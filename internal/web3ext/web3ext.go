@@ -458,6 +458,21 @@ web3._extend({
 			params: 0
 		}),
 		new web3._extend.Method({
+			name: 'getEbtreeRoot',
+			call: 'eth_getEbtreeRoot',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'createEbtree',
+			call: 'eth_createEbtree',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'topkVSearch',
+			call: 'eth_topkVSearch',
+			params: 1
+		}),
+		new web3._extend.Method({
 			name: 'sign',
 			call: 'eth_sign',
 			params: 2,
