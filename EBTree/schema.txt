@@ -1,0 +1,10 @@
+CREATE TABLE account (hash VARCHAR(), balance BIGINT, block INT, tx VARCHAR());
+
+
+CREATE TABLE block (gasLimit INT, gasUsed INT, hash VARCHAR(), miner VARCHAR(), number INT, parentHash VARCHAR(), size INT, timeestamp INT, totalDifficulty BIGINT, transactionRoot VARCHAR());
+
+
+
+CREATE TABLE tx (hash VARCHAR(), fromer VARCHAR(), toer VARCHAR(), gas bigint, gasPrice bigint, value bigint, inputCode TEXT , functionHash VARCHAR(), inputVARCHAR() TEXT , nonce bigint, contract VARCHAR(), eventNames VARCHAR(), eventVARCHAR() VARCHAR(), createBlock int);
+
+CREATE TABLE contract (address VARCHAR(), balance BIGINT, createBlock INT, txHash VARCHAR(), creater VARCHAR(), binaryCode text, content text);
