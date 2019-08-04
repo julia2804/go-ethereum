@@ -19,6 +19,7 @@ package light
 import (
 	"context"
 	"errors"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -57,9 +58,10 @@ type LightChain struct {
 	scope         event.SubscriptionScope
 	genesisBlock  *types.Block
 
-	mu      sync.RWMutex
-	chainmu sync.RWMutex
-
+	mu           sync.RWMutex
+	chainmu      sync.RWMutex
+	ebtreeRoot   []byte
+	ebtreeCache  *EBTree.Database
 	bodyCache    *lru.Cache // Cache for the most recent block bodies
 	bodyRLPCache *lru.Cache // Cache for the most recent block bodies in RLP encoded format
 	blockCache   *lru.Cache // Cache for the most recent entire blocks
@@ -193,7 +195,7 @@ func (bc *LightChain) ResetWithGenesisBlock(genesis *types.Block) {
 
 	// Prepare the genesis block and reinitialise the chain
 	rawdb.WriteTd(bc.chainDb, genesis.Hash(), genesis.NumberU64(), genesis.Difficulty())
-	rawdb.WriteBlock(bc.chainDb, genesis)
+	rawdb.WriteBlockWithIndex(bc.chainDb, genesis, bc.ebtreeRoot, bc.ebtreeCache)
 
 	bc.genesisBlock = genesis
 	bc.hc.SetGenesis(bc.genesisBlock.Header())
@@ -460,6 +462,24 @@ func (self *LightChain) GetHeaderByNumberOdr(ctx context.Context, number uint64)
 		return header, nil
 	}
 	return GetHeaderByNumber(ctx, self.odr, number)
+}
+
+// CreateEbtree create a ebtree .
+func (self *LightChain) CreateEbtree() (*EBTree.EBTree, error) {
+
+	return nil, nil
+}
+
+// TopkVSearch search a value .
+func (self *LightChain) TopkVSearch(k *big.Int) (*big.Int, error) {
+
+	return nil, nil
+}
+
+// GetEbtreeRoot create a ebtree .
+func (self *LightChain) GetEbtreeRoot() ([]byte, error) {
+
+	return nil, nil
 }
 
 // Config retrieves the header chain's chain configuration.
