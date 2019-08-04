@@ -497,6 +497,27 @@ func (s *PublicBlockChainAPI) BlockNumber() hexutil.Uint64 {
 	return hexutil.Uint64(header.Number.Uint64())
 }
 
+// TopkVSearch returns the topk value of transactions indexed by ebtree.
+func (s *PublicBlockChainAPI) TopkVSerach(ctx context.Context, k *big.Int) error {
+	fmt.Println("hello topk search,%v", k)
+	return nil
+}
+
+// CreateEbtree init an ebtree.
+func (s *PublicBlockChainAPI) CreateEbtree(ctx context.Context) ([]byte, error) {
+	ebtree, err := s.b.CreateEbtree(ctx)
+	if ebtree == nil || err != nil {
+		return nil, err
+	}
+	return s.b.GetEbtreeRoot(ctx)
+}
+
+// GetEbtreeRoot get an ebtree.
+func (s *PublicBlockChainAPI) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
+
+	return s.b.GetEbtreeRoot(ctx)
+}
+
 // GetBalance returns the amount of wei for the given address in the state of the
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
