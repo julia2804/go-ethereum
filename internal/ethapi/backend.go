@@ -19,6 +19,7 @@ package ethapi
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -50,6 +51,9 @@ type Backend interface {
 	SetHead(number uint64)
 	HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error)
 	BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error)
+	CreateEbtree(ctx context.Context) (*EBTree.EBTree, error)
+	TopkVSearch(ctx context.Context, k *big.Int) (*big.Int, error)
+	GetEbtreeRoot(ctx context.Context) ([]byte, error)
 	StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *types.Header, error)
 	GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error)
 	GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error)
