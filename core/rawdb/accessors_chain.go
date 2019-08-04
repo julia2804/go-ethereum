@@ -19,6 +19,8 @@ package rawdb
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -230,6 +232,46 @@ func WriteBody(db DatabaseWriter, hash common.Hash, number uint64, body *types.B
 		log.Crit("Failed to RLP encode body", "err", err)
 	}
 	WriteBodyRLP(db, hash, number, data)
+	WriteCanonicalHash(db, hash, number)
+}
+
+// WriteBodyWithIndex storea a block body into the database.
+func WriteBodyWithInex(db DatabaseWriter, hash common.Hash, number uint64, body *types.Body, root []byte, ebtdb *EBTree.Database) {
+	data, err := rlp.EncodeToBytes(body)
+	if err != nil {
+		log.Crit("Failed to RLP encode body", "err", err)
+	}
+	WriteBodyRLP(db, hash, number, data)
+	WriteCanonicalHash(db, hash, number)
+	InsertTransactionEbtree(root, ebtdb, body.Transactions)
+}
+func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions types.Transactions) error {
+	var rb EBTree.ByteNode
+	rb = root
+
+	tree, err := EBTree.New(root, ebtdb)
+	if err != nil {
+		return err
+	}
+	for _, t := range transactions {
+
+		amount := t.Value()
+		var tb []byte
+		th := t.Hash()
+		for _, tc := range th {
+			tb = append(tb, tc)
+		}
+		su, _, err := tree.InsertData(&rb, 0, nil, amount.Bytes(), tb)
+		if err != nil {
+			return err
+		}
+		if !su {
+			err := errors.New("insert data is not success in insertTransactionEbtree")
+			return err
+		}
+
+	}
+	return nil
 }
 
 // DeleteBody removes all block body data associated with a hash.
@@ -340,6 +382,22 @@ func ReadBlock(db DatabaseReader, hash common.Hash, number uint64) *types.Block 
 		return nil
 	}
 	return types.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles)
+}
+
+// WriteBlockWithIndex serializes a block into the database, header and body separately.
+func WriteBlockWithIndex(db DatabaseWriter, block *types.Block, root []byte, ebtdb *EBTree.Database) {
+	WriteBodyWithInex(db, block.Hash(), block.NumberU64(), block.Body(), root, ebtdb)
+	WriteHeader(db, block.Header())
+
+	/*bf, err := fmap.CreateBlockFile("/path/to/file")
+	if err != nil {
+		log.Crit("error",err);
+	}
+	defer bf.Close()
+	//create btree file
+	bft, _ := fmap.CreateBlockFile("/path/to/file")
+
+	defer bft.Close()*/
 }
 
 // WriteBlock serializes a block into the database, header and body separately.
