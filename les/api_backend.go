@@ -211,6 +211,10 @@ func (b *LesApiBackend) BloomStatus() (uint64, uint64) {
 	return params.BloomBitsBlocksClient, sections
 }
 
+func (b *LesApiBackend) RPCGasCap() *big.Int {
+	return b.eth.config.RPCGasCap
+}
+
 func (b *LesApiBackend) ServiceFilter(ctx context.Context, session *bloombits.MatcherSession) {
 	for i := 0; i < bloomFilterThreads; i++ {
 		go session.Multiplex(bloomRetrievalBatch, bloomRetrievalWait, b.eth.bloomRequests)
