@@ -164,7 +164,7 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 		}
 		blockchain.mu.Lock()
 		rawdb.WriteTd(blockchain.db, block.Hash(), block.NumberU64(), new(big.Int).Add(block.Difficulty(), blockchain.GetTdByHash(block.ParentHash())))
-		rawdb.WriteBlock(blockchain.db, block)
+		rawdb.WriteBlockWithIndex(blockchain.db, block, blockchain.ebtreeRoot, blockchain.ebtreeCache)
 		statedb.Commit(false)
 		blockchain.mu.Unlock()
 	}
