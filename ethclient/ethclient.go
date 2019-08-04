@@ -328,6 +328,14 @@ func (ec *Client) NetworkID(ctx context.Context) (*big.Int, error) {
 	return version, nil
 }
 
+// InitEbtreeAt return 4
+func (ec *Client) InitEbtreeAt(ctx context.Context, key []byte) (*uint64, error) {
+	var result uint64
+	result = 0
+	err := ec.c.CallContext(ctx, &result, "eth_initEbtree", key)
+	return (&result), err
+}
+
 // BalanceAt returns the wei balance of the given account.
 // The block number can be nil, in which case the balance is taken from the latest known block.
 func (ec *Client) BalanceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (*big.Int, error) {
