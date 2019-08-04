@@ -18,6 +18,7 @@ package les
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -61,6 +62,21 @@ func (b *LesApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNum
 		return b.eth.blockchain.CurrentHeader(), nil
 	}
 	return b.eth.blockchain.GetHeaderByNumberOdr(ctx, uint64(blockNr))
+}
+
+func (b *LesApiBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error) {
+	ebtree, err := b.eth.blockchain.CreateEbtree()
+	return ebtree, err
+}
+
+func (b *LesApiBackend) TopkVSearch(ctx context.Context, k *big.Int) (*big.Int, error) {
+	ebtree, err := b.eth.blockchain.TopkVSearch(k)
+	return ebtree, err
+}
+
+func (b *LesApiBackend) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
+	root, err := b.eth.blockchain.GetEbtreeRoot()
+	return root, err
 }
 
 func (b *LesApiBackend) HeaderByHash(ctx context.Context, hash common.Hash) (*types.Header, error) {
@@ -185,10 +201,6 @@ func (b *LesApiBackend) EventMux() *event.TypeMux {
 
 func (b *LesApiBackend) AccountManager() *accounts.Manager {
 	return b.eth.accountManager
-}
-
-func (b *LesApiBackend) RPCGasCap() *big.Int {
-	return b.eth.config.RPCGasCap
 }
 
 func (b *LesApiBackend) BloomStatus() (uint64, uint64) {
