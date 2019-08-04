@@ -18,6 +18,7 @@ package eth
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -99,6 +100,23 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	}
 	stateDb, err := b.eth.BlockChain().StateAt(header.Root)
 	return stateDb, header, err
+}
+
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k *big.Int) (*big.Int, error) {
+	_, err := b.eth.blockchain.TopkVSearch(k)
+	return k, err
+}
+
+func (b *EthAPIBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error) {
+	ebtree, err := b.eth.blockchain.CreateEbtree()
+	return ebtree, err
+}
+func (b *EthAPIBackend) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
+	root, err := b.eth.blockchain.GetEbtreeRoot()
+	if err != nil {
+		return nil, err
+	}
+	return root, err
 }
 
 func (b *EthAPIBackend) GetBlock(ctx context.Context, hash common.Hash) (*types.Block, error) {
@@ -211,10 +229,6 @@ func (b *EthAPIBackend) EventMux() *event.TypeMux {
 
 func (b *EthAPIBackend) AccountManager() *accounts.Manager {
 	return b.eth.AccountManager()
-}
-
-func (b *EthAPIBackend) RPCGasCap() *big.Int {
-	return b.eth.config.RPCGasCap
 }
 
 func (b *EthAPIBackend) BloomStatus() (uint64, uint64) {
