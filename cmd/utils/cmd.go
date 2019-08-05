@@ -128,7 +128,9 @@ func ImportChain(chain *core.BlockChain, fn string) error {
 	// Run actual the import.
 	blocks := make(types.Blocks, importBatchSize)
 	n := 0
+	log.Info("load a batch of blocks")
 	for batch := 0; ; batch++ {
+
 		// Load a batch of RLP blocks.
 		if checkInterrupt() {
 			return fmt.Errorf("interrupted")
