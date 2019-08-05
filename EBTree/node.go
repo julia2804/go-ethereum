@@ -19,6 +19,7 @@ package EBTree
 import (
 	"bytes"
 	"fmt"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
 	"io"
 	"strings"
@@ -154,11 +155,11 @@ func wrapError(err error, ctx string) error {
 	return &decodeError{err, []string{ctx}}
 }
 
-func createLeafNode(tree *EBTree, datalist []data) (leafNode, error) {
+func CreateLeafNode(tree *EBTree, datalist []data) (leafNode, error) {
 	var empty []byte
 	se, err := tree.newSequence()
 	if err != nil {
-		err = wrapError(err, "createLeafNode")
+		err = wrapError(err, "CreateLeafNode")
 		return leafNode{}, err
 	}
 	newn, err := constructLeafNode(se, uint8(len(datalist)), datalist, false, true, nil, empty, 0)
@@ -379,6 +380,7 @@ func getInternalNodePosition(n *internalNode, parent *internalNode, t *EBTree) (
 }
 
 func createData(value []byte, da []byte) (data, error) {
+	log.Info("into createData")
 	//create a data item for da
 	var kel [][]byte
 	//create a key list for data item
