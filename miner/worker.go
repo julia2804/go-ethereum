@@ -576,7 +576,7 @@ func (w *worker) resultLoop() {
 				logs = append(logs, receipt.Logs...)
 			}
 			// Commit block and state to database.
-			stat, err := w.chain.WriteBlockWithState(block, receipts, task.state)
+			stat, err, _ := w.chain.WriteBlockWithState(block, receipts, task.state)
 			if err != nil {
 				log.Error("Failed writing block to chain", "err", err)
 				continue
