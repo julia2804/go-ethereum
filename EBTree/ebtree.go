@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/pkg/errors"
 )
@@ -89,6 +90,7 @@ func (t *EBTree) isSpecial(value []byte) (bool, uint8) {
 // New will panic if db is nil and returns a MissingNodeError if root does
 // not exist in the database. Accessing the trie loads nodes from db on demand.
 func New(root []byte, db *Database) (*EBTree, error) {
+	log.Info("into new ebtree")
 	if db == nil {
 		panic("trie.New called without a database")
 	}
@@ -119,7 +121,7 @@ func New(root []byte, db *Database) (*EBTree, error) {
 }
 func (t *EBTree) splitIntoTwoLeaf(n *leafNode, pos int) (bool, *leafNode, *leafNode, error) {
 	var datalist []data
-	newn, err := createLeafNode(t, datalist)
+	newn, err := CreateLeafNode(t, datalist)
 	if err != nil {
 		err = wrapError(err, "split into two leaf node: create leaf node error")
 		return false, nil, nil, err
@@ -306,7 +308,10 @@ func (t *EBTree) DoNothing() error {
 //special value被存储在特定结构中
 //其他值正常存储在tree中
 func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []byte, da []byte) (bool, *internalNode, error) {
+	log.Info("into insert data")
+	log.Info(string(value))
 	//判断value是否special
+
 	sp, p := t.isSpecial(value)
 
 	if sp {
@@ -317,7 +322,7 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 	}
 	switch nt := n.(type) {
 	case *leafNode:
-
+		log.Info("n is a leafnode")
 		//向叶子节点插入数据
 		//若当前节点为空时，直接插入节点。
 		if len(nt.Data) == 0 {
@@ -328,7 +333,10 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 				return false, parent, err
 			}
 			nt.Data = append(nt.Data, dai)
-
+			n = nt
+			log.Info("create data for leafnode")
+			l := len(nt.Data)
+			log.Info(string(l))
 			return true, parent, nil
 		}
 
@@ -458,6 +466,7 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			return true, nil, nil
 		}
 	case *internalNode:
+		log.Info("n is a internal node")
 		flag := false
 		var i int
 		for i = 0; i < len(nt.Children); i++ {
@@ -569,8 +578,34 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			}
 
 		}
-
+	case *ByteNode:
+		log.Info("n is a bytenode")
+		nbb, _ := n.cache()
+		log.Info(string(nbb))
+		if n == nil {
+			dai, err := createData(value, da)
+			if err != nil {
+				err = wrapError(err, "insert data: create data wrong")
+				return false, parent, err
+			}
+			var da []data
+			da = append(da, dai)
+			_, err = CreateLeafNode(t, da)
+			if err != nil {
+				return false, nil, err
+			}
+			return true, nil, nil
+		} else {
+			var nb []byte
+			nb, _ = n.cache()
+			decoden, err := t.resolveHash(nb)
+			if err != nil {
+				return false, nil, err
+			}
+			return t.InsertData(decoden, pos, parent, value, da)
+		}
 	default:
+		log.Info("n with wrong node type")
 		err := errors.New("the node is not leaf or internal, something wrong")
 		return false, nil, err
 	}
@@ -579,11 +614,14 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 }
 
 func (t *EBTree) resolveHash(n []byte) (EBTreen, error) {
+	log.Info("into resolve hash func")
+	log.Info(string(n))
 	cacheMissCounter.Inc(1)
 
 	if node := t.db.node(n, t.cachegen); node != nil {
 		return node, nil
 	}
+	log.Info("not get the node from db")
 	return nil, &MissingNodeError{NodeId: n, Path: nil}
 }
 
