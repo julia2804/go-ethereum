@@ -236,42 +236,63 @@ func WriteBody(db DatabaseWriter, hash common.Hash, number uint64, body *types.B
 }
 
 // WriteBodyWithIndex storea a block body into the database.
-func WriteBodyWithInex(db DatabaseWriter, hash common.Hash, number uint64, body *types.Body, root []byte, ebtdb *EBTree.Database) {
+func WriteBodyWithInex(db DatabaseWriter, hash common.Hash, number uint64, body *types.Body, root []byte, ebtdb *EBTree.Database) ([]byte, error) {
+	log.Info("into writebody with index func")
+	i := len(body.Transactions)
+	ms := "the block has transactions:"
+	ms = ms + "hellow"
+	ms = ms + string(i)
+	log.Info(ms)
 	data, err := rlp.EncodeToBytes(body)
 	if err != nil {
 		log.Crit("Failed to RLP encode body", "err", err)
+		return nil, err
 	}
 	WriteBodyRLP(db, hash, number, data)
 	WriteCanonicalHash(db, hash, number)
-	InsertTransactionEbtree(root, ebtdb, body.Transactions)
+	r, err := InsertTransactionEbtree(root, ebtdb, body.Transactions)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
 }
-func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions types.Transactions) error {
+func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions types.Transactions) ([]byte, error) {
+	log.Info("into InsertTransactionEbtree func")
 	var rb EBTree.ByteNode
 	rb = root
-
-	tree, err := EBTree.New(root, ebtdb)
-	if err != nil {
-		return err
-	}
-	for _, t := range transactions {
-
-		amount := t.Value()
-		var tb []byte
-		th := t.Hash()
-		for _, tc := range th {
-			tb = append(tb, tc)
-		}
-		su, _, err := tree.InsertData(&rb, 0, nil, amount.Bytes(), tb)
+	if len(transactions) > 0 {
+		log.Info(string(root))
+		tree, err := EBTree.New(root, ebtdb)
 		if err != nil {
-			return err
-		}
-		if !su {
-			err := errors.New("insert data is not success in insertTransactionEbtree")
-			return err
+			return nil, err
 		}
 
+		for _, t := range transactions {
+			log.Info("get transaction")
+			amount := t.Value()
+			var tb []byte
+			th := t.Hash()
+			log.Info("get a transaction in insert ebtree")
+			log.Info(t.Value().String())
+			for _, tc := range th {
+				tb = append(tb, tc)
+			}
+			su, _, err := tree.InsertData(&rb, 0, nil, amount.Bytes(), tb)
+			if err != nil {
+				return nil, err
+			}
+			if !su {
+				err := errors.New("insert data is not success in insertTransactionEbtree")
+				return nil, err
+			}
+			r, err := tree.Commit(nil)
+			if err != nil {
+				return r, err
+			}
+		}
 	}
-	return nil
+
+	return nil, nil
 }
 
 // DeleteBody removes all block body data associated with a hash.
@@ -385,10 +406,15 @@ func ReadBlock(db DatabaseReader, hash common.Hash, number uint64) *types.Block 
 }
 
 // WriteBlockWithIndex serializes a block into the database, header and body separately.
-func WriteBlockWithIndex(db DatabaseWriter, block *types.Block, root []byte, ebtdb *EBTree.Database) {
-	WriteBodyWithInex(db, block.Hash(), block.NumberU64(), block.Body(), root, ebtdb)
-	WriteHeader(db, block.Header())
+func WriteBlockWithIndex(db DatabaseWriter, block *types.Block, root []byte, ebtdb *EBTree.Database) ([]byte, error) {
+	log.Info("into writeblock with index func")
 
+	r, err := WriteBodyWithInex(db, block.Hash(), block.NumberU64(), block.Body(), root, ebtdb)
+	if err != nil {
+		return nil, err
+	}
+	WriteHeader(db, block.Header())
+	return r, nil
 	/*bf, err := fmap.CreateBlockFile("/path/to/file")
 	if err != nil {
 		log.Crit("error",err);
