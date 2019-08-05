@@ -986,14 +986,14 @@ func (bc *BlockChain) WriteBlockWithoutState(block *types.Block, td *big.Int) (e
 }
 
 // WriteBlockWithState writes the block and all associated state to the database.
-func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.Receipt, state *state.StateDB) (status WriteStatus, err error) {
+func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.Receipt, state *state.StateDB) (status WriteStatus, err error, r []byte) {
 	bc.wg.Add(1)
 	defer bc.wg.Done()
 
 	// Calculate the total difficulty of the block
 	ptd := bc.GetTd(block.ParentHash(), block.NumberU64()-1)
 	if ptd == nil {
-		return NonStatTy, consensus.ErrUnknownAncestor
+		return NonStatTy, consensus.ErrUnknownAncestor, nil
 	}
 	// Make sure no inconsistent state is leaked during insertion
 	bc.mu.Lock()
@@ -1005,20 +1005,26 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 
 	// Irrelevant of the canonical status, write the block itself to the database
 	if err := bc.hc.WriteTd(block.Hash(), block.NumberU64(), externTd); err != nil {
-		return NonStatTy, err
+		return NonStatTy, err, nil
 	}
-	rawdb.WriteBlockWithIndex(bc.db, block, bc.ebtreeRoot, bc.ebtreeCache)
+	log.Info("into write block with state")
+	s := block.Number()
+	log.Info(s.String())
+	r, err = rawdb.WriteBlockWithIndex(bc.db, block, bc.ebtreeRoot, bc.ebtreeCache)
+	if err != nil {
+		return NonStatTy, err, nil
+	}
 
 	root, err := state.Commit(bc.chainConfig.IsEIP158(block.Number()))
 	if err != nil {
-		return NonStatTy, err
+		return NonStatTy, err, nil
 	}
 	triedb := bc.stateCache.TrieDB()
 
 	// If we're running an archive node, always flush
 	if bc.cacheConfig.Disabled {
 		if err := triedb.Commit(root, false); err != nil {
-			return NonStatTy, err
+			return NonStatTy, err, nil
 		}
 	} else {
 		// Full but not archive node, do proper garbage collection
@@ -1094,7 +1100,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		// Reorganise the chain if the parent is not the head block
 		if block.ParentHash() != currentBlock.Hash() {
 			if err := bc.reorg(currentBlock, block); err != nil {
-				return NonStatTy, err
+				return NonStatTy, err, nil
 			}
 		}
 		// Write the positional metadata for transaction/receipt lookups and preimages
@@ -1106,7 +1112,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		status = SideStatTy
 	}
 	if err := batch.Write(); err != nil {
-		return NonStatTy, err
+		return NonStatTy, err, nil
 	}
 
 	// Set new head.
@@ -1114,7 +1120,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		bc.insert(block)
 	}
 	bc.futureBlocks.Remove(block.Hash())
-	return status, nil
+	return status, nil, r
 }
 
 // addFutureBlock checks if the block is within the max allowed window to get
@@ -1154,6 +1160,7 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 	// Pre-checks passed, start the full block imports
 	bc.wg.Add(1)
 	bc.chainmu.Lock()
+	log.Info("into the blocckchain InsertChain function")
 	n, events, logs, err := bc.insertChain(chain, true)
 	bc.chainmu.Unlock()
 	bc.wg.Done()
@@ -1172,6 +1179,7 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 // completes, then the historic state could be pruned again
 func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []interface{}, []*types.Log, error) {
 	// If the chain is terminating, don't even bother starting u
+	log.Info("into insertChain func")
 	if atomic.LoadInt32(&bc.procInterrupt) == 1 {
 		return 0, nil, nil, nil
 	}
@@ -1281,7 +1289,11 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		proctime := time.Since(start)
 
 		// Write the block to the chain and get the status.
-		status, err := bc.WriteBlockWithState(block, receipts, state)
+		status, err, r := bc.WriteBlockWithState(block, receipts, state)
+		if r != nil {
+			bc.ebtreeRoot = r
+			log.Info("set ebtree root")
+		}
 		t3 := time.Now()
 		if err != nil {
 			return it.index, events, coalescedLogs, err
