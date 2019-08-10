@@ -691,6 +691,7 @@ func (bc *BlockChain) TopkVSearch(k *big.Int) (*big.Int, error) {
 // .
 func (bc *BlockChain) GetEbtreeRoot() ([]byte, error) {
 	if bc.ebtreeRoot == nil {
+		fmt.Println("there is no ebtree in get ebtree root")
 		err := errors.New("there is no ebtree in get ebtree root")
 		return bc.ebtreeRoot, err
 	}
@@ -1011,6 +1012,11 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	s := block.Number()
 	log.Info(s.String())
 	r, err = rawdb.WriteBlockWithIndex(bc.db, block, bc.ebtreeRoot, bc.ebtreeCache)
+	bc.ebtreeRoot = r
+	log.Info("next is r:")
+	fmt.Println(r)
+	log.Info("next is ebtree root:")
+	fmt.Println(bc.ebtreeRoot)
 	if err != nil {
 		return NonStatTy, err, nil
 	}
@@ -1120,6 +1126,8 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		bc.insert(block)
 	}
 	bc.futureBlocks.Remove(block.Hash())
+	log.Info("next is ebtree root:")
+	fmt.Println(bc.ebtreeRoot)
 	return status, nil, r
 }
 

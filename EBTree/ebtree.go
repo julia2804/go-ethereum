@@ -26,6 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/pkg/errors"
+	"reflect"
 )
 
 var (
@@ -62,8 +63,8 @@ type SpecialData struct {
 //
 // Trie is not safe for concurrent use.
 type EBTree struct {
-	db                   *Database
-	root                 EBTreen
+	Db                   *Database
+	Root                 EBTreen
 	sequence             []byte
 	special              []SpecialData
 	cachegen, cachelimit uint16
@@ -83,6 +84,37 @@ func (t *EBTree) isSpecial(value []byte) (bool, uint8) {
 	}
 	return false, 0
 }
+func typeof(v interface{}) string {
+	return reflect.TypeOf(v).String()
+}
+func DBCommit(tree *EBTree) ([]byte, error) {
+	switch rt := (tree.Root).(type) {
+	case *leafNode:
+		//todo:
+		log.Info("dbcommit:before commit:next is rt.id")
+		log.Info(string(rt.Id))
+		err := tree.Db.Commit(rt.Id, true)
+		if err != nil {
+			wrapError(err, "error in db.commit in func DBCommit")
+			return nil, err
+		}
+		log.Info("dbcommit:next is rt.id")
+		log.Info(string(rt.Id))
+		return rt.Id, nil
+	case *internalNode:
+		//todo:
+		err := tree.Db.Commit(rt.Id, true)
+		if err != nil {
+			wrapError(err, "error in db.commit in func DBCommit")
+			return nil, err
+		}
+
+		return rt.Id, nil
+	default:
+		err := errors.New("wong root node type")
+		return nil, err
+	}
+}
 
 // New creates a trie with an existing root node from db.
 // If root is the zero hash or the sha3 hash of an empty string, the
@@ -95,10 +127,13 @@ func New(root []byte, db *Database) (*EBTree, error) {
 		panic("trie.New called without a database")
 	}
 	ebt := &EBTree{
-		db: db,
+		Db:       db,
+		sequence: IntToBytes(0),
 	}
-	ebt.db = db
-	if root != (nil) {
+	log.Info(string(len(root)))
+	ebt.Db = db
+	if len(root) != 0 {
+		log.Info(string(root))
 		rootNode, err := ebt.resolveHash(root[:])
 		if err != nil {
 			return ebt, err
@@ -115,7 +150,7 @@ func New(root []byte, db *Database) (*EBTree, error) {
 			err := errors.New("wrong type")
 			return nil, err
 		}
-		ebt.root = rootNode
+		ebt.Root = rootNode
 	}
 	return ebt, nil
 }
@@ -322,10 +357,17 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 	}
 	switch nt := n.(type) {
 	case *leafNode:
-		log.Info("n is a leafnode")
+		log.Info("insertdata:n is a leafnode")
 		//向叶子节点插入数据
 		//若当前节点为空时，直接插入节点。
+		log.Info("insertdata:next is leafnode id")
+		log.Info(string(nt.Id))
+		log.Info(string(len(nt.Data)))
+		outid := t.OutputRoot()
+		log.Info("insertdata:next is outid:")
+		log.Info(string(outid))
 		if len(nt.Data) == 0 {
+			log.Info("the data is nil")
 			//create a data item for da
 			dai, err := createData(value, da)
 			if err != nil {
@@ -344,11 +386,19 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 		flag := false
 		//遍历当前节点的所有data，将da插入合适的位置
 		//value一定小于或等于当前节点到最大值
+
 		for i := 0; i < len(nt.Data); i++ {
+			log.Info("find the appropriate position in nt datas")
+
 			switch dt := (nt.Data[i]).(type) {
 			case dataEncode:
 				//decode the data
-				d, _ := decodeData(dt)
+				log.Info("data is encoded")
+				log.Info(string(dt))
+				d, err := decodeData(dt)
+				if err != nil {
+					return false, parent, err
+				}
 				fmt.Print(i)
 				fmt.Println(dt)
 				if bytes.Compare(d.Value, value) < 0 {
@@ -387,6 +437,9 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 				}
 				return true, parent, nil
 			case data:
+				log.Info("data is not encoded")
+				log.Info(string(dt.Value))
+				log.Info(string(value))
 				if bytes.Compare(dt.Value, value) < 0 {
 					//EBTree叶子节点按升序排列，应该data应该插入到nt.data[i]之后
 					continue
@@ -421,13 +474,56 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 					flag = true
 					return true, parent, nil
 				}
+			case *data:
+				log.Info("pointer data type")
+				if bytes.Compare(dt.Value, value) < 0 {
+					log.Info("find next value")
+					//EBTree叶子节点按升序排列，应该data应该插入到nt.data[i]之后
+					continue
+				} else if bytes.Compare(dt.Value, value) == 0 {
+					log.Info("find the same value")
+					//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
+					dt.Keylist = append(dt.Keylist, da)
+					nt.Data[i] = dt
+					n = nt
+					flag = true
+					return true, parent, nil
+				} else {
+					log.Info("find a larger value")
+					//说明EBTree中不存在value值，此时，需要构建data，并将其加入到节点中
+					su, nt, err := moveData(nt, i)
+					if !su {
+						err = wrapError(err, "insert data: move data wrong")
+						return false, parent, err
+					}
+					nt.Data[i], err = createData(value, da)
+					if err != nil {
+						err = wrapError(err, "insert data: create data wrong")
+						return false, parent, err
+					}
+					//split the leaf node
+					if len(nt.Data) > int(maxLeafNodeCount) {
+						su, parent, err := t.split(nt, parent)
+						if !su {
+							err = wrapError(err, "insert data: split the leaf node wrong")
+							return false, parent, err
+						}
+						return true, parent, nil
+					}
+					flag = true
+					return true, parent, nil
+				}
+			case *dataEncode:
+				log.Info("pointer data encode type")
 			default:
-				return false, nil, nil
+				log.Info("data type is not appropriate")
+				err := errors.New("data type is not appropriate")
+				return false, nil, err
 			}
 
 		}
-		if !flag {
-			//将该值插入到节点末尾
+		if !flag { //将该值插入到节点末尾
+			log.Info("the data should be put in the last ")
 			dai, err := createData(value, da)
 			if err != nil {
 				err = wrapError(err, "insert data: when the data was added into the end of node, create data wrong")
@@ -466,7 +562,9 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			return true, nil, nil
 		}
 	case *internalNode:
-		log.Info("n is a internal node")
+		log.Info("insertdata: is a internal node")
+		log.Info("insertdata:next is internalnoode id")
+		log.Info(string(nt.Id))
 		flag := false
 		var i int
 		for i = 0; i < len(nt.Children); i++ {
@@ -579,10 +677,11 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 
 		}
 	case *ByteNode:
-		log.Info("n is a bytenode")
+		log.Info("insertdata:n is a bytenode")
 		nbb, _ := n.cache()
+		log.Info("insertdata:next is bytenode id")
 		log.Info(string(nbb))
-		if n == nil {
+		if string(nbb) == "" {
 			dai, err := createData(value, da)
 			if err != nil {
 				err = wrapError(err, "insert data: create data wrong")
@@ -590,8 +689,15 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			}
 			var da []data
 			da = append(da, dai)
-			_, err = CreateLeafNode(t, da)
+			newn, err := CreateLeafNode(t, da)
+			log.Info("next is newn leaf node")
+			log.Info(string(newn.Id))
+			t.Root = &newn
+			outid := t.OutputRoot()
+			log.Info("next is outid:")
+			log.Info(string(outid))
 			if err != nil {
+				log.Info("err in create leaf node")
 				return false, nil, err
 			}
 			return true, nil, nil
@@ -618,7 +724,7 @@ func (t *EBTree) resolveHash(n []byte) (EBTreen, error) {
 	log.Info(string(n))
 	cacheMissCounter.Inc(1)
 
-	if node := t.db.node(n, t.cachegen); node != nil {
+	if node := t.Db.node(n, t.cachegen); node != nil {
 		return node, nil
 	}
 	log.Info("not get the node from db")
@@ -636,6 +742,8 @@ func IntToBytes(i uint64) []byte {
 }
 
 func (t *EBTree) newSequence() ([]byte, error) {
+	log.Info("into new sequece")
+	log.Info(string(t.sequence))
 	re := BytesToInt(t.sequence)
 	re = re + 1
 	if re < 0 {
@@ -644,16 +752,36 @@ func (t *EBTree) newSequence() ([]byte, error) {
 	}
 	id := IntToBytes(uint64(re))
 	t.sequence = id
+	log.Info(string(t.sequence))
 	return id, nil
+}
+func (t *EBTree) OutputRoot() []byte {
+	switch rt := (t.Root).(type) {
+	case *leafNode:
+		log.Info("outputroot:root node type: leafnode")
+		log.Info(string(rt.Id))
+		return rt.Id
+	case *internalNode:
+		log.Info("outputroot:root node type: internalnode")
+		return rt.Id
+	case *ByteNode:
+		log.Info("outputroot:root node type: bytenode")
+		id, _ := rt.cache()
+		return id
+	default:
+		log.Info("Output  root: wrong root node type")
+	}
+	return nil
 }
 
 // Commit writes all nodes to the trie's memory database, tracking the internal
 // and external (for account tries) references.
 func (t *EBTree) Commit(onleaf LeafCallback) ([]byte, error) {
-	if t.db == nil {
+
+	if t.Db == nil {
 		panic("commit called on trie with nil database")
 	}
-	collapsedNode, err := t.foldRoot(t.db, onleaf)
+	collapsedNode, err := t.foldRoot(t.Db, onleaf)
 	if err != nil {
 		return nil, err
 	}
@@ -664,17 +792,19 @@ func (t *EBTree) Commit(onleaf LeafCallback) ([]byte, error) {
 		return nil, err
 	}
 	rt, _ := collapsedNode.cache()
+	log.Info(string(rt))
 	return rt, nil
 }
 
 func (t *EBTree) foldRoot(db *Database, onleaf LeafCallback) (EBTreen, error) {
-	if t.root == nil {
+	log.Info("into fold root ")
+	if t.Root == nil {
 		err := errors.New("tree is nil")
 		return nil, err
 	}
 	f := newFolder(t.cachegen, t.cachelimit, onleaf)
 	defer returnFolderToPool(f)
-	return f.fold(t.root, db, true)
+	return f.fold(t.Root, db, true)
 }
 
 // TryGet returns the value for key stored in the trie.
@@ -682,7 +812,7 @@ func (t *EBTree) foldRoot(db *Database, onleaf LeafCallback) (EBTreen, error) {
 // If a node was not found in the database, a MissingNodeError is returned.
 func (t *EBTree) TryGet(value []byte) ([][]byte, error) {
 
-	data, _, didResolve, err := t.tryGet(t.root, value, 0)
+	data, _, didResolve, err := t.tryGet(t.Root, value, 0)
 	if err == nil && didResolve {
 		//t.root = newroot
 	}

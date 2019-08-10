@@ -18,6 +18,7 @@ package EBTree
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/log"
 	"sync"
 )
 
@@ -64,6 +65,7 @@ func returnFolderToPool(h *folder) {
 // fold folds a node , also returning a copy of the
 // original node without next field to replace the original one.
 func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
+	log.Info("into fold func")
 	// If we're not storing the node, just folding, use available cached data
 
 	//返回该节点折叠后的marshjson
@@ -76,6 +78,7 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 	//var collapsedNode idNode
 	switch nt := (n).(type) {
 	case *leafNode:
+		log.Info("encode a leaf node")
 		var collapsed leafNode
 		if nt.Id == nil {
 			err := errors.New("empty node")
@@ -86,15 +89,22 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 		if nt.Next != nil {
 			switch cnt := (nt.Next).(type) {
 			case *leafNode:
+				log.Info("fold:collapsedNode:leafnode")
 				var nb ByteNode
 				nb = cnt.Id
 				collapsed.Next = &nb
 			case *internalNode:
+				log.Info("fold:collapsedNode:internalnode")
 				var nb ByteNode
 				nb = cnt.Id
 				collapsed.Next = &nb
+			case *ByteNode:
+				log.Info("fold:collapsedNode:bytenode")
+				var nb ByteNode
+				nb, _ = cnt.cache()
+				collapsed.Next = &nb
 			default:
-				err := errors.New("wrong type")
+				err := errors.New("fold: wrong collapsed node type")
 				return nil, err
 			}
 		}
@@ -268,10 +278,12 @@ func (f *folder) store(n EBTreen, db *Database, force bool) ([]byte, error) {
 		db.lock.Lock()
 		switch nt := (n).(type) {
 		case *leafNode:
+			log.Info("store:into leafnode")
 			db.insert(nt.Id, f.tmp, n)
 			db.lock.Unlock()
 			return nt.Id, nil
 		case *internalNode:
+			log.Info("store:into internalnode")
 			db.insert(nt.Id, f.tmp, n)
 			db.lock.Unlock()
 			return nt.Id, nil

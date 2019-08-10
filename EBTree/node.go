@@ -156,8 +156,10 @@ func wrapError(err error, ctx string) error {
 }
 
 func CreateLeafNode(tree *EBTree, datalist []data) (leafNode, error) {
+	log.Info("into create leaf node")
 	var empty []byte
 	se, err := tree.newSequence()
+	log.Info(string(se))
 	if err != nil {
 		err = wrapError(err, "CreateLeafNode")
 		return leafNode{}, err
@@ -167,6 +169,7 @@ func CreateLeafNode(tree *EBTree, datalist []data) (leafNode, error) {
 }
 
 func constructLeafNode(id []byte, count uint8, datalist []data, special bool, dirty bool, next EBTreen, nexid []byte, gen uint16) (leafNode, error) {
+	log.Info("into construct leaf node")
 	//newn := &leafNode{}
 	var dataInter []DataInterface
 	for i := uint8(0); i < count; i++ {
@@ -224,7 +227,7 @@ func addChild(internal internalNode, chil child, position int) (bool, internalNo
 }
 
 func moveData(n *leafNode, pos int) (bool, *leafNode, error) {
-
+	log.Info("into moveData")
 	n.Data = append(n.Data, data{})
 
 	for i := len(n.Data) - 1; i > pos; i-- {
@@ -283,7 +286,7 @@ func getLeafNodePosition(n *leafNode, parent *internalNode, t *EBTree) (bool, *i
 				err = wrapError(err, "get leaf node position wrong: when parent is nil, create root")
 				return false, parent, uint8(0), err
 			}
-			t.root = parent
+			t.Root = parent
 			return true, parent, uint8(0), nil
 		default:
 			fmt.Println(dt)
@@ -349,7 +352,7 @@ func getInternalNodePosition(n *internalNode, parent *internalNode, t *EBTree) (
 				err = wrapError(err, "get internal node position wrong: when parent is nil, create root")
 				return false, parent, uint8(0), err
 			}
-			t.root = parent
+			t.Root = parent
 			return true, parent, uint8(0), nil
 
 		}
@@ -596,7 +599,7 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error) {
 	var result []searchValue
 	if max {
-		n, err := findFirstNode(t.root)
+		n, err := findFirstNode(t.Root)
 		if err != nil {
 			wrapError(err, "top-k search value wrong:find first node wrong")
 			return false, nil, err
@@ -662,7 +665,7 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) {
 	var result []searchData
 	if max {
-		n, err := findFirstNode(t.root)
+		n, err := findFirstNode(t.Root)
 		if err != nil {
 			wrapError(err, "top-k search data wrong:find first node wrong")
 			return false, nil, err
@@ -731,7 +734,7 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []searchValue, error) {
 	var result []searchValue
 
-	su, n, pos, err := t.findNode(t.root, min)
+	su, n, pos, err := t.findNode(t.Root, min)
 	if !su {
 		wrapError(err, "range search value wrong:find node wrong")
 		return false, nil, err
@@ -815,7 +818,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []searchData, error) {
 	var result []searchData
 
-	su, n, pos, err := t.findNode(t.root, min)
+	su, n, pos, err := t.findNode(t.Root, min)
 	if !su {
 		wrapError(err, "range search value wrong:find node wrong")
 		return false, nil, err
@@ -1086,6 +1089,7 @@ func decodeNode(id, buf []byte) (EBTreen, error) {
 }
 
 func decodeData(buf []byte) (data, error) {
+	log.Info("into decoded data")
 	d := data{}
 	elems, _, _ := rlp.SplitList(buf)
 	c, _ := rlp.CountValues(elems)
@@ -1141,7 +1145,8 @@ func decodeChild(buf []byte) (child, []byte, error) {
 }
 
 func decodeLeaf(id, buf []byte) (EBTreen, error) {
-
+	log.Info("decode leafnode:")
+	fmt.Println(id)
 	le := leafNode{}
 	le.Id = id
 	elems, rest, _ := rlp.SplitList(buf)
@@ -1152,6 +1157,7 @@ func decodeLeaf(id, buf []byte) (EBTreen, error) {
 	for i := 0; i < c; i++ {
 		kbuf, rest1, _ := rlp.SplitString(elems)
 		d, _ := decodeData(kbuf)
+		fmt.Println(d.Value)
 		fmt.Print(i)
 		fmt.Println(kbuf)
 		le.Data = append(le.Data, d)

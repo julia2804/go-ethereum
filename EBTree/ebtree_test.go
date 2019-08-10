@@ -114,7 +114,7 @@ func updateString(tree *EBTree) {
 
 		a[i-1] = j
 
-		su, _, err := tree.InsertData(tree.root, uint8(i), nil, IntToBytes(uint64(j)), v)
+		su, _, err := tree.InsertData(tree.Root, uint8(i), nil, IntToBytes(uint64(j)), v)
 		if !su {
 			fmt.Sprintf("the error is not nil,%v", err)
 		}
@@ -129,7 +129,7 @@ func TestInsert(t *testing.T) {
 	tree, _ := newEmpty()
 
 	updateString(tree)
-	printTree(tree.root)
+	printTree(tree.Root)
 	fmt.Println()
 	fmt.Println()
 	fmt.Println()
@@ -232,7 +232,7 @@ func TestRangeDataSearch(t *testing.T) {
 func TestSearch(t *testing.T) {
 	tree, _ := newEmpty()
 	updateString(tree)
-	result1, err := SearchNode(IntToBytes(uint64(129)), tree.root, tree)
+	result1, err := SearchNode(IntToBytes(uint64(129)), tree.Root, tree)
 	if err != nil {
 		fmt.Printf("somethine wrong in search node")
 		return
@@ -244,7 +244,7 @@ func TestSearch(t *testing.T) {
 		fmt.Println()
 	}
 	fmt.Println()
-	result2, err := SearchNode(IntToBytes(uint64(552)), tree.root, tree)
+	result2, err := SearchNode(IntToBytes(uint64(552)), tree.Root, tree)
 	if err != nil {
 		fmt.Printf("somethine wrong in search node")
 		return
@@ -268,12 +268,12 @@ func TestMutiLeveInsert(t *testing.T) {
 		arr[i] = IntToBytes(uint64(rand.Intn(500000000)))
 	}
 	for i, a := range arr {
-		su, _, err := tree.InsertData(tree.root, uint8(i), nil, a, RandString(64))
+		su, _, err := tree.InsertData(tree.Root, uint8(i), nil, a, RandString(64))
 		if !su {
 			fmt.Sprintf("the error is not nil,%v", err)
 		}
 	}
-	printTree(tree.root)
+	printTree(tree.Root)
 	fmt.Printf("wrong number count:%d\n", wcount)
 	fmt.Printf("end of output")
 	fmt.Printf(string(tree.sequence))
@@ -352,19 +352,19 @@ func testMissingNode(t *testing.T, memonly bool) {
 	updateString(tree)
 
 	_, _ = tree.Commit(nil)
-	switch rt := (tree.root).(type) {
+	switch rt := (tree.Root).(type) {
 	case *leafNode:
 		//todo:
-		tree.db.Commit(rt.Id, true)
+		tree.Db.Commit(rt.Id, true)
 
-		triedb = tree.db
+		triedb = tree.Db
 		//TODO:
 		tree, _ = New(rt.Id, triedb)
 	case *internalNode:
 		//todo:
-		tree.db.Commit(rt.Id, true)
+		tree.Db.Commit(rt.Id, true)
 
-		triedb = tree.db
+		triedb = tree.Db
 		//TODO:
 		tree, _ = New(rt.Id, triedb)
 	default:
@@ -862,7 +862,7 @@ func TestReadCsv(t *testing.T) {
 			//todo:value=0的情况，首先定位，什么数字的插入会导致错误发生
 			//发现一个错误，0被插入到tree中,hash是0x01cde6e47904c689e183ee5c3cc39167ab61b6e368d9a158ff87075ee4ea75c1,0
 			//fmt.Println(bytes.Compare(data,value))
-			tree.InsertData(tree.root, uint8(i), nil, IntToBytes(0), data)
+			tree.InsertData(tree.Root, uint8(i), nil, IntToBytes(0), data)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -905,7 +905,7 @@ func TestReadCsv(t *testing.T) {
 			for i := 0; i < len(bv); i++ {
 				s0 = append(s0, bv[i])
 			}
-			tree.InsertData(tree.root, uint8(i), nil, s0, data)
+			tree.InsertData(tree.Root, uint8(i), nil, s0, data)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -997,19 +997,19 @@ func TestReadCsv(t *testing.T) {
 	}
 	combineAndPrintSearchValue(result,s0,tree,k,false)*/
 	_, _ = tree.Commit(nil)
-	switch rt := (tree.root).(type) {
+	switch rt := (tree.Root).(type) {
 	case *leafNode:
 		//todo:
-		tree.db.Commit(rt.Id, true)
+		tree.Db.Commit(rt.Id, true)
 
-		triedb := tree.db
+		triedb := tree.Db
 		//TODO:
 		tree, _ = New(rt.Id, triedb)
 	case *internalNode:
 		//todo:
-		tree.db.Commit(rt.Id, true)
+		tree.Db.Commit(rt.Id, true)
 
-		triedb := tree.db
+		triedb := tree.Db
 		//TODO:
 		tree, _ = New(rt.Id, triedb)
 	default:

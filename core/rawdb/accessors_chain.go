@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 
@@ -238,11 +239,7 @@ func WriteBody(db DatabaseWriter, hash common.Hash, number uint64, body *types.B
 // WriteBodyWithIndex storea a block body into the database.
 func WriteBodyWithInex(db DatabaseWriter, hash common.Hash, number uint64, body *types.Body, root []byte, ebtdb *EBTree.Database) ([]byte, error) {
 	log.Info("into writebody with index func")
-	i := len(body.Transactions)
-	ms := "the block has transactions:"
-	ms = ms + "hellow"
-	ms = ms + string(i)
-	log.Info(ms)
+
 	data, err := rlp.EncodeToBytes(body)
 	if err != nil {
 		log.Crit("Failed to RLP encode body", "err", err)
@@ -251,6 +248,8 @@ func WriteBodyWithInex(db DatabaseWriter, hash common.Hash, number uint64, body 
 	WriteBodyRLP(db, hash, number, data)
 	WriteCanonicalHash(db, hash, number)
 	r, err := InsertTransactionEbtree(root, ebtdb, body.Transactions)
+	fmt.Println("the result for insertTransaction ebtree:")
+	fmt.Println(r)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +260,8 @@ func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions t
 	var rb EBTree.ByteNode
 	rb = root
 	if len(transactions) > 0 {
-		log.Info(string(root))
+		fmt.Println("InsertTransactionEbtree:print the root")
+		fmt.Println(root)
 		tree, err := EBTree.New(root, ebtdb)
 		if err != nil {
 			return nil, err
@@ -273,10 +273,13 @@ func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions t
 			var tb []byte
 			th := t.Hash()
 			log.Info("get a transaction in insert ebtree")
-			log.Info(t.Value().String())
+			fmt.Println(t.Value())
 			for _, tc := range th {
 				tb = append(tb, tc)
 			}
+			outid := tree.OutputRoot()
+			log.Info("next is outid:")
+			fmt.Println(outid)
 			su, _, err := tree.InsertData(&rb, 0, nil, amount.Bytes(), tb)
 			if err != nil {
 				return nil, err
@@ -285,11 +288,24 @@ func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions t
 				err := errors.New("insert data is not success in insertTransactionEbtree")
 				return nil, err
 			}
-			r, err := tree.Commit(nil)
-			if err != nil {
-				return r, err
-			}
+			outid = tree.OutputRoot()
+			log.Info("next is outid:")
+			fmt.Println(outid)
+
 		}
+		_, err = tree.Commit(nil)
+		outid := tree.OutputRoot()
+		log.Info("next is outid:")
+		fmt.Println(outid)
+		if err != nil {
+			log.Info(err.Error())
+			return nil, err
+		}
+		rid, err := EBTree.DBCommit(tree)
+		if err != nil {
+			return nil, err
+		}
+		return rid, nil
 	}
 
 	return nil, nil
@@ -410,6 +426,8 @@ func WriteBlockWithIndex(db DatabaseWriter, block *types.Block, root []byte, ebt
 	log.Info("into writeblock with index func")
 
 	r, err := WriteBodyWithInex(db, block.Hash(), block.NumberU64(), block.Body(), root, ebtdb)
+	fmt.Println("the root node for ebtree:")
+	fmt.Println(r)
 	if err != nil {
 		return nil, err
 	}
