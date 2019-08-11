@@ -146,21 +146,8 @@ func TestInsert(t *testing.T) {
 
 }
 
-func combineAndPrintSearchData(result []searchData, pos []byte, tree *EBTree, k []byte, top bool) {
-	_, result, err := tree.combineSearchDataResult(result, pos, k, top)
-	if err != nil {
-		fmt.Printf("something wrong in combine search data result\n")
-		return
-	}
-	for i, r := range result {
-		fmt.Printf("the %dth value is %d,the data is:\n", i, r.value)
-		fmt.Printf(string(r.data))
-		fmt.Println()
-	}
-}
-
 func combineAndPrintSearchValue(result []searchValue, pos []byte, tree *EBTree, k []byte, top bool) {
-	_, result, err := tree.combineSearchValueResult(result, pos, k, top)
+	_, result, err := tree.CombineSearchValueResult(result, pos, k, top)
 	if err != nil {
 		fmt.Printf("something wrong in combine search data result\n")
 		return
@@ -185,7 +172,7 @@ func TestTopkDataSearch(t *testing.T) {
 	if !su {
 		fmt.Printf("something wrong in top-k search\n")
 	}
-	combineAndPrintSearchData(result, IntToBytes(uint64(0)), tree, k, true)
+	tree.CombineAndPrintSearchData(result, IntToBytes(uint64(0)), k, true)
 }
 
 func TestTopkValueSearch(t *testing.T) {

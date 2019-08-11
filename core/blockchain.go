@@ -683,9 +683,17 @@ func (bc *BlockChain) CreateEbtree() (*EBTree.EBTree, error) {
 }
 
 // .
-func (bc *BlockChain) TopkVSearch(k *big.Int) (*big.Int, error) {
-
-	return k, nil
+func (bc *BlockChain) TopkVSearch(k *big.Int, root []byte) ([][]byte, error) {
+	tree, err := EBTree.New(root, bc.ebtreeCache)
+	if err != nil {
+		return nil, err
+	}
+	su, result, _ := tree.TopkDataSearch(k.Bytes(), true)
+	if !su {
+		fmt.Printf("something wrong in range value search")
+	}
+	tree.CombineAndPrintSearchData(result, nil, k.Bytes(), true)
+	return nil, nil
 }
 
 // .

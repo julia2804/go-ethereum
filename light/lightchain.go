@@ -471,7 +471,7 @@ func (self *LightChain) CreateEbtree() (*EBTree.EBTree, error) {
 }
 
 // TopkVSearch search a value .
-func (self *LightChain) TopkVSearch(k *big.Int) (*big.Int, error) {
+func (self *LightChain) TopkVSearch(k *big.Int) ([][]byte, error) {
 
 	return nil, nil
 }

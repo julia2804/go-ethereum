@@ -907,7 +907,7 @@ func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []sear
 //搜索时需要将搜索的结果和special值进行对比，保证输出正确结果
 //输入为对tree进行搜索得到的结果
 //返回值为最终的结果和错误
-func (t *EBTree) compareSpeacial(min []byte, max []byte) (bool, uint64, uint64, error) {
+func (t *EBTree) CompareSpeacial(min []byte, max []byte) (bool, uint64, uint64, error) {
 	flag := false
 	var pos uint64
 	var count uint64
@@ -926,8 +926,22 @@ func (t *EBTree) compareSpeacial(min []byte, max []byte) (bool, uint64, uint64, 
 	return flag, pos, count, nil
 	//如果结果集中应包含special值，special值应该放在哪里
 }
-
-func (tree *EBTree) combineSearchDataResult(result []searchData, min []byte, k []byte, top bool) (bool, []searchData, error) {
+func (tree *EBTree) CombineAndPrintSearchData(result []searchData, pos []byte, k []byte, top bool) {
+	if pos == nil {
+		pos = IntToBytes(uint64(0))
+	}
+	_, result, err := tree.CombineSearchDataResult(result, pos, k, top)
+	if err != nil {
+		fmt.Printf("something wrong in combine search data result\n")
+		return
+	}
+	for i, r := range result {
+		fmt.Printf("the %dth value is %d,the data is:\n", i, r.value)
+		fmt.Printf(string(r.data))
+		fmt.Println()
+	}
+}
+func (tree *EBTree) CombineSearchDataResult(result []searchData, min []byte, k []byte, top bool) (bool, []searchData, error) {
 
 	var finalR []searchData
 	var su bool
@@ -935,9 +949,9 @@ func (tree *EBTree) combineSearchDataResult(result []searchData, min []byte, k [
 	var number uint64
 	var err error
 	if top {
-		su, pos, number, err = tree.compareSpeacial(IntToBytes(0), result[len(result)-1].value)
+		su, pos, number, err = tree.CompareSpeacial(IntToBytes(0), result[len(result)-1].value)
 	} else {
-		su, pos, number, err = tree.compareSpeacial(min, result[len(result)-1].value)
+		su, pos, number, err = tree.CompareSpeacial(min, result[len(result)-1].value)
 	}
 
 	if err != nil {
@@ -998,7 +1012,7 @@ func (tree *EBTree) combineSearchDataResult(result []searchData, min []byte, k [
 	return true, finalR, nil
 }
 
-func (tree *EBTree) combineSearchValueResult(result []searchValue, min []byte, k []byte, top bool) (bool, []searchValue, error) {
+func (tree *EBTree) CombineSearchValueResult(result []searchValue, min []byte, k []byte, top bool) (bool, []searchValue, error) {
 
 	var finalR []searchValue
 	var su bool
@@ -1006,9 +1020,9 @@ func (tree *EBTree) combineSearchValueResult(result []searchValue, min []byte, k
 	var number uint64
 	var err error
 	if top {
-		su, pos, number, err = tree.compareSpeacial(IntToBytes(0), result[len(result)-1].value)
+		su, pos, number, err = tree.CompareSpeacial(IntToBytes(0), result[len(result)-1].value)
 	} else {
-		su, pos, number, err = tree.compareSpeacial(min, result[len(result)-1].value)
+		su, pos, number, err = tree.CompareSpeacial(min, result[len(result)-1].value)
 	}
 
 	if err != nil {

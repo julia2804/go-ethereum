@@ -498,9 +498,9 @@ func (s *PublicBlockChainAPI) BlockNumber() hexutil.Uint64 {
 }
 
 // TopkVSearch returns the topk value of transactions indexed by ebtree.
-func (s *PublicBlockChainAPI) TopkVSerach(ctx context.Context, k *big.Int) error {
-	fmt.Println("hello topk search,%v", k)
-	return nil
+func (s *PublicBlockChainAPI) TopkVSerach(ctx context.Context, k *big.Int) ([][]byte, error) {
+	data, err := s.b.TopkVSearch(ctx, k)
+	return data, err
 }
 
 // CreateEbtree init an ebtree.
