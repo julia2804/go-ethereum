@@ -236,6 +236,7 @@ func importChain(ctx *cli.Context) error {
 		}
 		log.Info("utils:importChain:next is ebtree root:")
 		rid, _ := chain.GetEbtreeRoot()
+		chainDb.Put([]byte("TEbtreeRoot"), rid)
 		fmt.Println(rid)
 	} else {
 		for _, arg := range ctx.Args() {

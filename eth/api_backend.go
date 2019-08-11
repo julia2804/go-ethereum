@@ -18,6 +18,7 @@ package eth
 
 import (
 	"context"
+	"fmt"
 	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 
@@ -102,9 +103,10 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	return stateDb, header, err
 }
 
-func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k *big.Int) (*big.Int, error) {
-	_, err := b.eth.blockchain.TopkVSearch(k)
-	return k, err
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k *big.Int) ([][]byte, error) {
+	root, err := b.GetEbtreeRoot(ctx)
+	data, err := b.eth.blockchain.TopkVSearch(k, root)
+	return data, err
 }
 
 func (b *EthAPIBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error) {
@@ -112,11 +114,14 @@ func (b *EthAPIBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error
 	return ebtree, err
 }
 func (b *EthAPIBackend) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
-	root, err := b.eth.blockchain.GetEbtreeRoot()
+	key := []byte("TEbtreeRoot")
+	root, err := b.eth.chainDb.Get(key)
+	fmt.Println(root)
+	//root, err := b.eth.blockchain.GetEbtreeRoot()
 	if err != nil {
 		return nil, err
 	}
-	return root, err
+	return root, nil
 }
 
 func (b *EthAPIBackend) GetBlock(ctx context.Context, hash common.Hash) (*types.Block, error) {
