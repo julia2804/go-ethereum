@@ -470,8 +470,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'topkVSearch',
 			call: 'eth_topkVSearch',
-			params: 1,
-			inputFormatter:[web3._extend.utils.toBigNumber]
+			params: 0
 		}),
 		new web3._extend.Method({
 			name: 'sign',

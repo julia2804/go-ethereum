@@ -683,17 +683,21 @@ func (bc *BlockChain) CreateEbtree() (*EBTree.EBTree, error) {
 }
 
 // .
-func (bc *BlockChain) TopkVSearch(k *big.Int, root []byte) ([][]byte, error) {
+func (bc *BlockChain) TopkVSearch(k []byte, root []byte) ([][]byte, error) {
 	tree, err := EBTree.New(root, bc.ebtreeCache)
 	if err != nil {
 		return nil, err
 	}
-	su, result, _ := tree.TopkDataSearch(k.Bytes(), true)
-	if !su {
-		fmt.Printf("something wrong in range value search")
+	su, result, err := tree.TopkDataSearch(k, true)
+	if err != nil {
+		fmt.Printf("something wrong in range value search with error")
+		return nil, err
 	}
-	tree.CombineAndPrintSearchData(result, nil, k.Bytes(), true)
-	return nil, nil
+	if !su {
+		fmt.Printf("something wrong in range value search without error")
+	}
+	tree.CombineAndPrintSearchData(result, nil, k, true)
+	return nil, err
 }
 
 // .
@@ -1018,13 +1022,15 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	}
 	log.Info("into write block with state")
 	s := block.Number()
-	log.Info(s.String())
+	fmt.Println(s)
+	log.Info("before write:next is ebtree root:")
+	fmt.Println(bc.ebtreeRoot)
 	r, err = rawdb.WriteBlockWithIndex(bc.db, block, bc.ebtreeRoot, bc.ebtreeCache)
 	bc.ebtreeRoot = r
-	log.Info("next is r:")
+	/*log.Info("next is r:")
 	fmt.Println(r)
-	log.Info("next is ebtree root:")
-	fmt.Println(bc.ebtreeRoot)
+	log.Info("after write:next is ebtree root:")
+	fmt.Println(bc.ebtreeRoot)*/
 	if err != nil {
 		return NonStatTy, err, nil
 	}

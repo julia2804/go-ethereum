@@ -69,8 +69,8 @@ func (b *LesApiBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error
 	return ebtree, err
 }
 
-func (b *LesApiBackend) TopkVSearch(ctx context.Context, k *big.Int) ([][]byte, error) {
-	data, err := b.eth.blockchain.TopkVSearch(k)
+func (b *LesApiBackend) TopkVSearch(ctx context.Context) ([][]byte, error) {
+	data, err := b.eth.blockchain.TopkVSearch()
 	return data, err
 }
 

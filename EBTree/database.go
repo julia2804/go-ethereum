@@ -261,7 +261,7 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 		if err := encodeLeaf(&result, &enode); err != nil {
 			panic("encode error: " + err.Error())
 		}
-		fmt.Print(result)
+		//fmt.Print(result)
 	case *internalNode:
 		log.Info("into node type:internal node")
 		var enode internalNode

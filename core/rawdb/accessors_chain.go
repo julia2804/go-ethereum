@@ -280,7 +280,16 @@ func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions t
 			outid := tree.OutputRoot()
 			log.Info("next is outid:")
 			fmt.Println(outid)
-			su, _, err := tree.InsertData(&rb, 0, nil, amount.Bytes(), tb)
+			var su bool
+			var err error
+			if tree.Root == nil {
+				fmt.Println("this tree is empty")
+				su, _, err = tree.InsertData(&rb, 0, nil, amount.Bytes(), tb)
+			} else {
+				fmt.Println("this tree is not empty")
+				su, _, err = tree.InsertData(tree.Root, 0, nil, amount.Bytes(), tb)
+			}
+
 			if err != nil {
 				return nil, err
 			}
@@ -305,10 +314,11 @@ func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions t
 		if err != nil {
 			return nil, err
 		}
+
 		return rid, nil
 	}
 
-	return nil, nil
+	return root, nil
 }
 
 // DeleteBody removes all block body data associated with a hash.

@@ -660,6 +660,26 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 	return false, nil, nil
 
 }
+func (t *EBTree) ResolveByteNode(dt *ByteNode) (*leafNode, error) {
+	dtc, _ := dt.cache()
+	decoden, err := t.resolveHash(dtc)
+	if err != nil {
+		return nil, err
+	}
+	switch det := (decoden).(type) {
+	case *leafNode:
+		return det, nil
+	case *internalNode:
+		err := errors.New("the next of leaf node should be leafnode, something wrong")
+		return nil, err
+	case *ByteNode:
+		err := errors.New("wrong det type:there must be problems in resolve func")
+		return nil, err
+	default:
+		err := errors.New("wrong det node type")
+		return nil, err
+	}
+}
 
 //top-k data search
 func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) {
@@ -667,10 +687,14 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 	if max {
 		n, err := findFirstNode(t.Root)
 		if err != nil {
-			wrapError(err, "top-k search data wrong:find first node wrong")
+			err = wrapError(err, "top-k search data wrong:find first node wrong")
 			return false, nil, err
 		}
+		b := false
 		for {
+			if b {
+				break
+			}
 			if n == nil {
 				break
 			}
@@ -682,7 +706,8 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 				switch dt := (n.Data[i]).(type) {
 				case dataEncode:
 					//TODO:
-					return false, nil, nil
+					err := errors.New("topkvsearch:data is encoded")
+					return false, nil, err
 				case data:
 					for _, kl := range dt.Keylist {
 						if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
@@ -694,7 +719,8 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 						}
 					}
 				default:
-					return false, nil, nil
+					err := errors.New("topkdatasearch:data in wrong type")
+					return false, nil, err
 				}
 
 			}
@@ -705,20 +731,41 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 					n = nnt
 				case *ByteNode:
 					//todo: load from cache or database
-					return false, nil, nil
+					if nnt == nil {
+						b = true
+						fmt.Println("nnt is nil")
+						break
+					} else {
+						nntid, _ := nnt.cache()
+						if len(nntid) == 0 {
+							b = true
+							fmt.Println("nnt's length is 0")
+							break
+						} else {
+							den, err := t.ResolveByteNode(nnt)
+							if err != nil {
+								return false, nil, err
+							}
+							n = den
+						}
+					}
+
+					//err:=errors.New("topkdatasearch:!flag:n.nexty  type is bytenode")
+					//return false, nil, err
 				default:
-					err := errors.New("wrong type")
+					err := errors.New("topkdatasearch:wrong n.nexty type")
 					return false, nil, err
 				}
 			} else {
 				break
 			}
 		}
+		fmt.Println("out of for")
 		if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
-			wrapError(err, "top-k search data wrong:not enough data")
+			err = wrapError(err, "top-k search data wrong:not enough data")
 			return false, result, err
 		} else if bytes.Compare(IntToBytes(uint64(len(result))), k) > 0 {
-			wrapError(err, "top-k search data wrong:get too much data")
+			err = wrapError(err, "top-k search data wrong:get too much data")
 			return false, result, err
 		} else {
 			return true, result, nil
@@ -727,7 +774,9 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 	} else {
 
 	}
-	return false, nil, nil
+	fmt.Println("wrong in topkvSearch")
+	err := errors.New("wrong in topkvsearch")
+	return false, nil, err
 }
 
 //range value search
@@ -926,23 +975,24 @@ func (t *EBTree) CompareSpeacial(min []byte, max []byte) (bool, uint64, uint64, 
 	return flag, pos, count, nil
 	//如果结果集中应包含special值，special值应该放在哪里
 }
-func (tree *EBTree) CombineAndPrintSearchData(result []searchData, pos []byte, k []byte, top bool) {
+func (tree *EBTree) CombineAndPrintSearchData(result []searchData, pos []byte, k []byte, top bool) error {
+	log.Info("into comine and print searchdata")
 	if pos == nil {
 		pos = IntToBytes(uint64(0))
 	}
-	_, result, err := tree.CombineSearchDataResult(result, pos, k, top)
+	/*_, result, err := tree.CombineSearchDataResult(result, pos, k, top)
 	if err != nil {
 		fmt.Printf("something wrong in combine search data result\n")
-		return
-	}
+		return err
+	}*/
 	for i, r := range result {
 		fmt.Printf("the %dth value is %d,the data is:\n", i, r.value)
-		fmt.Printf(string(r.data))
-		fmt.Println()
+		fmt.Println(r.data)
 	}
+	return nil
 }
 func (tree *EBTree) CombineSearchDataResult(result []searchData, min []byte, k []byte, top bool) (bool, []searchData, error) {
-
+	log.Info("into CombineSearchDataResult in EBtree")
 	var finalR []searchData
 	var su bool
 	var pos uint64
@@ -1103,32 +1153,32 @@ func decodeNode(id, buf []byte) (EBTreen, error) {
 }
 
 func decodeData(buf []byte) (data, error) {
-	log.Info("into decoded data")
+	//log.Info("into decoded data")
 	d := data{}
 	elems, _, _ := rlp.SplitList(buf)
-	c, _ := rlp.CountValues(elems)
-	fmt.Println(elems)
-	fmt.Println(c)
+	rlp.CountValues(elems)
+	//fmt.Println(elems)
+	//fmt.Println(c)
 
 	elems, rest, _ := rlp.SplitList(elems)
 	cc, _ := rlp.CountValues(elems)
-	fmt.Println(elems)
-	fmt.Println(cc)
+	//fmt.Println(elems)
+	//fmt.Println(cc)
 
 	for i := 0; i < cc; i++ {
 		kbuf, rest1, _ := rlp.SplitString(elems)
-		fmt.Print(i)
-		fmt.Println(kbuf)
+		//fmt.Print(i)
+		//fmt.Println(kbuf)
 		d.Keylist = append(d.Keylist, kbuf)
-		fmt.Println(rest1)
+		//fmt.Println(rest1)
 		elems = rest1
 	}
 	elems = rest
-	value, rest3, _ := rlp.SplitString(elems)
+	value, _, _ := rlp.SplitString(elems)
 	d.Value = value
-	fmt.Print("value:")
-	fmt.Println(value)
-	fmt.Println(rest3)
+	//fmt.Print("value:")
+	//fmt.Println(value)
+	//fmt.Println(rest3)
 
 	return d, nil
 
@@ -1159,34 +1209,34 @@ func decodeChild(buf []byte) (child, []byte, error) {
 }
 
 func decodeLeaf(id, buf []byte) (EBTreen, error) {
-	log.Info("decode leafnode:")
-	fmt.Println(id)
+	//log.Info("decode leafnode:")
+	//fmt.Println(id)
 	le := leafNode{}
 	le.Id = id
 	elems, rest, _ := rlp.SplitList(buf)
 	c, _ := rlp.CountValues(elems)
-	fmt.Println(elems)
-	fmt.Println(c)
+	//fmt.Println(elems)
+	//fmt.Println(c)
 
 	for i := 0; i < c; i++ {
 		kbuf, rest1, _ := rlp.SplitString(elems)
 		d, _ := decodeData(kbuf)
-		fmt.Println(d.Value)
-		fmt.Print(i)
-		fmt.Println(kbuf)
+		//fmt.Println(d.Value)
+		//fmt.Print(i)
+		//fmt.Println(kbuf)
 		le.Data = append(le.Data, d)
-		fmt.Println(rest1)
+		//fmt.Println(rest1)
 		elems = rest1
 	}
 
 	elems = rest
-	nextid, rest5, _ := rlp.SplitString(elems)
+	nextid, _, _ := rlp.SplitString(elems)
 	var nextByteNode ByteNode
 	nextByteNode = nextid
 	le.Next = &nextByteNode
-	fmt.Print("nextid:")
-	fmt.Println(nextid)
-	fmt.Println(rest5)
+	//fmt.Print("nextid:")
+	//fmt.Println(nextid)
+	//fmt.Println(rest5)
 	return &le, nil
 
 	return nil, nil

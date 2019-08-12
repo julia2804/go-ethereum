@@ -343,8 +343,8 @@ func (t *EBTree) DoNothing() error {
 //special value被存储在特定结构中
 //其他值正常存储在tree中
 func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []byte, da []byte) (bool, *internalNode, error) {
-	log.Info("into insert data")
-	log.Info(string(value))
+	log.Info("into insert data,vaule is:")
+	fmt.Println(value)
 	//判断value是否special
 
 	sp, p := t.isSpecial(value)
@@ -357,15 +357,15 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 	}
 	switch nt := n.(type) {
 	case *leafNode:
-		log.Info("insertdata:n is a leafnode")
 		//向叶子节点插入数据
 		//若当前节点为空时，直接插入节点。
-		log.Info("insertdata:next is leafnode id")
-		log.Info(string(nt.Id))
-		log.Info(string(len(nt.Data)))
+		log.Info("insertdata:leafnode id:")
+		fmt.Println(nt.Id)
+		log.Info("insertdata:leafnode data length:")
+		fmt.Println(len(nt.Data))
 		outid := t.OutputRoot()
-		log.Info("insertdata:next is outid:")
-		log.Info(string(outid))
+		log.Info("insertdata:leafnode:now tree root is")
+		fmt.Println(outid)
 		if len(nt.Data) == 0 {
 			log.Info("the data is nil")
 			//create a data item for da
@@ -376,9 +376,9 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			}
 			nt.Data = append(nt.Data, dai)
 			n = nt
-			log.Info("create data for leafnode")
+			log.Info("create data for leafnode,data length is:")
 			l := len(nt.Data)
-			log.Info(string(l))
+			fmt.Println(l)
 			return true, parent, nil
 		}
 
@@ -393,14 +393,13 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			switch dt := (nt.Data[i]).(type) {
 			case dataEncode:
 				//decode the data
-				log.Info("data is encoded")
-				log.Info(string(dt))
+				log.Info("data is encoded,dt is:")
+				fmt.Println(dt)
 				d, err := decodeData(dt)
 				if err != nil {
 					return false, parent, err
 				}
-				fmt.Print(i)
-				fmt.Println(dt)
+				fmt.Println("it's the %dth value", i)
 				if bytes.Compare(d.Value, value) < 0 {
 					//EBTree叶子节点按升序排列，应该data应该插入到nt.data[i]之后
 					continue
@@ -437,9 +436,10 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 				}
 				return true, parent, nil
 			case data:
-				log.Info("data is not encoded")
-				log.Info(string(dt.Value))
-				log.Info(string(value))
+				log.Info("data is not encoded,dt value:")
+				fmt.Println(dt.Value)
+				log.Info(" the value will be inserted is::")
+				fmt.Println(value)
 				if bytes.Compare(dt.Value, value) < 0 {
 					//EBTree叶子节点按升序排列，应该data应该插入到nt.data[i]之后
 					continue
@@ -562,9 +562,8 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			return true, nil, nil
 		}
 	case *internalNode:
-		log.Info("insertdata: is a internal node")
 		log.Info("insertdata:next is internalnoode id")
-		log.Info(string(nt.Id))
+		fmt.Println(nt.Id)
 		flag := false
 		var i int
 		for i = 0; i < len(nt.Children); i++ {
@@ -677,10 +676,9 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 
 		}
 	case *ByteNode:
-		log.Info("insertdata:n is a bytenode")
 		nbb, _ := n.cache()
 		log.Info("insertdata:next is bytenode id")
-		log.Info(string(nbb))
+		fmt.Println(nbb)
 		if string(nbb) == "" {
 			dai, err := createData(value, da)
 			if err != nil {
@@ -690,12 +688,12 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			var da []data
 			da = append(da, dai)
 			newn, err := CreateLeafNode(t, da)
-			log.Info("next is newn leaf node")
-			log.Info(string(newn.Id))
+			log.Info("next is newn leaf node id:")
+			fmt.Println(newn.Id)
 			t.Root = &newn
 			outid := t.OutputRoot()
-			log.Info("next is outid:")
-			log.Info(string(outid))
+			log.Info("next is the root of tree:")
+			fmt.Println(outid)
 			if err != nil {
 				log.Info("err in create leaf node")
 				return false, nil, err
@@ -721,7 +719,7 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 
 func (t *EBTree) resolveHash(n []byte) (EBTreen, error) {
 	log.Info("into resolve hash func")
-	log.Info(string(n))
+	fmt.Println(n)
 	cacheMissCounter.Inc(1)
 
 	if node := t.Db.node(n, t.cachegen); node != nil {

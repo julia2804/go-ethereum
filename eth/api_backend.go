@@ -103,9 +103,15 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	return stateDb, header, err
 }
 
-func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k *big.Int) ([][]byte, error) {
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context) ([][]byte, error) {
+	k, e := new(big.Int).SetString("1000", 10)
+
+	if e != true {
+		fmt.Println(e)
+
+	}
 	root, err := b.GetEbtreeRoot(ctx)
-	data, err := b.eth.blockchain.TopkVSearch(k, root)
+	data, err := b.eth.blockchain.TopkVSearch(k.Bytes(), root)
 	return data, err
 }
 
