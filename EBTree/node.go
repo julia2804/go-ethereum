@@ -1209,23 +1209,25 @@ func decodeChild(buf []byte) (child, []byte, error) {
 }
 
 func decodeLeaf(id, buf []byte) (EBTreen, error) {
-	//log.Info("decode leafnode:")
-	//fmt.Println(id)
+	log.Info("decode leafnode:")
+	//fmt.Println(buf)
 	le := leafNode{}
 	le.Id = id
 	elems, rest, _ := rlp.SplitList(buf)
 	c, _ := rlp.CountValues(elems)
-	//fmt.Println(elems)
-	//fmt.Println(c)
+
+	fmt.Println(c)
 
 	for i := 0; i < c; i++ {
 		kbuf, rest1, _ := rlp.SplitString(elems)
 		d, _ := decodeData(kbuf)
+		fmt.Println(len(d.Keylist))
 		//fmt.Println(d.Value)
 		//fmt.Print(i)
 		//fmt.Println(kbuf)
 		le.Data = append(le.Data, d)
-		//fmt.Println(rest1)
+		fmt.Println("the rest of decode leaf node data")
+		fmt.Println(rest1)
 		elems = rest1
 	}
 
@@ -1234,12 +1236,10 @@ func decodeLeaf(id, buf []byte) (EBTreen, error) {
 	var nextByteNode ByteNode
 	nextByteNode = nextid
 	le.Next = &nextByteNode
-	//fmt.Print("nextid:")
-	//fmt.Println(nextid)
+
 	//fmt.Println(rest5)
 	return &le, nil
 
-	return nil, nil
 }
 
 func decodeInternal(id, buf []byte) (EBTreen, error) {

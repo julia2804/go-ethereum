@@ -221,7 +221,6 @@ func (db *Database) Commit(node []byte, report bool) error {
 func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 	// If the node does not exist, it's a previously committed node
 	log.Info("into commit func")
-	log.Info(string(id))
 	node, ok := db.dirties[string(id)]
 	if !ok {
 		err := errors.New("this node is not dirty, should not be commit")
@@ -255,6 +254,8 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 				return err
 			}
 			enode.Data = append(enode.Data, cd)
+			fmt.Println("next is enode.data length:")
+			fmt.Println(len(enode.Data))
 		}
 		enode.Id = nt.Id
 		enode.Next = nt.Next

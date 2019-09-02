@@ -93,13 +93,13 @@ func RandString(len int) []byte {
 }
 
 func updateString(tree *EBTree) {
-	var a [90000]int
+	var a [9]int
 	//TODO:出错
 	var v []byte
-	for i := 1; i < 90000; i++ {
+	for i := 1; i < 9; i++ {
 		var j int
 		v = []byte("qwerqwerqwerqwerqwerqwerqwerqwer")
-		j = rand.Intn(1000000)
+		j = rand.Intn(100)
 		if j == 1957 {
 			v = []byte("yuplmytecautqwerqwerqwerqwerqwer")
 		}
@@ -213,7 +213,7 @@ func TestRangeDataSearch(t *testing.T) {
 	if !su {
 		fmt.Printf("something wrong in range data search")
 	}
-	combineAndPrintSearchData(result, min, tree, k, false)
+	tree.CombineAndPrintSearchData(result, min, k, false)
 }
 
 func TestSearch(t *testing.T) {

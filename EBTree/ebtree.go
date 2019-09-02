@@ -91,15 +91,14 @@ func DBCommit(tree *EBTree) ([]byte, error) {
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
 		//todo:
-		log.Info("dbcommit:before commit:next is rt.id")
-		log.Info(string(rt.Id))
+		log.Info("dbcommit:before commit:next is rt.Data length")
+		fmt.Println(len(rt.Data))
 		err := tree.Db.Commit(rt.Id, true)
 		if err != nil {
 			wrapError(err, "error in db.commit in func DBCommit")
 			return nil, err
 		}
-		log.Info("dbcommit:next is rt.id")
-		log.Info(string(rt.Id))
+
 		return rt.Id, nil
 	case *internalNode:
 		//todo:
@@ -130,10 +129,10 @@ func New(root []byte, db *Database) (*EBTree, error) {
 		Db:       db,
 		sequence: IntToBytes(0),
 	}
-	log.Info(string(len(root)))
+
 	ebt.Db = db
 	if len(root) != 0 {
-		log.Info(string(root))
+
 		rootNode, err := ebt.resolveHash(root[:])
 		if err != nil {
 			return ebt, err
