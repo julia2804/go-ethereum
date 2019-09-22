@@ -37,10 +37,10 @@ var (
 	emptyState = crypto.Keccak256Hash(nil)
 
 	//maxInternalNodeCount
-	maxInternalNodeCount = uint8(32)
+	maxInternalNodeCount = uint8(2)
 
 	//maxLeafNodeCount
-	maxLeafNodeCount = uint8(16)
+	maxLeafNodeCount = uint8(2)
 
 	cacheMissCounter   = metrics.NewRegisteredCounter("trie/cachemiss", nil)
 	cacheUnloadCounter = metrics.NewRegisteredCounter("trie/cacheunload", nil)
@@ -87,7 +87,7 @@ func (t *EBTree) isSpecial(value []byte) (bool, uint8) {
 func typeof(v interface{}) string {
 	return reflect.TypeOf(v).String()
 }
-func DBCommit(tree *EBTree) ([]byte, error) {
+func (tree *EBTree) DBCommit() ([]byte, error) {
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
 		//todo:
@@ -171,6 +171,7 @@ func (t *EBTree) splitIntoTwoLeaf(n *leafNode, pos int) (bool, *leafNode, *leafN
 	return true, n, &newn, nil
 }
 func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, error) {
+	fmt.Println("into split ebtree")
 	switch nt := n.(type) {
 	case *leafNode:
 		pos := (len(nt.Data) + 1) / 2
@@ -343,11 +344,9 @@ func (t *EBTree) DoNothing() error {
 //其他值正常存储在tree中
 func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []byte, da []byte) (bool, *internalNode, error) {
 	log.Info("into insert data,vaule is:")
-	fmt.Println(value)
+	//fmt.Println(value)
 	//判断value是否special
-
 	sp, p := t.isSpecial(value)
-
 	if sp {
 		//将对应data存入special中
 		t.special[p].data = append(t.special[p].data, da)
@@ -362,9 +361,9 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 		fmt.Println(nt.Id)
 		log.Info("insertdata:leafnode data length:")
 		fmt.Println(len(nt.Data))
-		outid := t.OutputRoot()
+		/*outid := t.OutputRoot()
 		log.Info("insertdata:leafnode:now tree root is")
-		fmt.Println(outid)
+		fmt.Println(outid)*/
 		if len(nt.Data) == 0 {
 			log.Info("the data is nil")
 			//create a data item for da
@@ -463,12 +462,15 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 					}
 					//split the leaf node
 					if len(nt.Data) > int(maxLeafNodeCount) {
-						su, parent, err := t.split(nt, parent)
+						su, pa, err := t.split(nt, parent)
 						if !su {
 							err = wrapError(err, "insert data: split the leaf node wrong")
-							return false, parent, err
+							return false, pa, err
 						}
-						return true, parent, nil
+						if pa == nil {
+							t.Root = pa
+						}
+						return true, pa, nil
 					}
 					flag = true
 					return true, parent, nil
