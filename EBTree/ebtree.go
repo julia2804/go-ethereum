@@ -37,10 +37,10 @@ var (
 	emptyState = crypto.Keccak256Hash(nil)
 
 	//maxInternalNodeCount
-	maxInternalNodeCount = uint8(2)
+	maxInternalNodeCount = uint8(32)
 
 	//maxLeafNodeCount
-	maxLeafNodeCount = uint8(2)
+	maxLeafNodeCount = uint8(16)
 
 	cacheMissCounter   = metrics.NewRegisteredCounter("trie/cachemiss", nil)
 	cacheUnloadCounter = metrics.NewRegisteredCounter("trie/cacheunload", nil)
@@ -153,6 +153,8 @@ func New(root []byte, db *Database) (*EBTree, error) {
 	}
 	return ebt, nil
 }
+
+//split leafnode into two leaf nodes
 func (t *EBTree) splitIntoTwoLeaf(n *leafNode, pos int) (bool, *leafNode, *leafNode, error) {
 	var datalist []data
 	newn, err := CreateLeafNode(t, datalist)
@@ -170,8 +172,10 @@ func (t *EBTree) splitIntoTwoLeaf(n *leafNode, pos int) (bool, *leafNode, *leafN
 	}
 	return true, n, &newn, nil
 }
+
+//split node
 func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, error) {
-	fmt.Println("into split ebtree")
+	//fmt.Println("into split ebtree")
 	switch nt := n.(type) {
 	case *leafNode:
 		pos := (len(nt.Data) + 1) / 2
@@ -193,11 +197,44 @@ func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, er
 		//当前节点的元素被split，对应的parent中的children的值也要修改
 		switch dt := (nt.Data[len(nt.Data)-1]).(type) {
 		case dataEncode:
-			//TODO:
+
 			_ = dt
 			err := errors.New("wrong data type")
 			return false, nil, err
 		case data:
+			switch ct := (parent.Children[re]).(type) {
+			case childEncode:
+				return false, nil, nil
+			case child:
+				ct.Value = dt.Value
+				parent.Children[re] = ct
+				if err != nil {
+					return false, parent, err
+				}
+				switch dtt := (newn.Data[len(newn.Data)-1]).(type) {
+				case dataEncode:
+					//TODO:
+					_ = dt
+					err := errors.New("wrong data type")
+					return false, nil, err
+				case data:
+					child2, err := createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "split leaf node :create child to connect the new node to root")
+						return false, parent, err
+					}
+					su, presult, err := addChild(*parent, child2, int(re+1))
+					if !su {
+						err = wrapError(err, "split leaf node: add the new child to root")
+						return false, parent, err
+					}
+					parent.Children = presult.Children
+					return true, parent, nil
+				default:
+					return false, parent, err
+				}
+			}
+		case *data:
 			switch ct := (parent.Children[re]).(type) {
 			case childEncode:
 				return false, nil, nil
@@ -335,8 +372,245 @@ func (t *EBTree) insertInternalNode(n *internalNode, pos int, parent *internalNo
 	return true, parent, nil
 }
 
-func (t *EBTree) DoNothing() error {
-	return nil
+//insert into dataNode
+func (t *EBTree) InsertToDataNode(i int, nt *leafNode, d *data, value []byte, da []byte, flag bool, parent *internalNode) (bool, bool, *internalNode, error) {
+	if bytes.Compare(d.Value, value) == 0 {
+		//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
+		d.Keylist = append(d.Keylist, da)
+		flag = true
+		nt.Data[i] = d
+		return flag, true, parent, nil
+	} else if bytes.Compare(d.Value, value) > 0 {
+
+		flag = true
+		//说明EBTree中不存在value值，此时，需要构建data，并将其加入到节点中
+		su, nt, err := moveData(nt, i)
+		if !su {
+			err = wrapError(err, "insert data: move data wrong")
+			return flag, false, parent, err
+		}
+		nt.Data[i], err = createData(value, da)
+		if err != nil {
+			err = wrapError(err, "insert data: create data wrong")
+			return flag, false, parent, err
+		}
+		//split the leaf node
+		if len(nt.Data) > int(maxLeafNodeCount) {
+			su, parent, err := t.split(nt, parent)
+			if !su {
+				err = wrapError(err, "insert data: split the leaf node wrong")
+				return flag, false, parent, err
+			}
+			return flag, true, parent, nil
+		}
+
+		return flag, true, parent, nil
+	}
+	return false, false, nil, nil
+}
+
+//insert data into internalnode child
+func (t *EBTree) InsertToChild(i int, nt *internalNode, cd *child, value []byte, da []byte, parent *internalNode, decoden EBTreen) (bool, bool, *internalNode, EBTreen, error) {
+	if bytes.Compare(cd.Value, value) >= 0 {
+
+		//call the insert function to
+		su, _, err := t.InsertData(decoden, uint8(i), nt, value, da)
+		if !su {
+			err = wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
+			return true, false, parent, decoden, err
+		}
+		//split internal node
+		if len(nt.Children) > int(maxInternalNodeCount) {
+			_, parent, err := t.split(nt, parent)
+			if err != nil {
+				err = wrapError(err, "insert data: when the data was added into appropriate child, split internal node wrong")
+				return true, false, parent, decoden, err
+			}
+		}
+
+		return true, true, parent, decoden, nil
+	} else {
+		return false, false, parent, decoden, nil
+	}
+}
+func (t *EBTree) InsertToChildEncode(ct childEncode, nt *internalNode, i int, value []byte, da []byte, parent *internalNode) (bool, bool, *internalNode, *child, error) {
+	cd, _, err := decodeChild(ct)
+	decoden, err := t.resolveHash(ct)
+	if err != nil {
+		return true, false, nil, nil, err
+	}
+	cd.Pointer = decoden
+	nt.Children[i] = cd
+	//insert the data into specific child
+	flag, su, parent, decoden, err := t.InsertToChild(i, nt, &cd, value, da, parent, decoden)
+
+	return flag, su, parent, &cd, err
+}
+
+//insert into sepcial
+func (t *EBTree) InsertToSpecial(p uint8, parent *internalNode, da []byte) (bool, *internalNode, error) {
+	//将对应data存入special中
+	t.special[p].data = append(t.special[p].data, da)
+	t.special[p].dirty = true
+	return true, parent, nil
+}
+
+//insert data into internalNode
+func (t *EBTree) InsertDataToInternal(nt *internalNode, pos uint8, parent *internalNode, value []byte, da []byte) (bool, *internalNode, error) {
+	flag := false
+	var i int
+	for i = 0; i < len(nt.Children); i++ {
+		switch ct := (nt.Children[i]).(type) {
+		case childEncode:
+
+			//insert the data into specific child
+			flag, su, parent, cd, err := t.InsertToChildEncode(ct, nt, i, value, da, parent)
+			nt.Children[i] = cd
+			if err != nil {
+				return false, nil, err
+			}
+			if !flag {
+				continue
+			} else {
+				return su, parent, err
+			}
+		case child:
+			flag, su, parent, cn, err := t.InsertToChild(i, nt, &ct, value, da, parent, ct.Pointer)
+			if !flag {
+				continue
+			} else {
+				ct.Pointer = cn
+				nt.Children[i] = ct
+				return su, parent, err
+			}
+		default:
+			log.Info("wrong child type")
+			return false, nil, nil
+		}
+
+	}
+	if !flag {
+		//将该值插入到节点末尾
+		//call the insert function to
+		switch ct := (nt.Children[i-1]).(type) {
+		case childEncode:
+			//insert the data into specific child
+			_, su, parent, cd, err := t.InsertToChildEncode(ct, nt, i, value, da, parent)
+			nt.Children[i] = cd
+			if err != nil {
+				return false, nil, err
+			}
+
+			return su, parent, err
+
+		case child:
+			su, _, err := t.InsertData(ct.Pointer, uint8(i), nt, value, da)
+			if !su {
+				err = wrapError(err, "insert data: when the data was added into last child, something wrong")
+				return false, parent, err
+			}
+			ct.Value = value
+			nt.Children[i-1] = ct
+			if len(nt.Children) > int(maxInternalNodeCount) {
+				su, parent, err := t.split(nt, parent)
+				if !su {
+					err = wrapError(err, "insert data: when the data was added into last child, split internal node wrong")
+					return false, parent, err
+				}
+				return true, parent, nil
+			}
+
+			return true, parent, nil
+		default:
+			return false, nil, nil
+		}
+
+	}
+	return false, nil, nil
+}
+
+//insert data into leafNode
+func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode, value []byte, da []byte) (bool, *internalNode, error) {
+	//向叶子节点插入数据
+	//若当前节点为空时，直接插入节点。
+	if len(nt.Data) == 0 {
+		log.Info("the data is nil")
+		//create a data item for da
+		dai, err := createData(value, da)
+		if err != nil {
+			err = wrapError(err, "insert data: create data wrong")
+			return false, parent, err
+		}
+		nt.Data = append(nt.Data, dai)
+
+		return true, parent, nil
+	}
+
+	//用于标记该value是否被插入成功
+	flag := false
+	//遍历当前节点的所有data，将da插入合适的位置
+	//value一定小于或等于当前节点到最大值
+
+	for i := 0; i < len(nt.Data); i++ {
+		log.Info("find the appropriate position in nt datas")
+
+		switch dt := (nt.Data[i]).(type) {
+		case dataEncode:
+			//decode the data
+			log.Info("data is encoded,dt is:")
+			fmt.Println(dt)
+			d, err := decodeData(dt)
+			if err != nil {
+				return false, parent, err
+			}
+
+			flag, su, parent, err := t.InsertToDataNode(i, nt, &d, value, da, flag, parent)
+			if flag {
+				return su, parent, err
+			} else {
+				continue
+			}
+		case data:
+			flag, su, parent, err := t.InsertToDataNode(i, nt, &dt, value, da, flag, parent)
+			if flag {
+				return su, parent, err
+			} else {
+				continue
+			}
+
+		case *data:
+			flag, su, parent, err := t.InsertToDataNode(i, nt, dt, value, da, flag, parent)
+			if flag {
+				return su, parent, err
+			} else {
+				continue
+			}
+		case *dataEncode:
+			log.Info("pointer data encode type")
+
+		default:
+			log.Info("data type is not appropriate")
+			err := errors.New("data type is not appropriate")
+			return false, nil, err
+		}
+
+	}
+
+	//将该值插入到节点末尾
+	if !flag {
+		log.Info("the data should be put in the last ")
+		dai, err := createData(value, da)
+		if err != nil {
+			err = wrapError(err, "insert data: when the data was added into the end of node, create data wrong")
+			return false, parent, err
+		}
+
+		nt.Data = append(nt.Data, dai)
+
+		//bak_code 1
+		return true, nil, nil
+	}
+	return true, nil, nil
 }
 
 //向EBTree中插入数据
@@ -348,334 +622,14 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 	//判断value是否special
 	sp, p := t.isSpecial(value)
 	if sp {
-		//将对应data存入special中
-		t.special[p].data = append(t.special[p].data, da)
-		t.special[p].dirty = true
-		return true, parent, nil
+		return t.InsertToSpecial(p, parent, da)
 	}
 	switch nt := n.(type) {
 	case *leafNode:
-		//向叶子节点插入数据
-		//若当前节点为空时，直接插入节点。
-		log.Info("insertdata:leafnode id:")
-		fmt.Println(nt.Id)
-		log.Info("insertdata:leafnode data length:")
-		fmt.Println(len(nt.Data))
-		/*outid := t.OutputRoot()
-		log.Info("insertdata:leafnode:now tree root is")
-		fmt.Println(outid)*/
-		if len(nt.Data) == 0 {
-			log.Info("the data is nil")
-			//create a data item for da
-			dai, err := createData(value, da)
-			if err != nil {
-				err = wrapError(err, "insert data: create data wrong")
-				return false, parent, err
-			}
-			nt.Data = append(nt.Data, dai)
-			n = nt
-			log.Info("create data for leafnode,data length is:")
-			l := len(nt.Data)
-			fmt.Println(l)
-			return true, parent, nil
-		}
-
-		//用于标记该value是否被插入成功
-		flag := false
-		//遍历当前节点的所有data，将da插入合适的位置
-		//value一定小于或等于当前节点到最大值
-
-		for i := 0; i < len(nt.Data); i++ {
-			log.Info("find the appropriate position in nt datas")
-
-			switch dt := (nt.Data[i]).(type) {
-			case dataEncode:
-				//decode the data
-				log.Info("data is encoded,dt is:")
-				fmt.Println(dt)
-				d, err := decodeData(dt)
-				if err != nil {
-					return false, parent, err
-				}
-				fmt.Println("it's the %dth value", i)
-				if bytes.Compare(d.Value, value) < 0 {
-					//EBTree叶子节点按升序排列，应该data应该插入到nt.data[i]之后
-					continue
-				} else if bytes.Compare(d.Value, value) == 0 {
-					//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
-					d.Keylist = append(d.Keylist, da)
-					flag = true
-					nt.Data[i] = d
-					return true, parent, nil
-				} else {
-					nt.Data[i] = d
-					//说明EBTree中不存在value值，此时，需要构建data，并将其加入到节点中
-					su, nt, err := moveData(nt, i)
-					if !su {
-						err = wrapError(err, "insert data: move data wrong")
-						return false, parent, err
-					}
-					nt.Data[i], err = createData(value, da)
-					if err != nil {
-						err = wrapError(err, "insert data: create data wrong")
-						return false, parent, err
-					}
-					//split the leaf node
-					if len(nt.Data) > int(maxLeafNodeCount) {
-						su, parent, err := t.split(nt, parent)
-						if !su {
-							err = wrapError(err, "insert data: split the leaf node wrong")
-							return false, parent, err
-						}
-						return true, parent, nil
-					}
-					flag = true
-					return true, parent, nil
-				}
-				return true, parent, nil
-			case data:
-				log.Info("data is not encoded,dt value:")
-				fmt.Println(dt.Value)
-				log.Info(" the value will be inserted is::")
-				fmt.Println(value)
-				if bytes.Compare(dt.Value, value) < 0 {
-					//EBTree叶子节点按升序排列，应该data应该插入到nt.data[i]之后
-					continue
-				} else if bytes.Compare(dt.Value, value) == 0 {
-					//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
-					dt.Keylist = append(dt.Keylist, da)
-					nt.Data[i] = dt
-					n = nt
-					flag = true
-					return true, parent, nil
-				} else {
-					//说明EBTree中不存在value值，此时，需要构建data，并将其加入到节点中
-					su, nt, err := moveData(nt, i)
-					if !su {
-						err = wrapError(err, "insert data: move data wrong")
-						return false, parent, err
-					}
-					nt.Data[i], err = createData(value, da)
-					if err != nil {
-						err = wrapError(err, "insert data: create data wrong")
-						return false, parent, err
-					}
-					//split the leaf node
-					if len(nt.Data) > int(maxLeafNodeCount) {
-						su, pa, err := t.split(nt, parent)
-						if !su {
-							err = wrapError(err, "insert data: split the leaf node wrong")
-							return false, pa, err
-						}
-						if pa == nil {
-							t.Root = pa
-						}
-						return true, pa, nil
-					}
-					flag = true
-					return true, parent, nil
-				}
-			case *data:
-				log.Info("pointer data type")
-				if bytes.Compare(dt.Value, value) < 0 {
-					log.Info("find next value")
-					//EBTree叶子节点按升序排列，应该data应该插入到nt.data[i]之后
-					continue
-				} else if bytes.Compare(dt.Value, value) == 0 {
-					log.Info("find the same value")
-					//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
-					dt.Keylist = append(dt.Keylist, da)
-					nt.Data[i] = dt
-					n = nt
-					flag = true
-					return true, parent, nil
-				} else {
-					log.Info("find a larger value")
-					//说明EBTree中不存在value值，此时，需要构建data，并将其加入到节点中
-					su, nt, err := moveData(nt, i)
-					if !su {
-						err = wrapError(err, "insert data: move data wrong")
-						return false, parent, err
-					}
-					nt.Data[i], err = createData(value, da)
-					if err != nil {
-						err = wrapError(err, "insert data: create data wrong")
-						return false, parent, err
-					}
-					//split the leaf node
-					if len(nt.Data) > int(maxLeafNodeCount) {
-						su, parent, err := t.split(nt, parent)
-						if !su {
-							err = wrapError(err, "insert data: split the leaf node wrong")
-							return false, parent, err
-						}
-						return true, parent, nil
-					}
-					flag = true
-					return true, parent, nil
-				}
-			case *dataEncode:
-				log.Info("pointer data encode type")
-			default:
-				log.Info("data type is not appropriate")
-				err := errors.New("data type is not appropriate")
-				return false, nil, err
-			}
-
-		}
-		if !flag { //将该值插入到节点末尾
-			log.Info("the data should be put in the last ")
-			dai, err := createData(value, da)
-			if err != nil {
-				err = wrapError(err, "insert data: when the data was added into the end of node, create data wrong")
-				return false, parent, err
-			}
-
-			nt.Data = append(nt.Data, dai)
-
-			//如果更新的是最大值，应该同时更新children.value
-			//如果parent为空，那么不需要进行更新
-			if parent != nil {
-				_, parent, res, err := getLeafNodePosition(nt, parent, t)
-				if err != nil {
-					wrapError(err, "insert data: when the node is leaf node, get leaf node postion wrong")
-					return false, parent, err
-				}
-				switch ct := (parent.Children[res]).(type) {
-				case childEncode:
-					return false, parent, err
-				case child:
-					ct.Value = value
-				default:
-					return false, nil, nil
-				}
-			}
-
-			//split the leaf node
-			if len(nt.Data) > int(maxLeafNodeCount) {
-				su, parent, err := t.split(nt, parent)
-				if !su {
-					err = wrapError(err, "insert data: when the data was added into the end of node, split leaf node wrong")
-					return false, parent, err
-				}
-				return true, parent, nil
-			}
-			return true, nil, nil
-		}
+		return t.InsertDataToLeaf(nt, pos, parent, value, da)
 	case *internalNode:
-		log.Info("insertdata:next is internalnoode id")
-		fmt.Println(nt.Id)
-		flag := false
-		var i int
-		for i = 0; i < len(nt.Children); i++ {
-			switch ct := (nt.Children[i]).(type) {
-			case childEncode:
-				//decode child
-				cd, _, err := decodeChild(ct)
-				decoden, err := t.resolveHash(ct)
-				if err != nil {
-					return false, nil, err
-				}
-				cd.Pointer = decoden
-				nt.Children[i] = cd
-				if bytes.Compare(cd.Value, value) < 0 {
-					continue
-				} else {
-					//call the insert function to
-					su, _, err := t.InsertData(decoden, uint8(i), nt, value, da)
-					if !su {
-						err = wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
-						return false, parent, err
-					}
 
-					if len(nt.Children) > int(maxInternalNodeCount) {
-						_, parent, err := t.split(nt, parent)
-						if err != nil {
-							err = wrapError(err, "insert data: when the data was added into appropriate child, split internal node wrong")
-							return false, parent, err
-						}
-					}
-					flag = true
-					return true, parent, nil
-				}
-			case child:
-				if bytes.Compare(ct.Value, value) < 0 {
-					continue
-				} else {
-
-					//call the insert function to
-					su, _, err := t.InsertData(ct.Pointer, uint8(i), nt, value, da)
-					if !su {
-						err = wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
-						return false, parent, err
-					}
-
-					if len(nt.Children) > int(maxInternalNodeCount) {
-						_, parent, err := t.split(nt, parent)
-						if err != nil {
-							err = wrapError(err, "insert data: when the data was added into appropriate child, split internal node wrong")
-							return false, parent, err
-						}
-					}
-					flag = true
-					return true, parent, nil
-				}
-			default:
-				return false, nil, nil
-			}
-
-		}
-		if !flag {
-			//TODO:将该值插入到节点末尾
-			//call the insert function to
-			switch ct := (nt.Children[i-1]).(type) {
-			case childEncode:
-				//decode child
-				cd, _, err := decodeChild(ct)
-				decoden, err := t.resolveHash(ct)
-				if err != nil {
-					return false, nil, err
-				}
-				cd.Pointer = decoden
-				su, _, err := t.InsertData(decoden, uint8(i), nt, value, da)
-				if !su {
-					err = wrapError(err, "insert data: when the data was added into last child, something wrong")
-					return false, parent, err
-				}
-				cd.Value = value
-				nt.Children[i] = cd
-				if len(nt.Children) > int(maxInternalNodeCount) {
-					su, parent, err := t.split(nt, parent)
-					if !su {
-						err = wrapError(err, "insert data: when the data was added into last child, split internal node wrong")
-						return false, parent, err
-					}
-					return true, parent, nil
-				}
-
-				return true, parent, nil
-			case child:
-				su, _, err := t.InsertData(ct.Pointer, uint8(i), nt, value, da)
-				if !su {
-					err = wrapError(err, "insert data: when the data was added into last child, something wrong")
-					return false, parent, err
-				}
-				ct.Value = value
-				if len(nt.Children) > int(maxInternalNodeCount) {
-					su, parent, err := t.split(nt, parent)
-					if !su {
-						err = wrapError(err, "insert data: when the data was added into last child, split internal node wrong")
-						return false, parent, err
-					}
-					return true, parent, nil
-				}
-
-				return true, parent, nil
-			default:
-				return false, nil, nil
-			}
-
-		}
+		return t.InsertDataToInternal(nt, pos, parent, value, da)
 	case *ByteNode:
 		nbb, _ := n.cache()
 		log.Info("insertdata:next is bytenode id")
@@ -707,6 +661,7 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			if err != nil {
 				return false, nil, err
 			}
+			n = decoden
 			return t.InsertData(decoden, pos, parent, value, da)
 		}
 	default:
@@ -717,17 +672,41 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 	err := errors.New("the function reach to the bottom, something wrong")
 	return false, nil, err
 }
+func (t *EBTree) resolveLeaf(n []byte) (leafNode, error) {
+	cacheMissCounter.Inc(1)
 
-func (t *EBTree) resolveHash(n []byte) (EBTreen, error) {
-	log.Info("into resolve hash func")
+	if node := t.Db.node(n, t.cachegen); node != nil {
+		switch nt := (node).(type) {
+		case *leafNode:
+			var ds []data
+			for i := 0; i < len(nt.Data); i++ {
+				switch dt := (nt.Data[i]).(type) {
+				case data:
+					ds = append(ds, dt)
+				}
+			}
+			nextid, _ := nt.Next.cache()
+			le, _ := constructLeafNode(nt.Id, uint8(len(nt.Data)), ds, false, true, nt.Next, nextid, 0)
+			return le, nil
+		}
+
+	}
+	log.Info("not get the node from db")
 	fmt.Println(n)
+	err := errors.New("not get the leaf node %v from db")
+	return leafNode{}, err
+}
+func (t *EBTree) resolveHash(n []byte) (EBTreen, error) {
+
 	cacheMissCounter.Inc(1)
 
 	if node := t.Db.node(n, t.cachegen); node != nil {
 		return node, nil
 	}
 	log.Info("not get the node from db")
-	return nil, &MissingNodeError{NodeId: n, Path: nil}
+	fmt.Println(n)
+	err := errors.New("not get the leaf node %v from db")
+	return nil, err
 }
 
 func BytesToInt(b []byte) (i uint64) {
