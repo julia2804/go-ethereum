@@ -112,7 +112,7 @@ type collapseNode struct {
 // its written out to disk or garbage collected. No read cache is created, so all
 // data retrievals will hit the underlying disk database.
 func NewDatabase(diskdb ethdb.Database) *Database {
-	return NewDatabaseWithCache(diskdb, 0)
+	return NewDatabaseWithCache(diskdb, 256)
 }
 
 // NewDatabaseWithCache creates a new trie database to store ephemeral trie content
@@ -229,12 +229,12 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 
 	//enode the node
 	var result []byte
+	result = nil
 	switch nt := (node.node).(type) {
 	case *leafNode:
 		log.Info("into node type:leafnode")
 		var enode leafNode
 		for _, d := range nt.Data {
-			log.Info("start encode data")
 			var cd data
 			switch dt := (d).(type) {
 			case dataEncode:
@@ -254,8 +254,6 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 				return err
 			}
 			enode.Data = append(enode.Data, cd)
-			fmt.Println("next is enode.data length:")
-			fmt.Println(len(enode.Data))
 		}
 		enode.Id = nt.Id
 		enode.Next = nt.Next
@@ -301,7 +299,6 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 		if err := encodeInternal(&result, &enode); err != nil {
 			panic("encode error: " + err.Error())
 		}
-		fmt.Println(result)
 	default:
 		log.Info("into node type:wrong type")
 		err := errors.New("wrong node type")
@@ -312,7 +309,6 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 		err := errors.New("wrong encode")
 		return err
 	}
-
 	if err := batch.Put(id[:], result); err != nil {
 		return err
 	}
@@ -342,14 +338,15 @@ func (db *Database) Size() common.StorageSize {
 // node retrieves a cached trie node from memory, or returns nil if none can be
 // found in the memory cache.
 func (db *Database) node(id []byte, cachegen uint16) EBTreen {
-	// Retrieve the node from the clean cache if available
-	if db.cleans != nil {
+	// todo:fix these problems:Retrieve the node from the clean cache if available
+	/*if db.cleans != nil {
 		if enc, err := db.cleans.Get(string(id[:])); err == nil && enc != nil {
+			fmt.Printf("find the data from db.cleans for  %v",id)
 			memcacheCleanHitMeter.Mark(1)
 			memcacheCleanReadMeter.Mark(int64(len(enc)))
 			return mustDecodeNode(id[:], enc)
 		}
-	}
+	}*/
 	// Retrieve the node from the dirty cache if available
 	db.lock.RLock()
 	dirty := db.dirties[string(id)]
@@ -364,11 +361,12 @@ func (db *Database) node(id []byte, cachegen uint16) EBTreen {
 	if err != nil || enc == nil {
 		return nil
 	}
-	if db.cleans != nil {
+	/*if db.cleans != nil {
 		db.cleans.Set(string(id[:]), enc)
 		memcacheCleanMissMeter.Mark(1)
 		memcacheCleanWriteMeter.Mark(int64(len(enc)))
-	}
+	}*/
+	fmt.Printf("find the data from db.diskdb for  %v", id)
 	return mustDecodeNode(id[:], enc)
 }
 
