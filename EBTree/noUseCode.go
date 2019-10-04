@@ -1,5 +1,155 @@
 package EBTree
 
+/*test topkValueSearch
+var k []byte
+k = IntToBytes(uint64(100))
+_, result, _ := tree.TopkValueSearch(k, true)
+
+for i:=0;i<len(result);i++{
+
+
+	for j:=0;j<len(result[i].data);j++{
+		fmt.Println(result[i].data[j])
+	}
+}*/
+
+/*var s1 []byte
+value2, e :=new(big.Int).SetString("15532600000000000000000000000000000",10)
+if !e{
+	fmt.Println("error")
+} else {
+	bv2 := value2.Bytes()
+	dif := 8 - len(bv2)
+	b0 := byte(0)
+	for {
+		if dif <= 0 {
+			break
+		} else {
+			s1 = append(s1, b0)
+			dif = dif - 1
+		}
+	}
+	for i := 0; i < len(bv2); i++ {
+		s1 = append(s1, bv2[i])
+	}
+	result2, err := SearchNode(s1, tree.Root, tree)
+		if err != nil {
+			fmt.Printf("somethine wrong in search node")
+			return
+		}
+		fmt.Printf("the result for 552:\n")
+		for i, r := range result2 {
+			fmt.Printf("the %dth:\n", i)
+			fmt.Printf("%v",r)
+			fmt.Println()
+		}
+		fmt.Println()
+	}
+	var k []byte
+	k = IntToBytes(uint64(500000))
+
+	_, result, _ := tree.RangeValueSearch(s0, s1, k)
+	if(len(result)==0){
+		fmt.Println("no data")
+	}
+	for i:=0;i<len(result);i++{
+		fmt.Println("%d value:",i)
+		fmt.Println(result[i].value)
+		fmt.Println("data:")
+		for j:=0;j<len(result[i].data);j++{
+			fmt.Println(result[i].data[j])
+		}
+	}
+	//combineAndPrintSearchValue(result, s0, tree, k, false)
+	fmt.Println("first find")
+}*/
+/*_, _ = tree.Commit(nil)
+switch rt := (tree.Root).(type) {
+case *leafNode:
+	//todo:
+	tree.Db.Commit(rt.Id, true)
+
+	triedb := tree.Db
+	//TODO:
+	tree, _ = New(rt.Id, triedb)
+case *internalNode:
+	//todo:
+	tree.Db.Commit(rt.Id, true)
+
+	triedb := tree.Db
+	//TODO:
+	tree, _ = New(rt.Id, triedb)
+default:
+	return
+
+}
+fmt.Println(tree.sequence)*/
+
+/*	var s0 []byte
+	value, e :=new(big.Int).SetString("245431000000000000",10)
+	if !e{
+		fmt.Println("error")
+	} else {
+		bv := value.Bytes()
+		dif := 8 - len(bv)
+		b0 := byte(0)
+		for {
+			if dif <= 0 {
+				break
+			} else {
+				s0 = append(s0, b0)
+				dif = dif - 1
+			}
+		}
+		for i := 0; i < len(bv); i++ {
+			s0 = append(s0, bv[i])
+		}
+	}
+	result1, err := SearchNode(s0, tree.Root, tree)
+		if err != nil {
+			fmt.Printf("somethine wrong in search node")
+			return
+		}
+		fmt.Printf("the result for 129:\n")
+		for i, r := range result1 {
+			fmt.Printf("the %dth:\n", i)
+			fmt.Printf("%v",r)
+			fmt.Println()
+		}
+		fmt.Println()
+	}
+}*/
+
+//bak-code1
+/*如果更新的是最大值，应该同时更新children.value
+//如果parent为空，那么不需要进行更新
+if parent != nil {
+	_, parent, res, err := getLeafNodePosition(nt, parent, t)
+	if err != nil {
+		wrapError(err, "insert data: when the node is leaf node, get leaf node postion wrong")
+		return false, parent, err
+	}
+	switch ct := (parent.Children[res]).(type) {
+	case childEncode:
+		return false, parent, err
+	case child:
+		ct.Value = value
+	default:
+		return false, nil, nil
+	}
+}
+
+
+//split the leaf node
+if len(nt.Data) > int(maxLeafNodeCount) {
+	su, parent, err := t.split(nt, parent)
+	if !su {
+		err = wrapError(err, "insert data: when the data was added into the end of node, split leaf node wrong")
+		return false, parent, err
+	}
+	return true, parent, nil
+}*/
+
 //当前节点为高频值节点
 /*if nt.special {
 	//获取当前节点在parent节点中的位置，对于根节点来说，此时需要重新创建一个根节点
