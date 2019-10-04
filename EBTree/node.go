@@ -306,22 +306,34 @@ func getLeafNodePosition(n *leafNode, parent *internalNode, t *EBTree) (bool, *i
 			if ct.Pointer == n {
 				switch dt := (n.Data[len(n.Data)-1]).(type) {
 				case dataEncode:
-					//TODO:
-					_ = dt
-					return false, nil, 0, nil
+					err := errors.New("data is encoded in getLeafNodePosition")
+					return false, nil, 0, err
 				case data:
 					re = uint8(i)
 					ct.Value = dt.Value
 					parent.Children[i] = pc
 					flag = true
 					return true, parent, re, nil
+				case *dataEncode:
+					err := errors.New("data is encoded in getLeafNodePosition")
+					return false, nil, 0, err
+				case *data:
+					re = uint8(i)
+					ct.Value = dt.Value
+					parent.Children[i] = pc
+					flag = true
+					return true, parent, re, nil
 				default:
-					return false, nil, 0, nil
+					fmt.Println("data type error in getLeafNodePosition")
+					err := errors.New("data type error in getLeafNodePosition")
+					return false, nil, 0, err
 				}
 				//fmt.Println(pc.value)
 			}
 		default:
-			return false, nil, 0, nil
+			fmt.Println("child type error in getLeafNodePosition")
+			err := errors.New("child type error in getLeafNodePosition")
+			return false, nil, 0, err
 		}
 
 	}
@@ -414,6 +426,11 @@ func SearchLeafNode(value []byte, n *leafNode) ([][]byte, error) {
 			if bytes.Equal(dt.Value, value) {
 				return dt.Keylist, nil
 			}
+
+		case *data:
+			if bytes.Equal(dt.Value, value) {
+				return dt.Keylist, nil
+			}
 		default:
 			return nil, nil
 		}
@@ -493,34 +510,57 @@ func SearchNode(value []byte, n EBTreen, t *EBTree) ([][]byte, error) {
 
 }
 
-func findFirstNode(n EBTreen) (*leafNode, error) {
+func findFirstNode(n EBTreen, tree *EBTree) (*leafNode, EBTreen, error) {
 	if n == nil {
 		err := errors.New("find first node wrong: t.root is nil")
-		return nil, err
+		return nil, nil, err
 	}
 	switch nt := (n).(type) {
 	case *leafNode:
-		return nt, nil
+		return nt, nt, nil
 	case *internalNode:
 		if len(nt.Children) <= 0 {
 			err := errors.New("find first node wrong: when node is internal node, nt.count <=0")
-			return nil, err
+			return nil, nil, err
 		}
 		switch ct := (nt.Children[0]).(type) {
 		case childEncode:
-			return nil, nil
-		case child:
-			re, err := findFirstNode(ct.Pointer)
+			cd, _, err := decodeChild(ct)
+			decoden, err := tree.resolveHash(ct)
+			if err != nil {
+				return nil, nil, err
+			}
+			cd.Pointer = decoden
+			nt.Children[0] = cd
+			re, decoden, err := findFirstNode(decoden, tree)
 			if err != nil {
 				wrapError(err, "find first node wrong:when node is internal node")
-				return nil, err
+				return nil, nil, err
 			}
-			return re, nil
-		}
 
+			return re, nt, nil
+		case child:
+			re, decoden, err := findFirstNode(ct.Pointer, tree)
+			if err != nil {
+				wrapError(err, "find first node wrong:when node is internal node")
+				return nil, nil, err
+			}
+			ct.Pointer = decoden
+			nt.Children[0] = ct
+			return re, nt, nil
+		}
+	case *ByteNode:
+		ntid, _ := nt.cache()
+		decoden, _ := tree.resolveHash(ntid)
+
+		return findFirstNode(decoden, tree)
+
+	default:
+		err := errors.New("wrong type ")
+		return nil, nil, err
 	}
-	err := errors.New("find first node wrong: the type of node is wrong")
-	return nil, err
+	err := errors.New("wrong in func")
+	return nil, nil, err
 }
 
 func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, error) {
@@ -543,8 +583,8 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 		for i := 0; i < len(nt.Data); i++ {
 			switch dt := (nt.Data[i]).(type) {
 			case dataEncode:
-				//TODO:
-				return false, nt, 0, nil
+				err := errors.New("data is encoded in getLeafNodePosition")
+				return false, nil, 0, err
 			case data:
 				if bytes.Compare(dt.Value, value) < 0 {
 					//EBTree叶子节点按升序排列，继续向后查找
@@ -554,8 +594,21 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 
 					return true, nt, uint8(i), nil
 				}
+			case *dataEncode:
+				err := errors.New("data is encoded in getLeafNodePosition")
+				return false, nil, 0, err
+			case *data:
+				if bytes.Compare(dt.Value, value) < 0 {
+					//EBTree叶子节点按升序排列，继续向后查找
+					continue
+				} else {
+					//找到节点
+
+					return true, nt, uint8(i), nil
+				}
 			default:
-				return false, nt, 0, nil
+				err := errors.New("wront data type")
+				return false, nt, 0, err
 			}
 
 		}
@@ -587,6 +640,11 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 			}
 
 		}
+	case *ByteNode:
+		ntid, _ := nt.cache()
+		decoden, _ := t.resolveHash(ntid)
+
+		return t.findNode(decoden, value)
 	default:
 		err := errors.New("the node is not leaf or internal, something wrong")
 		return false, nil, 0, err
@@ -599,7 +657,7 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error) {
 	var result []searchValue
 	if max {
-		n, err := findFirstNode(t.Root)
+		n, _, err := findFirstNode(t.Root, t)
 		if err != nil {
 			wrapError(err, "top-k search value wrong:find first node wrong")
 			return false, nil, err
@@ -621,6 +679,9 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 					case data:
 						r := searchValue{dt.Value, dt.Keylist}
 						result = append(result, r)
+					case *data:
+						r := searchValue{dt.Value, dt.Keylist}
+						result = append(result, r)
 					default:
 						return false, nil, nil
 					}
@@ -630,14 +691,24 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 					break
 				}
 			}
-
+			if n.Next == nil {
+				break
+			}
 			if !flag {
 				switch nnt := (n.Next).(type) {
 				case *leafNode:
 					n = nnt
 				case *ByteNode:
-					//todo: load from cache or database
-					return false, nil, nil
+					nntid, _ := nnt.cache()
+					if nntid == nil {
+						return true, result, nil
+					}
+					decoden, err := t.resolveLeaf(nntid)
+					if err != nil {
+						return false, nil, err
+					}
+					n.Next = &decoden
+					n = &decoden
 				default:
 					err := errors.New("wrong type")
 					return false, nil, err
@@ -648,11 +719,11 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 			}
 		}
 		if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
-			wrapError(err, "top-k value search wrong:not enough data")
-			return false, result, err
+			fmt.Println("top-k value search wrong:not enough data")
+			return true, result, nil
 		} else if bytes.Compare(IntToBytes(uint64(len(result))), k) > 0 {
-			wrapError(err, "top-k value search wrong:get too much data")
-			return false, result, err
+			fmt.Println("top-k value search wrong:get too much data")
+			return false, result, nil
 		} else {
 			return true, result, nil
 		}
@@ -685,7 +756,7 @@ func (t *EBTree) ResolveByteNode(dt *ByteNode) (*leafNode, error) {
 func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) {
 	var result []searchData
 	if max {
-		n, err := findFirstNode(t.Root)
+		n, _, err := findFirstNode(t.Root, t)
 		if err != nil {
 			err = wrapError(err, "top-k search data wrong:find first node wrong")
 			return false, nil, err
@@ -705,10 +776,24 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 			for i := 0; i < len(n.Data); i++ {
 				switch dt := (n.Data[i]).(type) {
 				case dataEncode:
-					//TODO:
 					err := errors.New("topkvsearch:data is encoded")
 					return false, nil, err
 				case data:
+					for _, kl := range dt.Keylist {
+						if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
+							r := searchData{dt.Value, kl}
+							result = append(result, r)
+
+						} else {
+							flag = true
+							break
+						}
+					}
+				case *dataEncode:
+
+					err := errors.New("topkvsearch:data is encoded")
+					return false, nil, err
+				case *data:
 					for _, kl := range dt.Keylist {
 						if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
 							r := searchData{dt.Value, kl}
@@ -724,7 +809,9 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 				}
 
 			}
-
+			if n.Next == nil {
+				break
+			}
 			if !flag {
 				switch nnt := (n.Next).(type) {
 				case *leafNode:
@@ -779,8 +866,33 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 	return false, nil, err
 }
 
+//search in leafNode data
+func (t *EBTree) RangeValueSearchLeaf(dt *data, max []byte, k []byte, result []searchValue) (bool, bool, []searchValue, error) {
+	var lev []byte
+	if len(dt.Value) < len(max) {
+		t := len(max)
+
+		b0 := byte(0)
+		for i := 0; i < t-len(dt.Value); i++ {
+			lev = append(lev, b0)
+		}
+		for j := 0; j < len(dt.Value); j++ {
+			lev = append(lev, dt.Value[j])
+		}
+	}
+
+	if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 && bytes.Compare(lev, max) <= 0 {
+		r := searchValue{dt.Value, dt.Keylist}
+		result = append(result, r)
+		return false, true, result, nil
+	} else {
+		return true, true, result, nil
+	}
+}
+
 //range value search
 func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []searchValue, error) {
+
 	var result []searchValue
 
 	su, n, pos, err := t.findNode(t.Root, min)
@@ -788,28 +900,44 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 		wrapError(err, "range search value wrong:find node wrong")
 		return false, nil, err
 	}
+	//find the result in range
 	for i := int(pos); i < len(n.Data); i++ {
 		switch dt := (n.Data[i]).(type) {
-		case dataEncode:
-			//TODO:
-			return false, nil, nil
+
 		case data:
-			if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 && bytes.Compare(dt.Value, max) <= 0 {
-				r := searchValue{dt.Value, dt.Keylist}
-				result = append(result, r)
-			} else {
-				return true, result, nil
+			flag, su, rd, err := t.RangeValueSearchLeaf(&dt, max, k, result)
+			result = rd
+			if flag {
+				return su, result, err
+			}
+		case *data:
+			flag, su, rd, err := t.RangeValueSearchLeaf(dt, max, k, result)
+			result = rd
+			if flag {
+				return su, result, err
 			}
 		default:
-			return false, nil, nil
+			err := errors.New("wrong data type")
+			return false, nil, err
 		}
 	}
 	switch nnt := (n.Next).(type) {
 	case *leafNode:
 		n = nnt
 	case *ByteNode:
-		//todo: load from cache or database
-		return false, nil, nil
+
+		nntid, _ := nnt.cache()
+		if nntid == nil {
+			return true, result, nil
+		}
+
+		decoden, err := t.resolveLeaf(nntid)
+		if err != nil {
+			return false, nil, err
+		}
+		n.Next = &decoden
+		n = &decoden
+
 	default:
 		err := errors.New("wrong type")
 		return false, nil, err
@@ -826,26 +954,47 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 			switch dt := (n.Data[i]).(type) {
 			case dataEncode:
 				//TODO:
+				fmt.Println("data is encoded")
 				return false, nil, nil
 			case data:
-				if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 && bytes.Compare(dt.Value, max) <= 0 {
-					r := searchValue{dt.Value, dt.Keylist}
-					result = append(result, r)
-				} else {
-					flag = true
-					break
+				flag, su, rd, err := t.RangeValueSearchLeaf(&dt, max, k, result)
+				result = rd
+				if flag {
+					return su, result, err
 				}
+			case *data:
+				flag, su, result, err := t.RangeValueSearchLeaf(dt, max, k, result)
+				if flag {
+					return su, result, err
+				}
+			default:
+				err := errors.New("wrong data type")
+				return false, result, err
 			}
 		}
 
 		if !flag {
+			if n.Next == nil {
+				return true, result, nil
+			}
 			switch nnt := (n.Next).(type) {
 			case *ByteNode:
-				return false, nil, nil
+				nntid, _ := nnt.cache()
+				if nntid == nil {
+					return true, result, nil
+				}
+				decoden, err := t.resolveLeaf(nntid)
+				if err != nil {
+					return false, nil, err
+				}
+				n.Next = &decoden
+				n = &decoden
+
 			case *leafNode:
 				n = nnt
+
 			default:
-				err := errors.New("wrong type")
+				err := errors.New("wrong next node type")
 				return false, nil, err
 			}
 		} else {
@@ -858,8 +1007,6 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 	} else {
 		return true, result, nil
 	}
-
-	return false, nil, nil
 
 }
 
@@ -1070,9 +1217,26 @@ func (tree *EBTree) CombineSearchValueResult(result []searchValue, min []byte, k
 	var number uint64
 	var err error
 	if top {
-		su, pos, number, err = tree.CompareSpeacial(IntToBytes(0), result[len(result)-1].value)
+		if result == nil {
+			err := errors.New("result is nil, no data in range")
+			return false, nil, err
+		} else {
+			su, pos, number, err = tree.CompareSpeacial(IntToBytes(0), result[len(result)-1].value)
+		}
+
 	} else {
-		su, pos, number, err = tree.CompareSpeacial(min, result[len(result)-1].value)
+		if result == nil {
+			err := errors.New("no data in such range")
+			return false, nil, err
+		} else {
+			if result == nil {
+				err := errors.New("result is nil, no data in range")
+				return false, nil, err
+			} else {
+				su, pos, number, err = tree.CompareSpeacial(min, result[len(result)-1].value)
+			}
+		}
+
 	}
 
 	if err != nil {
@@ -1209,25 +1373,19 @@ func decodeChild(buf []byte) (child, []byte, error) {
 }
 
 func decodeLeaf(id, buf []byte) (EBTreen, error) {
-	log.Info("decode leafnode:")
+	//log.Info("to decode leafnode:")
 	//fmt.Println(buf)
 	le := leafNode{}
 	le.Id = id
 	elems, rest, _ := rlp.SplitList(buf)
 	c, _ := rlp.CountValues(elems)
 
-	fmt.Println(c)
+	fmt.Printf("%d values in elems\n", c)
 
 	for i := 0; i < c; i++ {
 		kbuf, rest1, _ := rlp.SplitString(elems)
 		d, _ := decodeData(kbuf)
-		fmt.Println(len(d.Keylist))
-		//fmt.Println(d.Value)
-		//fmt.Print(i)
-		//fmt.Println(kbuf)
 		le.Data = append(le.Data, d)
-		fmt.Println("the rest of decode leaf node data")
-		fmt.Println(rest1)
 		elems = rest1
 	}
 
@@ -1247,8 +1405,6 @@ func decodeInternal(id, buf []byte) (EBTreen, error) {
 	in.Id = id
 	elems, _, _ := rlp.SplitList(buf)
 	c, _ := rlp.CountValues(elems)
-	fmt.Println(elems)
-	fmt.Println(c)
 
 	for i := 0; i < c; i++ {
 		kbuf, rest1, err := rlp.SplitString(elems)
@@ -1261,10 +1417,7 @@ func decodeInternal(id, buf []byte) (EBTreen, error) {
 			wrapError(err, "decode internal node error when decode child")
 			return nil, nil
 		}
-		fmt.Print(i)
-		fmt.Println(kbuf)
 		in.Children = append(in.Children, cd)
-		fmt.Println(rest1)
 		elems = rest1
 	}
 
@@ -1279,32 +1432,6 @@ func constructData(value []byte, keylist [][]byte) data {
 func constructChild(value []byte, pointer EBTreen) child {
 	c := child{Value: value, Pointer: pointer}
 	return c
-}
-
-//TODO:6/19
-//将节点转化为[]数组，将节点元素转化为byte,byte[],或者有byte[]组成的列表
-func encodeNode(oriNode EBTreen) ([]byte, error) {
-	switch n := (oriNode).(type) {
-	case *leafNode:
-		//TODO:encode leafNode
-		le, _ := rlp.EncodeToBytes(n)
-		fmt.Printf("bytes is %v", le)
-		return nil, nil
-	case *internalNode:
-		//TODO:encode internalNode
-		return nil, nil
-	}
-	return nil, nil
-}
-
-func (*leafNode) encodeData(d data) ([]byte, error) {
-	//TODO:encode the data for leaf node
-	return nil, nil
-}
-
-func (*leafNode) encodeKeList(k [][]byte) ([]byte, error) {
-	//TODO:encode the keylist for data
-	return nil, nil
 }
 
 func encodeInternal(bb *[]byte, in *internalNode) error {
@@ -1334,11 +1461,16 @@ func encodeInternal(bb *[]byte, in *internalNode) error {
 }
 
 func encodeLeaf(result *[]byte, le *leafNode) error {
+	fmt.Printf("into encode leaf,len of data is %d\n", len(le.Data))
 	for i := 0; i < len(le.Data); i++ {
 		switch dt := (le.Data[i]).(type) {
 		case dataEncode:
-			continue
 		case data:
+			bb, _ := rlp.EncodeToBytes(dt)
+			var dataE dataEncode
+			dataE = bb
+			le.Data[i] = dataE
+		case *data:
 			bb, _ := rlp.EncodeToBytes(dt)
 			var dataE dataEncode
 			dataE = bb
@@ -1376,5 +1508,6 @@ func encodeLeaf(result *[]byte, le *leafNode) error {
 	for _, i := range r1 {
 		*result = append(*result, i)
 	}
+
 	return nil
 }
