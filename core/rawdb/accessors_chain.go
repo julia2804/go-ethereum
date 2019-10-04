@@ -278,42 +278,41 @@ func InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions t
 		for _, t := range transactions {
 			//log.Info("get transaction")
 			amount := t.Value()
-			var tb []byte
-			th := t.Hash()
+
+			th := t.GetHash()
+
 			log.Info("get a transaction in insert ebtree")
 			fmt.Println(t.Value())
-			for _, tc := range th {
-				tb = append(tb, tc)
+			if len(th.Bytes()) == 0 {
+				fmt.Println("transaction  hash is nil")
+				err := errors.New("transaction  hash is nil")
+				return nil, err
 			}
-			/*outid := tree.OutputRoot()
-			log.Info("next is outid:")
-			fmt.Println(outid)*/
+			datastr := th.String()[2:]
+
+			data, _ := rlp.EncodeToBytes(datastr)
+
 			var err error
 			if tree.Root == nil {
 				fmt.Println("this tree is empty")
-				_, _, err = tree.InsertData(&rb, 0, nil, amount.Bytes(), tb)
+
+				_, _, err = tree.InsertData(&rb, 0, nil, amount.Bytes(), data)
 			} else {
 				fmt.Println("this tree is not empty")
-				_, _, err = tree.InsertData(tree.Root, 0, nil, amount.Bytes(), tb)
+				_, _, err = tree.InsertData(tree.Root, 0, nil, amount.Bytes(), data)
 			}
 
 			if err != nil {
 				return nil, err
 			}
-			/*if !su {
-				err := errors.New("insert data is not success in insertTransactionEbtree")
-				return nil, err
-			}*/
-			/*outid = tree.OutputRoot()
-			log.Info("next is outid:")
-			fmt.Println(outid)*/
 
 		}
-
-		return nil, nil
+		//tree.Commit(nil);
+		//tree.DBCommit();
+		return tree.OutputRoot(), nil
 	}
 
-	return nil, nil
+	return tree.OutputRoot(), nil
 }
 
 // DeleteBody removes all block body data associated with a hash.
