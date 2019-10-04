@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 	"math/rand"
 	"sync"
@@ -164,7 +165,14 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 		}
 		blockchain.mu.Lock()
 		rawdb.WriteTd(blockchain.db, block.Hash(), block.NumberU64(), new(big.Int).Add(block.Difficulty(), blockchain.GetTdByHash(block.ParentHash())))
-		rawdb.WriteBlockWithIndex(blockchain.db, block, blockchain.ebtreeRoot, blockchain.ebtreeCache)
+		var tree *EBTree.EBTree
+		if len(block.Transactions()) > 0 {
+			rid, _ := blockchain.GetEbtreeRoot()
+			tree, _ = EBTree.New(rid, blockchain.ebtreeCache)
+		} else {
+			tree = nil
+		}
+		rawdb.WriteBlockWithIndex(blockchain.db, block, blockchain.ebtreeRoot, blockchain.ebtreeCache, tree)
 		statedb.Commit(false)
 		blockchain.mu.Unlock()
 	}
@@ -1388,7 +1396,7 @@ func TestEIP161AccountRemoval(t *testing.T) {
 	blockchain, _ := NewBlockChain(db, nil, gspec.Config, ethash.NewFaker(), vm.Config{}, nil)
 	defer blockchain.Stop()
 
-	blocks, _ := GenerateChain(gspec.Config, genesis, ethash.NewFaker(), db, 3, func(i int, block *BlockGen) {
+	blocks, _ := GenerateChain(gspec.Config, genesis, ethash.NewFaker(), db, 10, func(i int, block *BlockGen) {
 		var (
 			tx     *types.Transaction
 			err    error
@@ -1396,11 +1404,134 @@ func TestEIP161AccountRemoval(t *testing.T) {
 		)
 		switch i {
 		case 0:
-			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, new(big.Int), 21000, new(big.Int), nil), signer, key)
+			a := big.NewInt(3000)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2000)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(4000)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2200)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1000)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2500)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(3100)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2900)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1800)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1600)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(3700)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2400)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(3800)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1400)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1700)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(900)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1110)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1670)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(3790)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2430)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1100)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
 		case 1:
-			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, new(big.Int), 21000, new(big.Int), nil), signer, key)
+			a := big.NewInt(1300)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
 		case 2:
-			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, new(big.Int), 21000, new(big.Int), nil), signer, key)
+			a := big.NewInt(10000)
+
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(7000)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+
+		case 3:
+			a := big.NewInt(2200)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+
+			block.AddTx(tx)
+			a = big.NewInt(2500)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+
+		case 4:
+			a := big.NewInt(1200)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2600)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1700)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+
+		case 5:
+			a := big.NewInt(2400)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(22200)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+
+		case 6:
+			a := big.NewInt(15000)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1600)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(1900)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+		case 7:
+			a := big.NewInt(27000)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2900)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2800)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+		case 8:
+			a := big.NewInt(1100)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2500)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+			block.AddTx(tx)
+			a = big.NewInt(2430)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
+		case 9:
+			a := big.NewInt(2530)
+			tx, err = types.SignTx(types.NewTransaction(block.TxNonce(address), theAddr, a, 21000, new(big.Int), nil), signer, key)
 		}
 		if err != nil {
 			t.Fatal(err)
