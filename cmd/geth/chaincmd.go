@@ -235,9 +235,10 @@ func importChain(ctx *cli.Context) error {
 			log.Error("Import error", "err", err)
 		}
 		log.Info("utils:importChain:next is ebtree root:")
+		//todo:store the ebtreeRoot into chaindb
 		rid, _ := chain.GetEbtreeRoot()
 		chainDb.Put([]byte("TEbtreeRoot"), rid)
-		fmt.Println(rid)
+
 	} else {
 		for _, arg := range ctx.Args() {
 			if err := utils.ImportChain(chain, arg); err != nil {
@@ -246,9 +247,7 @@ func importChain(ctx *cli.Context) error {
 		}
 	}
 	chain.Stop()
-	rid, _ := chain.GetEbtreeRoot()
-	fmt.Println("get chain.ebtree root after stop:")
-	fmt.Println(rid)
+
 	fmt.Printf("Import done in %v.\n\n", time.Since(start))
 
 	// Output pre-compaction stats mostly to see the import trashing

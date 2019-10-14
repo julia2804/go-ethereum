@@ -453,8 +453,7 @@ func (bc *BlockChain) ResetWithGenesisBlock(genesis *types.Block) error {
 	if err := bc.hc.WriteTd(genesis.Hash(), genesis.NumberU64(), genesis.Difficulty()); err != nil {
 		log.Crit("Failed to write genesis block TD", "err", err)
 	}
-	//rawdb.WriteBlock(bc.db, genesis)
-	rawdb.WriteBlockWithIndex(bc.db, genesis, nil, bc.ebtreeCache, nil)
+	rawdb.WriteBlock(bc.db, genesis)
 
 	bc.genesisBlock = genesis
 	bc.insert(bc.genesisBlock)
@@ -707,13 +706,15 @@ func (bc *BlockChain) TopkVSearch(k []byte, root []byte) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("produce the tree success!")
+
 	su, result, err := tree.TopkDataSearch(k, true)
 	if err != nil {
-		fmt.Printf("something wrong in range value search with error")
+		fmt.Printf("something wrong in topk  search with error")
 		return nil, err
 	}
 	if !su {
-		fmt.Printf("something wrong in range value search without error")
+		fmt.Printf("something wrong in topk  search without error")
 	}
 	tree.CombineAndPrintSearchData(result, nil, k, true)
 	return nil, err
@@ -1020,20 +1021,20 @@ func (bc *BlockChain) WriteBlockWithoutState(block *types.Block, td *big.Int) (e
 	if err := bc.hc.WriteTd(block.Hash(), block.NumberU64(), td); err != nil {
 		return err
 	}
-	rawdb.WriteBlockWithIndex(bc.db, block, nil, bc.ebtreeCache, nil)
+	rawdb.WriteBlockWithIndex(bc.db, block)
 
 	return nil
 }
 
 // WriteBlockWithState writes the block and all associated state to the database.
-func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.Receipt, state *state.StateDB, tree *EBTree.EBTree) (status WriteStatus, err error, r []byte) {
+func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.Receipt, state *state.StateDB) (status WriteStatus, err error) {
 	bc.wg.Add(1)
 	defer bc.wg.Done()
 
 	// Calculate the total difficulty of the block
 	ptd := bc.GetTd(block.ParentHash(), block.NumberU64()-1)
 	if ptd == nil {
-		return NonStatTy, consensus.ErrUnknownAncestor, nil
+		return NonStatTy, consensus.ErrUnknownAncestor
 	}
 	// Make sure no inconsistent state is leaked during insertion
 	bc.mu.Lock()
@@ -1045,48 +1046,26 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 
 	// Irrelevant of the canonical status, write the block itself to the database
 	if err := bc.hc.WriteTd(block.Hash(), block.NumberU64(), externTd); err != nil {
-		return NonStatTy, err, nil
+		return NonStatTy, err
 	}
 	log.Info("into write block with state")
-	s := block.Number()
-	fmt.Println(s)
-	log.Info("before write:next is ebtree root:")
-	rid, err := bc.GetEbtreeRoot()
+	fmt.Println(block.Number())
 
-	r, err = rawdb.WriteBlockWithIndex(bc.db, block, rid, bc.ebtreeCache, tree)
-
-	if len(block.Transactions()) > 0 {
-		tree.Commit(nil)
-		tree.DBCommit()
-	}
-
+	err = rawdb.WriteBlockWithIndex(bc.db, block)
 	if err != nil {
-		return NonStatTy, err, nil
-	} else {
-		if len(r) != 0 {
-			bc.SetBlockChainEbtreeRot(r)
-			bc.SetBlockChainEbtreeDB(tree.Db)
-		}
-	}
-
-	/*log.Info("next is r:")
-	fmt.Println(r)
-	log.Info("after write:next is ebtree root:")
-	fmt.Println(bc.ebtreeRoot)*/
-	if err != nil {
-		return NonStatTy, err, nil
+		return NonStatTy, err
 	}
 
 	root, err := state.Commit(bc.chainConfig.IsEIP158(block.Number()))
 	if err != nil {
-		return NonStatTy, err, nil
+		return NonStatTy, err
 	}
 	triedb := bc.stateCache.TrieDB()
 
 	// If we're running an archive node, always flush
 	if bc.cacheConfig.Disabled {
 		if err := triedb.Commit(root, false); err != nil {
-			return NonStatTy, err, nil
+			return NonStatTy, err
 		}
 	} else {
 		// Full but not archive node, do proper garbage collection
@@ -1099,6 +1078,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 				nodes, imgs = triedb.Size()
 				limit       = common.StorageSize(bc.cacheConfig.TrieDirtyLimit) * 1024 * 1024
 			)
+
 			if nodes > limit || imgs > 4*1024*1024 {
 				triedb.Cap(limit - ethdb.IdealBatchSize)
 			}
@@ -1162,7 +1142,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		// Reorganise the chain if the parent is not the head block
 		if block.ParentHash() != currentBlock.Hash() {
 			if err := bc.reorg(currentBlock, block); err != nil {
-				return NonStatTy, err, nil
+				return NonStatTy, err
 			}
 		}
 		// Write the positional metadata for transaction/receipt lookups and preimages
@@ -1174,7 +1154,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		status = SideStatTy
 	}
 	if err := batch.Write(); err != nil {
-		return NonStatTy, err, nil
+		return NonStatTy, err
 	}
 
 	// Set new head.
@@ -1182,9 +1162,86 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		bc.insert(block)
 	}
 	bc.futureBlocks.Remove(block.Hash())
-	log.Info("next is ebtree root:")
-	fmt.Println(bc.GetEbtreeRoot())
-	return status, nil, r
+
+	return status, nil
+}
+func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
+	//insertTransaction to ebtree
+	var t *EBTree.EBTree
+	if len(txs) > 0 {
+		rid, _ := bc.GetEbtreeRoot()
+		t, _ = EBTree.New(rid, bc.ebtreeCache)
+		r, err := bc.InsertTransactionEbtree(rid, bc.ebtreeCache, txs, t)
+		fmt.Println("the result for insertTransaction ebtree:")
+		fmt.Println(r)
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		t.Commit(nil)
+		t.DBCommit()
+
+		if len(r) != 0 {
+			bc.SetBlockChainEbtreeRot(r)
+			bc.SetBlockChainEbtreeDB(t.Db)
+		}
+	} else {
+		t = nil
+	}
+
+}
+
+//insertTransactonEBtree
+func (bc *BlockChain) InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions types.Transactions, tree *EBTree.EBTree) ([]byte, error) {
+	log.Info("into InsertTransactionEbtree func")
+	if tree == nil {
+		fmt.Println("insertTransactionEbtree tree is nil")
+		err := errors.New("tree is nil in insertTransactionEbtree")
+		return nil, err
+	}
+	var rb EBTree.ByteNode
+	rb = root
+	if len(transactions) > 0 {
+		fmt.Println("InsertTransactionEbtree:print the root")
+		fmt.Println(root)
+
+		for _, t := range transactions {
+			//log.Info("get transaction")
+			amount := t.Value()
+
+			th := t.GetHash()
+
+			log.Info("get a transaction in insert ebtree")
+			fmt.Println(t.Value())
+			if len(th.Bytes()) == 0 {
+				fmt.Println("transaction  hash is nil")
+				err := errors.New("transaction  hash is nil")
+				return nil, err
+			}
+			datastr := th.String()[2:]
+
+			data, _ := rlp.EncodeToBytes(datastr)
+
+			var err error
+			if tree.Root == nil {
+				fmt.Println("this tree is empty")
+
+				_, _, err = tree.InsertData(&rb, 0, nil, amount.Bytes(), data)
+			} else {
+				fmt.Println("this tree is not empty")
+				_, _, err = tree.InsertData(tree.Root, 0, nil, amount.Bytes(), data)
+			}
+
+			if err != nil {
+				return nil, err
+			}
+
+		}
+		//tree.Commit(nil);
+		//tree.DBCommit();
+		return tree.OutputRoot(), nil
+	}
+
+	return tree.OutputRoot(), nil
 }
 
 // addFutureBlock checks if the block is within the max allowed window to get
@@ -1351,20 +1408,10 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 		}
 		t2 := time.Now()
 		proctime := time.Since(start)
-		var tree *EBTree.EBTree
-		if len(block.Transactions()) > 0 {
-			rid, _ := bc.GetEbtreeRoot()
-			tree, _ = EBTree.New(rid, bc.ebtreeCache)
-		} else {
-			tree = nil
-		}
+
 		// Write the block to the chain and get the status.
-		status, err, r := bc.WriteBlockWithState(block, receipts, state, tree)
-		if r != nil {
-			bc.ebtreeRoot = r
-			bc.SetBlockChainEbtreeRot(r)
-			log.Info("set ebtree root")
-		}
+		status, err := bc.WriteBlockWithState(block, receipts, state)
+
 		t3 := time.Now()
 		if err != nil {
 			return it.index, events, coalescedLogs, err

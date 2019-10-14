@@ -195,12 +195,8 @@ func (bc *LightChain) ResetWithGenesisBlock(genesis *types.Block) {
 
 	// Prepare the genesis block and reinitialise the chain
 	rawdb.WriteTd(bc.chainDb, genesis.Hash(), genesis.NumberU64(), genesis.Difficulty())
-	r, err := bc.GetEbtreeRoot()
-	if err != nil {
-		log.Error("error in getEbtreeRoot when in ResetWithGenesisBlock")
-	}
 
-	rawdb.WriteBlockWithIndex(bc.chainDb, genesis, r, bc.ebtreeCache, nil)
+	rawdb.WriteBlockWithIndex(bc.chainDb, genesis)
 
 	bc.genesisBlock = genesis
 	bc.hc.SetGenesis(bc.genesisBlock.Header())

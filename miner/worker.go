@@ -19,6 +19,7 @@ package miner
 import (
 	"bytes"
 	"errors"
+
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -575,8 +576,9 @@ func (w *worker) resultLoop() {
 				}
 				logs = append(logs, receipt.Logs...)
 			}
+
 			// Commit block and state to database.
-			stat, err, _ := w.chain.WriteBlockWithState(block, receipts, task.state)
+			stat, err := w.chain.WriteBlockWithState(block, receipts, task.state)
 			if err != nil {
 				log.Error("Failed writing block to chain", "err", err)
 				continue
@@ -599,6 +601,9 @@ func (w *worker) resultLoop() {
 
 			// Insert the block into the set of pending ones to resultLoop for confirmations
 			w.unconfirmed.Insert(block.NumberU64(), block.Hash())
+
+			//insertTransaction to ebtree
+			w.chain.InsertEBtree(block.Transactions())
 
 		case <-w.exitCh:
 			return
