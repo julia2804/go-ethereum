@@ -17,6 +17,7 @@ package EBTree
 
 import (
 	"errors"
+	"fmt"
 	"github.com/ethereum/go-ethereum/log"
 	"sync"
 )
@@ -60,15 +61,11 @@ func returnFolderToPool(h *folder) {
 	folderPool.Put(h)
 }
 
-//TODO:6/11
 // fold folds a node , also returning a copy of the
 // original node without next field to replace the original one.
 func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 	log.Info("into fold func")
 	// If we're not storing the node, just folding, use available cached data
-
-	//返回该节点折叠后的marshjson
-
 	if db == nil {
 		err := errors.New("the db given in fold is nil")
 		return nil, err
@@ -107,15 +104,7 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 				return nil, err
 			}
 		}
-
-		/*Generate the RLP encoding of the node
-		var result []byte
-
-		if err := encodeLeaf(&result, nt); err != nil {
-			panic("encode error: " + err.Error())
-		}
-		collapsedNode.NodeData=result*/
-		//TODO:process error
+		fmt.Println("we are going to store this node")
 		_, err := f.store(&collapsed, db, force)
 		if err != nil {
 			return nil, err
@@ -183,6 +172,7 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 		}
 		collapsedNode.NodeData=result*/
 		//TODO:process error
+
 		_, _ = f.store(&collapsed, db, force)
 		return &collapsed, nil
 
@@ -270,7 +260,8 @@ func (f *folder) foldChildren(original EBTreen, db *Database) (EBTreen, error) {
 // node->external trie references.
 func (f *folder) store(n EBTreen, db *Database, force bool) ([]byte, error) {
 	// Don't store hashes or empty nodes.
-
+	db.Cap(1024)
+	fmt.Println("into folder.store")
 	if db != nil {
 		// We are pooling the trie nodes into an intermediate memory cache
 

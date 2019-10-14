@@ -139,8 +139,8 @@ func NewDatabaseWithCache(diskdb ethdb.Database, cache int) *Database {
 // insert inserts a collapsed tree node into the memory database.
 func (db *Database) insert(id []byte, blob []byte, node EBTreen) {
 	// If the node's already cached, skip
-	log.Info("next is db.dirties")
-	log.Info(string(len(db.dirties)))
+	fmt.Println("into insert,the id is:")
+	fmt.Println(id)
 	if _, ok := db.dirties[string(id)]; ok {
 		log.Info("the node has been cached, skip")
 		return
@@ -151,18 +151,28 @@ func (db *Database) insert(id []byte, blob []byte, node EBTreen) {
 		size:      uint16(len(blob)),
 		flushPrev: db.newest,
 	}
-	//todo:
+	fmt.Printf("the size of dirty befor insert is %d", len(db.dirties))
 	db.dirties[string(id)] = entry
-
+	fmt.Printf("the size of dirty after insert is %d", len(db.dirties))
 	// Update the flush-list endpoints
 	if db.oldest == (nil) {
+		fmt.Println(id)
 		db.oldest, db.newest = id, id
 	} else {
+		if db.newest == nil {
+			fmt.Println("wrong in insert! db.newest==nil")
+			return
+		}
+		//find bugs
+		if db.dirties[string(db.newest)] == nil {
+			fmt.Println("wrong in insert! db.dirties[db.newest]==nil")
+			return
+		}
 		db.dirties[string(db.newest)].flushNext, db.newest = id, id
 	}
 
 	//todo:make sure the dirtiesSize of db
-	db.dirtiesSize += common.StorageSize(common.HashLength + entry.size)
+	db.dirtiesSize += common.StorageSize(2*common.HashLength + entry.size)
 }
 
 // Commit iterates over all the children of a particular node, writes them out
@@ -177,11 +187,11 @@ func (db *Database) Commit(node []byte, report bool) error {
 
 	start := time.Now()
 	batch := db.diskdb.NewBatch()
-
 	// Move the trie itself into the batch, flushing if enough data is accumulated
 	nodes, storage := len(db.dirties), db.dirtiesSize
 	if err := db.commit(node, batch); err != nil {
 		log.Error("Failed to commit trie from trie database", "err", err)
+		fmt.Println(node)
 		db.lock.RUnlock()
 		return err
 	}
@@ -223,6 +233,8 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 	log.Info("into commit func")
 	node, ok := db.dirties[string(id)]
 	if !ok {
+		//todo:why this node is not in dirty(maybe related to the limited size of dirty)
+		fmt.Println("this node is not dirty, should not be commit")
 		err := errors.New("this node is not dirty, should not be commit")
 		return err
 	}
@@ -230,6 +242,7 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 	//enode the node
 	var result []byte
 	result = nil
+
 	switch nt := (node.node).(type) {
 	case *leafNode:
 		log.Info("into node type:leafnode")
@@ -281,12 +294,24 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 					cptb, _ := cpt.cache()
 					err := db.commit(cptb, batch)
 					if err != nil {
-						err := wrapError(err, "something wrong in child pointer commit")
+						err := wrapError(err, "something wrong in child pointer commit as bytenode")
+						return err
+					}
+				case *leafNode:
+					err := db.commit(cpt.Id, batch)
+					if err != nil {
+						err := wrapError(err, "something wrong in child pointer commit as leafnode")
+						return err
+					}
+				case *internalNode:
+					err := db.commit(cpt.Id, batch)
+					if err != nil {
+						err := wrapError(err, "something wrong in child pointer commit as internalnode")
 						return err
 					}
 				default:
 					log.Info("into childres:child:pointer type:default")
-					err := errors.New("wrong child pointer type")
+					err := errors.New("wrong child pointer type:default")
 					return err
 				}
 			default:
@@ -299,6 +324,11 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 		if err := encodeInternal(&result, &enode); err != nil {
 			panic("encode error: " + err.Error())
 		}
+	case *ByteNode:
+		ntid, err := nt.cache()
+		fmt.Println(err)
+		fmt.Println("into node type:bytenode,id：")
+		fmt.Println(ntid)
 	default:
 		log.Info("into node type:wrong type")
 		err := errors.New("wrong node type")
@@ -334,6 +364,23 @@ func (db *Database) Size() common.StorageSize {
 	var flushlistSize = common.StorageSize((len(db.dirties) - 1) * 2 * common.HashLength)
 	return db.dirtiesSize + flushlistSize
 }
+func (db *Database) GetTreeMetas(key []byte) ([]byte, error) {
+
+	//todo:to improve the efficiency, we may use the cache someday
+	return db.diskdb.Get(key)
+}
+func (db *Database) SetTreeMetas(key []byte, result []byte, batch ethdb.Batch) error {
+	if err := batch.Put(key, result); err != nil {
+		return err
+	}
+
+	if err := batch.Write(); err != nil {
+		return err
+	}
+	batch.Reset()
+
+	return nil
+}
 
 // node retrieves a cached trie node from memory, or returns nil if none can be
 // found in the memory cache.
@@ -357,8 +404,10 @@ func (db *Database) node(id []byte, cachegen uint16) EBTreen {
 		//return dirty.obj(id, cachegen)
 	}
 	// Content unavailable in memory, attempt to retrieve from disk
+	fmt.Printf("missing the id:%v, in dirties\n", id[:])
 	enc, err := db.diskdb.Get(id[:])
 	if err != nil || enc == nil {
+		fmt.Printf("not get the id from diskb, the error is:%s\n", err.Error())
 		return nil
 	}
 	/*if db.cleans != nil {
@@ -366,7 +415,6 @@ func (db *Database) node(id []byte, cachegen uint16) EBTreen {
 		memcacheCleanMissMeter.Mark(1)
 		memcacheCleanWriteMeter.Mark(int64(len(enc)))
 	}*/
-	fmt.Printf("find the data from db.diskdb for  %v", id)
 	return mustDecodeNode(id[:], enc)
 }
 
@@ -402,9 +450,9 @@ func (db *Database) uncache(id []byte) {
 	}
 
 	// TODO:Uncache the node's subtries and remove the node itself too,don't sure if it is neccesary
-
+	fmt.Printf("db.uncache:delete oldest of dirty:%s", string(db.oldest))
 	delete(db.dirties, string(id))
-	db.dirtiesSize -= common.StorageSize(common.HashLength + int(node.size))
+	db.dirtiesSize -= common.StorageSize(2*common.HashLength + int(node.size))
 }
 
 // Cap iteratively flushes old but still referenced trie nodes until the total
@@ -414,6 +462,7 @@ func (db *Database) Cap(limit common.StorageSize) error {
 	// outside code doesn't see an inconsistent state (referenced data removed from
 	// memory cache during commit but not yet in persistent storage). This is ensured
 	// by only uncaching existing data when the database write finalizes.
+	fmt.Println("into db.cap func")
 	db.lock.RLock()
 
 	nodes, storage, start := len(db.dirties), db.dirtiesSize, time.Now()
@@ -427,7 +476,7 @@ func (db *Database) Cap(limit common.StorageSize) error {
 
 	// Keep committing nodes from the flush-list until we're below allowance
 	oldest := db.oldest
-	//todo: if the size of node is too large, the flush should happen ,too.
+	//if the size of node is too large, the flush should happen ,too.
 	for oldest != nil {
 		// Fetch the oldest referenced node and push into the batch
 		node := db.dirties[string(oldest)]
@@ -483,10 +532,11 @@ func (db *Database) Cap(limit common.StorageSize) error {
 
 	for !bytes.Equal(db.oldest, oldest) {
 		node := db.dirties[string(db.oldest)]
+		fmt.Printf("db.cap:delete oldest of dirty:%s", string(db.oldest))
 		delete(db.dirties, string(db.oldest))
 		db.oldest = node.flushNext
 		//todo:calculate the size of dirty
-		db.dirtiesSize -= common.StorageSize(common.HashLength + int(node.size))
+		db.dirtiesSize -= common.StorageSize(2*common.HashLength + int(node.size))
 	}
 	if db.oldest != nil {
 		db.dirties[string(db.oldest)].flushPrev = nil
