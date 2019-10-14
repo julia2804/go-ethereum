@@ -98,18 +98,41 @@ func RandString(len int) []byte {
 }
 
 func updateString(tree *EBTree) {
-	var a [19]int
-	//TODO:出错
+	var a [49]int
+
 	var v []byte
-	for i := 1; i < 19; i++ {
+	for i := 1; i < 49; i++ {
 		var j int
 		v = []byte("qwerqwerqwerqwerqwerqwerqwerqwer")
-		j = rand.Intn(100)
+		j = rand.Intn(1000)
 
 		a[i-1] = j
 
-		su, _, err := tree.InsertData(tree.Root, uint8(i), nil, IntToBytes(uint64(j)), v)
-		if !su {
+		err := tree.InsertDataToTree(IntToBytes(uint64(j)), v)
+		if err != nil {
+			fmt.Sprintf("the error is not nil,%v", err)
+		}
+
+	}
+
+	fmt.Println()
+
+}
+func updateString2(tree *EBTree) {
+	var a [89]int
+
+	var v []byte
+	for i := 1; i < 89; i++ {
+		var j int
+		v = []byte("qwerqwerqwerqwerqwerqwerqwerqwer")
+		j = rand.Intn(2000 - 10)
+		if j < 0 {
+			j = 0 - j
+		}
+		a[i-1] = j
+
+		err := tree.InsertDataToTree(IntToBytes(uint64(j)), v)
+		if err != nil {
 			fmt.Sprintf("the error is not nil,%v", err)
 		}
 
@@ -122,14 +145,14 @@ func updateString(tree *EBTree) {
 func TestInsert(t *testing.T) {
 	tree, _ := newEmpty()
 	v := []byte("qwermytecautqwerqwerqwerqwerqwer")
-	tree.InsertData(tree.Root, uint8(0), nil, IntToBytes(uint64(99)), v)
-	tree.InsertData(tree.Root, uint8(0), nil, IntToBytes(uint64(10)), v)
-	tree.InsertData(tree.Root, uint8(0), nil, IntToBytes(uint64(70)), v)
-	tree.InsertData(tree.Root, uint8(0), nil, IntToBytes(uint64(90)), v)
-	tree.InsertData(tree.Root, uint8(0), nil, IntToBytes(uint64(95)), v)
-	tree.InsertData(tree.Root, uint8(0), nil, IntToBytes(uint64(100)), v)
-	tree.InsertData(tree.Root, uint8(0), nil, IntToBytes(uint64(60)), v)
-	tree.InsertData(tree.Root, uint8(0), nil, IntToBytes(uint64(78)), v)
+	tree.InsertDataToTree(IntToBytes(uint64(99)), v)
+	tree.InsertDataToTree(IntToBytes(uint64(10)), v)
+	tree.InsertDataToTree(IntToBytes(uint64(70)), v)
+	tree.InsertDataToTree(IntToBytes(uint64(90)), v)
+	tree.InsertDataToTree(IntToBytes(uint64(95)), v)
+	tree.InsertDataToTree(IntToBytes(uint64(100)), v)
+	tree.InsertDataToTree(IntToBytes(uint64(60)), v)
+	tree.InsertDataToTree(IntToBytes(uint64(78)), v)
 	printTree(tree.Root)
 
 	//fmt.Println(BytesToInt(tree.sequence))
@@ -157,30 +180,47 @@ func TestTopkDataSearch(t *testing.T) {
 	tree, _ := newEmpty()
 	updateString(tree)
 	var k []byte
-	k = IntToBytes(uint64(20))
-	su, result, err := tree.TopkDataSearch(k, true)
+	k = IntToBytes(uint64(50))
+	/*su, result, err := tree.TopkDataSearch(k, true)
 	if !su {
 		fmt.Printf("something may be wrong in top-k search\n")
 		if err == nil {
 			tree.CombineAndPrintSearchData(result, IntToBytes(uint64(0)), k, true)
+			return
 		} else {
 			fmt.Println(err.Error())
+			return
 		}
 	}
-	tree.CombineAndPrintSearchData(result, IntToBytes(uint64(0)), k, true)
+	tree.CombineAndPrintSearchData(result, IntToBytes(uint64(0)), k, true)*/
+	_, _ = tree.Commit(nil)
+	var triedb *Database
+	tree.DBCommit()
+	rid, _ := tree.Root.cache()
+	triedb = tree.Db
+	triedb.Cap(1024)
+	tri, _ := New(rid, triedb)
+	updateString2(tri)
+	su, result, _ := tri.TopkValueSearch(k, true)
+	if !su {
+		fmt.Printf("something wrong in top-k search")
+	}
+
+	combineAndPrintSearchValue(result, IntToBytes(uint64(0)), tri, k, true)
 }
 
 func TestTopkValueSearch(t *testing.T) {
 	tree, _ := newEmpty()
 	updateString(tree)
 	var k []byte
-	k = IntToBytes(uint64(20))
+	k = IntToBytes(uint64(100))
 	su, result, _ := tree.TopkValueSearch(k, true)
 	if !su {
 		fmt.Printf("something wrong in top-k search")
 	}
 
 	combineAndPrintSearchValue(result, IntToBytes(uint64(0)), tree, k, true)
+
 }
 
 func TestRangeValueSearch(t *testing.T) {
@@ -289,7 +329,7 @@ func printNode(nt *leafNode) {
 	for _, d := range nt.Data {
 		switch dt := (d).(type) {
 		case dataEncode:
-			//TODO:
+
 			return
 		case data:
 			if dt.Keylist == nil {
@@ -343,18 +383,18 @@ func testMissingNode(t *testing.T, memonly bool) {
 	_, _ = tree.Commit(nil)
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
-		//todo:
+
 		tree.Db.Commit(rt.Id, true)
 
 		triedb = tree.Db
-		//TODO:
+
 		tree, _ = New(rt.Id, triedb)
 	case *internalNode:
-		//todo:
+
 		tree.Db.Commit(rt.Id, true)
 
 		triedb = tree.Db
-		//TODO:
+
 		tree, _ = New(rt.Id, triedb)
 	default:
 		return
@@ -409,7 +449,7 @@ func TestDecodeNode(t *testing.T) {
 	for i := 0; i < len(le.Data); i++ {
 		switch dt := (le.Data[i]).(type) {
 		case dataEncode:
-			//TODO:
+
 			return
 		case data:
 			for j := 0; j < len(dt.Keylist); j++ {
@@ -856,7 +896,7 @@ func TestReadCsv(t *testing.T) {
 		var s string
 		s = strings.TrimSpace(record[1])
 		if s == "0" {
-			//todo:value=0的情况，首先定位，什么数字的插入会导致错误发生
+			//value=0的情况，首先定位，什么数字的插入会导致错误发生
 			//发现一个错误，0被插入到tree中,hash是0x01cde6e47904c689e183ee5c3cc39167ab61b6e368d9a158ff87075ee4ea75c1,0
 			//fmt.Println(bytes.Compare(data,value))
 			tree.InsertData(tree.Root, uint8(i), nil, IntToBytes(0), datav)
@@ -881,7 +921,7 @@ func TestReadCsv(t *testing.T) {
 				fmt.Println(err)
 				continue
 			}
-			//todo:value=0的情况，首先定位，什么数字的插入会导致错误发生
+			//value=0的情况，首先定位，什么数字的插入会导致错误发生
 			//发现一个错误，0被插入到tree中,hash是0x01cde6e47904c689e183ee5c3cc39167ab61b6e368d9a158ff87075ee4ea75c1,0
 			//fmt.Println(bytes.Compare(data,value))
 			bv := Float64ToByte(value)
@@ -910,33 +950,34 @@ func TestReadCsv(t *testing.T) {
 		}
 
 	}
+
 	_, _ = tree.Commit(nil)
 	var triedb *Database
 	var rid []byte
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
-		//todo:
+
 		tree.Db.Commit(rt.Id, true)
 
 		triedb = tree.Db
-		//TODO:
+
 		rid = rt.Id
 	case *internalNode:
-		//todo:
+
 		tree.Db.Commit(rt.Id, true)
 
 		triedb = tree.Db
-		//TODO:
+
 		rid = rt.Id
 
 	default:
 		return
 
 	}
-	triedb.Cap(1*1024 - ethdb.IdealBatchSize)
+	triedb.Cap(1024)
 	tree, _ = New(rid, triedb)
 	var s0 []byte
-	value, e := new(big.Int).SetString("20", 10)
+	value, e := new(big.Int).SetString("0", 10)
 	if !e {
 		fmt.Println("error")
 	} else {
@@ -992,6 +1033,20 @@ func TestReadCsv(t *testing.T) {
 	k = IntToBytes(uint64(500000))
 	//_,result,err:=tree.TopkDataSearch(k,true)
 	_, result, err := tree.RangeValueSearch(s0, s1, k)
+	if len(result) == 0 {
+		fmt.Println("no data")
+	}
+	for i := 0; i < len(result); i++ {
+		fmt.Printf("%d value:", i)
+		fmt.Println(result[i].value)
+		fmt.Println("data:")
+		for j := 0; j < len(result[i].data); j++ {
+			fmt.Println(result[i].data[j])
+		}
+	}
+
+	updateString(tree)
+	_, result, err = tree.RangeValueSearch(s0, s1, k)
 	if len(result) == 0 {
 		fmt.Println("no data")
 	}

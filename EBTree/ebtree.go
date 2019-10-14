@@ -37,10 +37,10 @@ var (
 	emptyState = crypto.Keccak256Hash(nil)
 
 	//maxInternalNodeCount
-	maxInternalNodeCount = uint8(32)
+	maxInternalNodeCount = uint8(3)
 
 	//maxLeafNodeCount
-	maxLeafNodeCount = uint8(16)
+	maxLeafNodeCount = uint8(3)
 
 	cacheMissCounter   = metrics.NewRegisteredCounter("trie/cachemiss", nil)
 	cacheUnloadCounter = metrics.NewRegisteredCounter("trie/cacheunload", nil)
@@ -57,11 +57,6 @@ type SpecialData struct {
 	data  [][]byte
 }
 
-// Trie is a Merkle Patricia Trie.
-// The zero value is an empty trie with no database.
-// Use New to create a trie that sits on top of a database.
-//
-// Trie is not safe for concurrent use.
 type EBTree struct {
 	Db                   *Database
 	Root                 EBTreen
@@ -88,9 +83,14 @@ func typeof(v interface{}) string {
 	return reflect.TypeOf(v).String()
 }
 func (tree *EBTree) DBCommit() ([]byte, error) {
+	//store the metas for tree
+	batch := tree.Db.diskdb.NewBatch()
+	err := tree.Db.SetTreeMetas([]byte("sequence"), tree.sequence, batch)
+	if err != nil {
+		wrapError(err, "something wrong in store tree.sequence")
+	}
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
-		//todo:
 		log.Info("dbcommit:before commit:next is rt.Data length")
 		fmt.Println(len(rt.Data))
 		err := tree.Db.Commit(rt.Id, true)
@@ -101,7 +101,6 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 
 		return rt.Id, nil
 	case *internalNode:
-		//todo:
 		err := tree.Db.Commit(rt.Id, true)
 		if err != nil {
 			wrapError(err, "error in db.commit in func DBCommit")
@@ -113,6 +112,7 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 		err := errors.New("wong root node type")
 		return nil, err
 	}
+
 }
 
 // New creates a trie with an existing root node from db.
@@ -125,12 +125,18 @@ func New(root []byte, db *Database) (*EBTree, error) {
 	if db == nil {
 		panic("trie.New called without a database")
 	}
+	se, err := db.GetTreeMetas([]byte("sequence"))
+	if err != nil {
+		fmt.Println(err.Error())
+		se = IntToBytes(0)
+	}
 	ebt := &EBTree{
 		Db:       db,
-		sequence: IntToBytes(0),
+		sequence: se,
 	}
 
 	ebt.Db = db
+
 	if len(root) != 0 {
 
 		rootNode, err := ebt.resolveHash(root[:])
@@ -157,6 +163,7 @@ func New(root []byte, db *Database) (*EBTree, error) {
 //split leafnode into two leaf nodes
 func (t *EBTree) splitIntoTwoLeaf(n *leafNode, pos int) (bool, *leafNode, *leafNode, error) {
 	var datalist []data
+	fmt.Println("split leafnode into two leaf nodes")
 	newn, err := CreateLeafNode(t, datalist)
 	if err != nil {
 		err = wrapError(err, "split into two leaf node: create leaf node error")
@@ -192,19 +199,22 @@ func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, er
 		} else {
 			nt.Next = newn
 		}
-
+		//fix bug：10/12 err：there is no such leaf node in this parent node
 		_, parent, re, err := getLeafNodePosition(nt, parent, t)
+		if err != nil {
+			return false, nil, err
+		}
 		//当前节点的元素被split，对应的parent中的children的值也要修改
 		switch dt := (nt.Data[len(nt.Data)-1]).(type) {
 		case dataEncode:
-
 			_ = dt
 			err := errors.New("wrong data type")
 			return false, nil, err
 		case data:
 			switch ct := (parent.Children[re]).(type) {
 			case childEncode:
-				return false, nil, nil
+				err := errors.New("wrong data  child type:childEncode")
+				return false, nil, err
 			case child:
 				ct.Value = dt.Value
 				parent.Children[re] = ct
@@ -213,9 +223,8 @@ func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, er
 				}
 				switch dtt := (newn.Data[len(newn.Data)-1]).(type) {
 				case dataEncode:
-					//TODO:
 					_ = dt
-					err := errors.New("wrong data type")
+					err := errors.New("wrong data type:dataEncoded")
 					return false, nil, err
 				case data:
 					child2, err := createChild(dtt.Value, newn)
@@ -230,14 +239,36 @@ func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, er
 					}
 					parent.Children = presult.Children
 					return true, parent, nil
+				case *dataEncode:
+					_ = dt
+					err := errors.New("wrong data type:dataEncoded")
+					return false, nil, err
+				case *data:
+					child2, err := createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "split leaf node :create child to connect the new node to root")
+						return false, parent, err
+					}
+					su, presult, err := addChild(*parent, child2, int(re+1))
+					if !su {
+						err = wrapError(err, "split leaf node: add the new child to root")
+						return false, parent, err
+					}
+					parent.Children = presult.Children
+					return true, parent, nil
 				default:
+					err := errors.New("wrong data type:default")
 					return false, parent, err
 				}
+			default:
+				err := errors.New("wrong data  child type:default")
+				return false, nil, err
 			}
 		case *data:
 			switch ct := (parent.Children[re]).(type) {
 			case childEncode:
-				return false, nil, nil
+				err := errors.New("wrong data type:dataEncoded in getLeafNodePosition")
+				return false, nil, err
 			case child:
 				ct.Value = dt.Value
 				parent.Children[re] = ct
@@ -246,8 +277,6 @@ func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, er
 				}
 				switch dtt := (newn.Data[len(newn.Data)-1]).(type) {
 				case dataEncode:
-					//TODO:
-					_ = dt
 					err := errors.New("wrong data type")
 					return false, nil, err
 				case data:
@@ -264,6 +293,7 @@ func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, er
 					parent.Children = presult.Children
 					return true, parent, nil
 				default:
+					err := errors.New("wrong data type:dataEncoded in getLeafNodePosition")
 					return false, parent, err
 				}
 			}
@@ -320,7 +350,7 @@ func (t *EBTree) split(n EBTreen, parent *internalNode) (bool, *internalNode, er
 					}
 					su, presult, err := addChild(*parent, chil, int(re+1))
 					if !su {
-						err = wrapError(err, "split leaf node: add the new child to root")
+						err = wrapError(err, "split internal node: add the new child to root")
 						return false, parent, err
 					}
 					parent.Children = presult.Children
@@ -458,14 +488,14 @@ func (t *EBTree) InsertToSpecial(p uint8, parent *internalNode, da []byte) (bool
 //insert data into internalNode
 func (t *EBTree) InsertDataToInternal(nt *internalNode, pos uint8, parent *internalNode, value []byte, da []byte) (bool, *internalNode, error) {
 	flag := false
-	var i int
-	for i = 0; i < len(nt.Children); i++ {
-		switch ct := (nt.Children[i]).(type) {
+	var j int
+	for j = 0; j < len(nt.Children); j++ {
+		switch ct := (nt.Children[j]).(type) {
 		case childEncode:
 
 			//insert the data into specific child
-			flag, su, parent, cd, err := t.InsertToChildEncode(ct, nt, i, value, da, parent)
-			nt.Children[i] = cd
+			flag, su, parent, cd, err := t.InsertToChildEncode(ct, nt, j, value, da, parent)
+			nt.Children[j] = cd
 			if err != nil {
 				return false, nil, err
 			}
@@ -475,28 +505,29 @@ func (t *EBTree) InsertDataToInternal(nt *internalNode, pos uint8, parent *inter
 				return su, parent, err
 			}
 		case child:
-			flag, su, parent, cn, err := t.InsertToChild(i, nt, &ct, value, da, parent, ct.Pointer)
-			if !flag {
-				continue
-			} else {
+			if bytes.Compare(ct.Value, value) >= 0 {
+				_, su, parent, cn, err := t.InsertToChild(j, nt, &ct, value, da, parent, ct.Pointer)
 				ct.Pointer = cn
-				nt.Children[i] = ct
+				//nt.Children[j] = ct
 				return su, parent, err
+			} else {
+				continue
 			}
 		default:
 			log.Info("wrong child type")
-			return false, nil, nil
+			err := errors.New("wrong child type:default in  InsertDataToInternal")
+			return false, nil, err
 		}
 
 	}
 	if !flag {
 		//将该值插入到节点末尾
 		//call the insert function to
-		switch ct := (nt.Children[i-1]).(type) {
+		switch ct := (nt.Children[j-1]).(type) {
 		case childEncode:
 			//insert the data into specific child
-			_, su, parent, cd, err := t.InsertToChildEncode(ct, nt, i, value, da, parent)
-			nt.Children[i] = cd
+			_, su, parent, cd, err := t.InsertToChildEncode(ct, nt, j-1, value, da, parent)
+			nt.Children[j-1] = cd
 			if err != nil {
 				return false, nil, err
 			}
@@ -504,13 +535,13 @@ func (t *EBTree) InsertDataToInternal(nt *internalNode, pos uint8, parent *inter
 			return su, parent, err
 
 		case child:
-			su, _, err := t.InsertData(ct.Pointer, uint8(i), nt, value, da)
+			su, _, err := t.InsertData(ct.Pointer, uint8(j-1), nt, value, da)
 			if !su {
 				err = wrapError(err, "insert data: when the data was added into last child, something wrong")
 				return false, parent, err
 			}
 			ct.Value = value
-			nt.Children[i-1] = ct
+			nt.Children[j-1] = ct
 			if len(nt.Children) > int(maxInternalNodeCount) {
 				su, parent, err := t.split(nt, parent)
 				if !su {
@@ -522,11 +553,640 @@ func (t *EBTree) InsertDataToInternal(nt *internalNode, pos uint8, parent *inter
 
 			return true, parent, nil
 		default:
-			return false, nil, nil
+			err := errors.New("wrong child type:default in InsertDataToInternal")
+			return false, nil, err
 		}
 
 	}
 	return false, nil, nil
+}
+
+//split leafnode into two leaf nodes(recontruct)
+func (t *EBTree) splitIntoTwoLeafNode(n *leafNode, pos int) (*leafNode, error) {
+	var datalist []data
+	fmt.Println("split leafnode into two leaf nodes")
+	newn, err := CreateLeafNode(t, datalist)
+	if err != nil {
+		err = wrapError(err, "split into two leaf node: create leaf node error")
+		return nil, err
+	}
+	for j := len(n.Data) - 1; j >= pos; j-- {
+		newn.Data = append(newn.Data, data{})
+	}
+	for i := len(n.Data) - 1; i >= pos; i-- {
+
+		newn.Data[i-pos] = n.Data[i]
+		n.Data = append(n.Data[:i])
+	}
+	return &newn, nil
+}
+
+//split node(recontruct)
+func (t *EBTree) splitNode(n *EBTreen, parent *internalNode, i int) error {
+	//fmt.Println("into split ebtree")
+	switch nt := (*n).(type) {
+	case *leafNode:
+		if uint8(len(nt.Data)) <= maxLeafNodeCount {
+			return nil
+		}
+		pos := (len(nt.Data) + 1) / 2
+		//split the leaf node into two
+		newn, err := t.splitIntoTwoLeafNode(nt, pos)
+		if err != nil {
+			return err
+		}
+		if nt.Next != nil {
+			temp := nt.Next
+			nt.Next = newn
+			newn.Next = temp
+		} else {
+			nt.Next = newn
+		}
+		//对于根节点为叶子节点的情况,需要单独讨论
+		if parent == nil {
+			//需要为上级根节点确定value的值
+			switch dt := (nt.Data[len(nt.Data)-1]).(type) {
+			case dataEncode, *dataEncode:
+				err := errors.New("data is encoded")
+				return err
+			case data:
+				chil, err := createChild(dt.Value, *n)
+				var chil2 child
+				if err != nil {
+					err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+					return err
+				}
+				switch dtt := (newn.Data[len(newn.Data)-1]).(type) {
+				case dataEncode, *dataEncode:
+					err := errors.New("data is encoded")
+					return err
+				case data:
+					chil2, err = createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+						return err
+					}
+				case *data:
+					chil2, err = createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+						return err
+					}
+				default:
+					err := errors.New("wrong data type:default")
+					return err
+				}
+				var children []ChildInterface
+				children = append(children, chil)
+				children = append(children, chil2)
+				parent, err = createInternalNode(t, children)
+				if err != nil {
+					err = wrapError(err, "get leaf node position wrong: when parent is nil, create root")
+					return err
+				}
+				t.Root = parent
+				return nil
+			case *data:
+				chil, err := createChild(dt.Value, *n)
+				var chil2 child
+				if err != nil {
+					err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+					return err
+				}
+				switch dtt := (newn.Data[len(newn.Data)-1]).(type) {
+				case dataEncode, *dataEncode:
+					err := errors.New("data is encoded")
+					return err
+				case data:
+					chil2, err = createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+						return err
+					}
+				case *data:
+					chil2, err = createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+						return err
+					}
+				default:
+					err := errors.New("wrong data type:default")
+					return err
+				}
+				var children []ChildInterface
+				children = append(children, chil)
+				children = append(children, chil2)
+				parent, err = createInternalNode(t, children)
+				if err != nil {
+					err = wrapError(err, "get leaf node position wrong: when parent is nil, create root")
+					return err
+				}
+				t.Root = parent
+				return nil
+			default:
+				err := errors.New("wrong data type:default")
+				return err
+			}
+
+		}
+
+		//当前节点的元素被split，对应的parent中的children的值也要修改
+		switch dt := (nt.Data[len(nt.Data)-1]).(type) {
+		case dataEncode:
+			fmt.Println("wrong data type")
+			err := errors.New("wrong data type")
+			return err
+		case data:
+			switch ct := (parent.Children[i]).(type) {
+			case childEncode:
+				err := errors.New("wrong data  child type:childEncode")
+				return err
+			case child:
+				ct.Value = dt.Value
+				parent.Children[i] = ct
+				if err != nil {
+					return err
+				}
+				switch dtt := (newn.Data[len(newn.Data)-1]).(type) {
+				case dataEncode:
+					err := errors.New("wrong data type:dataEncoded")
+					return err
+				case data:
+					child2, err := createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "split leaf node :create child to connect the new node to root")
+						return err
+					}
+					su, presult, err := addChild(*parent, child2, int(i+1))
+					if !su {
+						err = wrapError(err, "split leaf node: add the new child to root")
+						return err
+					}
+					parent.Children = presult.Children
+					return nil
+				case *dataEncode:
+					err := errors.New("wrong data type:dataEncoded")
+					return err
+				case *data:
+					child2, err := createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "split leaf node :create child to connect the new node to root")
+						return err
+					}
+					su, presult, err := addChild(*parent, child2, int(i+1))
+					if !su {
+						err = wrapError(err, "split leaf node: add the new child to root")
+						return err
+					}
+					parent.Children = presult.Children
+					return nil
+				default:
+					err := errors.New("wrong data type:default")
+					return err
+				}
+			default:
+				err := errors.New("wrong data  child type:default")
+				return err
+			}
+		case *data:
+			switch ct := (parent.Children[i]).(type) {
+			case childEncode:
+				err := errors.New("wrong data type:dataEncoded in getLeafNodePosition")
+				return err
+			case child:
+				ct.Value = dt.Value
+				parent.Children[i] = ct
+				if err != nil {
+					return err
+				}
+				switch dtt := (newn.Data[len(newn.Data)-1]).(type) {
+				case dataEncode:
+					err := errors.New("wrong data type")
+					return err
+				case data:
+					child2, err := createChild(dtt.Value, newn)
+					if err != nil {
+						err = wrapError(err, "split leaf node :create child to connect the new node to root")
+						return err
+					}
+					su, presult, err := addChild(*parent, child2, int(i+1))
+					if !su {
+						err = wrapError(err, "split leaf node: add the new child to root")
+						return err
+					}
+					parent.Children = presult.Children
+					return nil
+				default:
+					err := errors.New("wrong data type:dataEncoded in getLeafNodePosition")
+					return err
+				}
+			}
+		default:
+			err := errors.New("node wrong  type")
+			return err
+
+		}
+
+	case *internalNode:
+		if uint8(len(nt.Children)) <= maxInternalNodeCount {
+			return nil
+		}
+		//carry the child node to new node
+		var childList []ChildInterface
+		pos := (len(nt.Children) + 1) / 2
+		newn, err := createInternalNode(t, childList)
+		if err != nil {
+			err = wrapError(err, "split internal node: create internal node error")
+			return err
+		}
+		for j := len(nt.Children) - 1; j >= pos; j-- {
+			newn.Children = append(newn.Children, child{})
+		}
+		for i := len(nt.Children) - 1; i >= pos; i-- {
+			newn.Children[i-pos] = nt.Children[i]
+			nt.Children = append(nt.Children[:i])
+		}
+		//直接将新节点链接到当前节点到后面，并链接到父节点上
+		//为新创建到节点，创建一个child对象
+		switch ct := (newn.Children[len(newn.Children)-1]).(type) {
+		case childEncode:
+			err := errors.New("wrong data type")
+			return err
+		case child:
+			chil, err := createChild(ct.Value, newn)
+			if err != nil {
+				err = wrapError(err, "split internal node: create newn child wrong")
+				return err
+			}
+			//对于根节点为叶子节点的情况,需要单独讨论
+			if parent == nil {
+				//需要为上级根节点确定value的值
+				switch dt := (nt.Children[len(nt.Children)-1]).(type) {
+				case childEncode, *childEncode:
+					err := errors.New("child is encoded")
+					return err
+				case child:
+					chil2, err := createChild(dt.Value, *n)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+						return err
+					}
+					var children []ChildInterface
+
+					children = append(children, chil2)
+					children = append(children, chil)
+					parent, err = createInternalNode(t, children)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create root")
+						return err
+					}
+					t.Root = parent
+					return nil
+				case *child:
+					chil2, err := createChild(dt.Value, *n)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+						return err
+					}
+					var children []ChildInterface
+					children = append(children, chil)
+					children = append(children, chil2)
+					parent, err = createInternalNode(t, children)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create root")
+						return err
+					}
+					t.Root = parent
+					return nil
+				default:
+					err := errors.New("wrong data type:default")
+					return err
+				}
+
+			}
+			switch cpt := (parent.Children[i]).(type) {
+			case childEncode:
+				err := errors.New("wrong data type")
+				return err
+			case child:
+				switch cnt := (nt.Children[len(nt.Children)-1]).(type) {
+				case childEncode:
+					err := errors.New("wrong data type")
+					return err
+				case child:
+					cpt.Value = cnt.Value
+					parent.Children[i] = cpt
+					if err != nil {
+						return err
+					}
+					su, presult, err := addChild(*parent, chil, int(i+1))
+					if !su {
+						err = wrapError(err, "split internal node: add the new child to root")
+						return err
+					}
+					parent.Children = presult.Children
+					return nil
+				default:
+					err := errors.New("wrong data type")
+					return err
+				}
+			default:
+				err := errors.New("wrong data type")
+				return err
+			}
+		case *child:
+			chil, err := createChild(ct.Value, newn)
+			if err != nil {
+				err = wrapError(err, "split internal node: create newn child wrong")
+				return err
+			}
+			//对于根节点为叶子节点的情况,需要单独讨论
+			if parent == nil {
+				//需要为上级根节点确定value的值
+				switch dt := (nt.Children[len(nt.Children)-1]).(type) {
+				case childEncode, *childEncode:
+					err := errors.New("child is encoded")
+					return err
+				case child:
+					chil2, err := createChild(dt.Value, *n)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+						return err
+					}
+					var children []ChildInterface
+					children = append(children, chil)
+					children = append(children, chil2)
+					parent, err = createInternalNode(t, children)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create root")
+						return err
+					}
+					t.Root = parent
+					return nil
+				case *child:
+					chil2, err := createChild(dt.Value, *n)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create child wrong")
+						return err
+					}
+					var children []ChildInterface
+					children = append(children, chil)
+					children = append(children, chil2)
+					parent, err = createInternalNode(t, children)
+					if err != nil {
+						err = wrapError(err, "get leaf node position wrong: when parent is nil, create root")
+						return err
+					}
+					t.Root = parent
+					return nil
+				default:
+					err := errors.New("wrong data type:default")
+					return err
+				}
+
+			}
+			switch cpt := (parent.Children[i]).(type) {
+			case childEncode:
+				err := errors.New("wrong data type")
+				return err
+			case child:
+				switch cnt := (nt.Children[len(nt.Children)-1]).(type) {
+				case childEncode:
+					err := errors.New("wrong data type")
+					return err
+				case child:
+					cpt.Value = cnt.Value
+					parent.Children[i] = cpt
+					if err != nil {
+						return err
+					}
+					su, presult, err := addChild(*parent, chil, int(i+1))
+					if !su {
+						err = wrapError(err, "split internal node: add the new child to root")
+						return err
+					}
+					parent.Children = presult.Children
+					return nil
+				default:
+					err := errors.New("wrong child type")
+					return err
+				}
+			default:
+				err := errors.New("wrong child type")
+				return err
+			}
+		default:
+			err := errors.New("wrong child type")
+			return err
+		}
+	default:
+		err := errors.New("node is defalut in splitNode")
+		return err
+	}
+	err := errors.New("something wrong")
+	return err
+}
+
+//insert data into internalnode child, not split（reconstruct)
+func (t *EBTree) InsertToInternalChild(cd *child, value []byte, da []byte) error {
+	//if the child pointer is bytenode,we should construct a leaf/internal node from it first
+	switch pt := (cd.Pointer).(type) {
+	case *leafNode, *internalNode:
+		//call the insert function to
+		err := t.InsertDataToNode(&cd.Pointer, value, da)
+		if err != nil {
+			wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
+			return err
+		}
+		if bytes.Compare(cd.Value, value) < 0 {
+			cd.Value = value
+		}
+		return nil
+	case *ByteNode:
+		//decode the pointer
+		ptid, _ := pt.cache()
+		decoden, err := t.resolveHash(ptid)
+		if err != nil {
+			wrapError(err, "decoden error")
+			return err
+		}
+		//replace the bytenode with leaf/internal node
+		cd.Pointer = decoden
+		//call the insert function to
+		err = t.InsertDataToNode(&cd.Pointer, value, da)
+		if err != nil {
+			wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
+			return err
+		}
+		if bytes.Compare(cd.Value, value) < 0 {
+			cd.Value = value
+		}
+		return nil
+	default:
+		log.Info("wrong pointer type：default")
+		err := errors.New("wrong pointer type:default in  InsertToInternalChild")
+		return err
+	}
+}
+
+//insert data into internalNode（reconstruct)
+func (t *EBTree) InsertDataToInternalNode(nt *internalNode, value []byte, da []byte) error {
+	var j int
+	for j = 0; j < len(nt.Children); j++ {
+		switch ct := (nt.Children[j]).(type) {
+		case childEncode:
+			log.Info("wrong child type：childEncode")
+			err := errors.New("child is encoded in InsertDataToInternalNode")
+			return err
+		case child:
+			if bytes.Compare(ct.Value, value) >= 0 {
+				//将数据插入到对应的child中
+				err := t.InsertToInternalChild(&ct, value, da)
+				nt.Children[j] = ct
+				if err != nil {
+					return err
+				}
+				//判断child对应的节点是否需要split
+				err = t.splitNode(&ct.Pointer, nt, j)
+				//返回结果
+				if err != nil {
+					wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
+					return err
+				}
+				return nil
+			} else {
+				continue
+			}
+
+		default:
+			log.Info("wrong child type：default")
+			err := errors.New("wrong child type:default in  InsertDataToInternal")
+			return err
+		}
+
+	}
+
+	//将该值插入到节点末尾
+	//update the value of children
+	//call the insert function to
+	switch ct := (nt.Children[j-1]).(type) {
+	case childEncode:
+		log.Info("wrong child type：childEncode in the last")
+		err := errors.New("child is encoded in InsertDataToInternalNode")
+		return err
+	case child:
+		err := t.InsertToInternalChild(&ct, value, da)
+		nt.Children[j-1] = ct
+		if err != nil {
+			return err
+		}
+		//判断child对应的节点是否需要split
+		err = t.splitNode(&ct.Pointer, nt, j-1)
+		//返回结果
+		if err != nil {
+			wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
+			return err
+		}
+		return nil
+	default:
+		log.Info("wrong child type：default in the last")
+		err := errors.New("wrong child type:default in  InsertDataToInternal")
+		return err
+	}
+
+}
+
+//insert into dataNode（reconstruct)
+func (t *EBTree) InsertToLeafData(nt *leafNode, i int, d *data, value []byte, da []byte) error {
+	if bytes.Compare(d.Value, value) == 0 {
+		//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
+		d.Keylist = append(d.Keylist, da)
+		return nil
+	} else {
+
+		//说明EBTree中不存在value值，此时，需要构建data，并将其加入到节点中
+		sucess, nt, err := moveData(nt, i)
+		if !sucess {
+			err = wrapError(err, "insert data: move data wrong")
+			return err
+		}
+		nt.Data[i], err = createData(value, da)
+		if err != nil {
+			err = wrapError(err, "insert data: create data wrong")
+			return err
+		}
+		return nil
+	}
+}
+
+//insert data into leafNode（reconstruct)
+func (t *EBTree) InsertDataToLeafNode(nt *leafNode, value []byte, da []byte) error {
+	//向叶子节点插入数据
+	//若当前节点为空时，直接插入节点。
+	if len(nt.Data) == 0 {
+		log.Info("the data is nil")
+		//create a data item for da
+		dai, err := createData(value, da)
+		if err != nil {
+			err = wrapError(err, "insert data: create data wrong")
+			return err
+		}
+		nt.Data = append(nt.Data, dai)
+
+		return nil
+	}
+
+	//遍历当前节点的所有data，将da插入合适的位置
+	//value一定小于或等于当前节点到最大值
+	for i := 0; i < len(nt.Data); i++ {
+		log.Info("find the appropriate position in nt datas")
+		switch dt := (nt.Data[i]).(type) {
+		case dataEncode:
+			//decode the data
+			log.Info("data is encoded！")
+			err := errors.New("data type is *dataEncode")
+			return err
+		case data:
+			if bytes.Compare(dt.Value, value) < 0 {
+				continue
+			} else {
+				err := t.InsertToLeafData(nt, i, &dt, value, da)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		case *data:
+			if bytes.Compare(dt.Value, value) < 0 {
+				continue
+			} else {
+				err := t.InsertToLeafData(nt, i, dt, value, da)
+				if err != nil {
+					return err
+				}
+				return nil
+			}
+		case *dataEncode:
+			log.Info("pointer data encode type")
+			err := errors.New("data type is *dataEncode")
+			return err
+		default:
+			log.Info("data type is not appropriate")
+			err := errors.New("data type is not appropriate")
+			return err
+		}
+	}
+
+	//将该值插入到节点末尾
+	log.Info("the data should be put in the last ")
+	dai, err := createData(value, da)
+	if err != nil {
+		err = wrapError(err, "insert data: when the data was added into the end of node, create data wrong")
+		return err
+	}
+	nt.Data = append(nt.Data, dai)
+	return nil
+
 }
 
 //insert data into leafNode
@@ -563,7 +1223,6 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 			if err != nil {
 				return false, parent, err
 			}
-
 			flag, su, parent, err := t.InsertToDataNode(i, nt, &d, value, da, flag, parent)
 			if flag {
 				return su, parent, err
@@ -611,6 +1270,41 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 		return true, nil, nil
 	}
 	return true, nil, nil
+}
+func (t *EBTree) InsertDataToTree(value []byte, da []byte) error {
+	err := t.InsertDataToNode(&t.Root, value, da)
+	if err != nil {
+		return err
+	}
+	return t.splitNode(&t.Root, nil, 0)
+}
+
+//将value插入到该节点或节点的子节点中
+func (t *EBTree) InsertDataToNode(n *EBTreen, value []byte, da []byte) error {
+	switch nt := (*n).(type) {
+	case *leafNode:
+		//insert into leafNode
+		return t.InsertDataToLeafNode(nt, value, da)
+		//不进行split
+	case *internalNode:
+		//insert into internal node
+		return t.InsertDataToInternalNode(nt, value, da)
+	case *ByteNode:
+		//insert into byte node,need to use real node to replace it
+		ntid, _ := (*n).cache()
+		decoden, err := t.resolveHash(ntid)
+		if err != nil {
+			return err
+		}
+		n = &decoden
+		return t.InsertDataToNode(n, value, da)
+	default:
+		log.Info("n with wrong node type")
+		err := errors.New("the node is not leaf or internal, something wrong")
+		return err
+	}
+	err := errors.New("the function reach to the bottom in InsertDataToNode, something wrong")
+	return err
 }
 
 //向EBTree中插入数据
@@ -673,6 +1367,10 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 	return false, nil, err
 }
 func (t *EBTree) resolveLeaf(n []byte) (leafNode, error) {
+
+	if BytesToInt(n) == uint64(20) {
+		fmt.Println("something wrong")
+	}
 	cacheMissCounter.Inc(1)
 
 	if node := t.Db.node(n, t.cachegen); node != nil {
@@ -697,6 +1395,9 @@ func (t *EBTree) resolveLeaf(n []byte) (leafNode, error) {
 	return leafNode{}, err
 }
 func (t *EBTree) resolveHash(n []byte) (EBTreen, error) {
+	if BytesToInt(n) == uint64(20) {
+		fmt.Println("something wrong")
+	}
 
 	cacheMissCounter.Inc(1)
 
@@ -724,13 +1425,14 @@ func (t *EBTree) newSequence() ([]byte, error) {
 	log.Info(string(t.sequence))
 	re := BytesToInt(t.sequence)
 	re = re + 1
+
 	if re < 0 {
 		err := errors.New("BytesToInt return a negtive data")
 		return nil, err
 	}
 	id := IntToBytes(uint64(re))
 	t.sequence = id
-	log.Info(string(t.sequence))
+	fmt.Println(t.sequence)
 	return id, nil
 }
 func (t *EBTree) OutputRoot() []byte {
@@ -755,9 +1457,11 @@ func (t *EBTree) OutputRoot() []byte {
 // Commit writes all nodes to the trie's memory database, tracking the internal
 // and external (for account tries) references.
 func (t *EBTree) Commit(onleaf LeafCallback) ([]byte, error) {
-
+	if t == nil {
+		panic("nil tree")
+	}
 	if t.Db == nil {
-		panic("commit called on trie with nil database")
+		panic("commit called on tree with nil database")
 	}
 	collapsedNode, err := t.foldRoot(t.Db, onleaf)
 	if err != nil {
@@ -782,6 +1486,9 @@ func (t *EBTree) foldRoot(db *Database, onleaf LeafCallback) (EBTreen, error) {
 	}
 	f := newFolder(t.cachegen, t.cachelimit, onleaf)
 	defer returnFolderToPool(f)
+
+	//todo:fold the sequence and special
+
 	return f.fold(t.Root, db, true)
 }
 
