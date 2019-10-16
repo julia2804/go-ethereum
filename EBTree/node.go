@@ -39,14 +39,14 @@ type (
 	internalNode struct {
 		Children []ChildInterface // Actual ebtree internal node data to encode/decode (needs custom encoder)
 		Id       []byte
-		dirty    bool
+		Dirty    bool
 	}
 	//叶子节点
 	leafNode struct {
 		Data  []DataInterface
 		Next  EBTreen
 		Id    []byte
-		dirty bool
+		Dirty bool
 	}
 	idNode struct {
 		Id       []byte
@@ -87,8 +87,8 @@ func (n *child) copy() *child               { copy := *n; return &copy }
 func (n *data) copy() *data                 { copy := *n; return &copy }
 
 //获取节点ID
-func (n *internalNode) cache() ([]byte, bool) { return n.Id, n.dirty }
-func (n *leafNode) cache() ([]byte, bool)     { return n.Id, n.dirty }
+func (n *internalNode) cache() ([]byte, bool) { return n.Id, n.Dirty }
+func (n *leafNode) cache() ([]byte, bool)     { return n.Id, n.Dirty }
 func (n *idNode) cache() ([]byte, bool)       { return n.Id, true }
 func (n ByteNode) cache() ([]byte, bool)      { return n, true }
 
@@ -180,7 +180,7 @@ func constructLeafNode(id []byte, count uint8, datalist []data, special bool, di
 	for i := uint8(0); i < count; i++ {
 		dataInter = append(dataInter, &datalist[i])
 	}
-	newn := leafNode{Data: dataInter, Id: id, Next: next}
+	newn := leafNode{Data: dataInter, Id: id, Next: next, Dirty: false}
 	return newn, nil
 }
 
@@ -196,7 +196,7 @@ func createInternalNode(tree *EBTree, children []ChildInterface) (*internalNode,
 
 func constructInternalNode(id []byte, count uint8, childlist []ChildInterface, gen uint16) (internalNode, error) {
 	//newn := &leafNode{}
-	newn := internalNode{Id: id, Children: childlist}
+	newn := internalNode{Id: id, Children: childlist, Dirty: false}
 	return newn, nil
 }
 
@@ -240,7 +240,143 @@ func moveData(n *leafNode, pos int) (bool, *leafNode, error) {
 	}
 	return true, n, nil
 }
+func CopyData(da []DataInterface) ([]DataInterface, error) {
+	var result []DataInterface
+	for i := 0; i < len(da); i++ {
+		var d data
+		di := da[i]
+		switch dt := (di).(type) {
+		case data:
+			d.Value = dt.Value
+			var ks [][]byte
+			for j := 0; j < len(dt.Keylist); j++ {
+				var key []byte
+				key = dt.Keylist[j]
+				ks = append(ks, key)
+			}
+			d.Keylist = ks
+		case *data:
+			d.Value = dt.Value
+			for j := 0; j < len(dt.Keylist); j++ {
+				var key []byte
+				key = dt.Keylist[i]
+				d.Keylist = append(d.Keylist, key)
+			}
+		case dataEncode:
+			err := errors.New("wrong data type:dataEncode")
+			return nil, err
+		default:
+			err := errors.New("wrong data type:default")
+			return nil, err
+		}
+		result = append(result, d)
+	}
+	return result, nil
+}
+func collapsedLeafNode(nt *leafNode) (*leafNode, error) {
+	log.Info("encode a leaf node")
+	var collapsed leafNode
+	if nt.Id == nil {
+		err := errors.New("empty node")
+		return nil, err
+	}
+	collapsed.Id = nt.Id
+	da, err := CopyData(nt.Data)
+	if err != nil {
+		return nil, err
+	}
+	collapsed.Data = da
 
+	if nt.Next != nil {
+		switch cnt := (nt.Next).(type) {
+		case *leafNode:
+			log.Info("fold:collapsedNode:leafnode")
+			var nb ByteNode
+			nb = cnt.Id
+			if len(nb) == 0 {
+				fmt.Println("wrong")
+			}
+			collapsed.Next = &nb
+		case *internalNode:
+			log.Info("fold:collapsedNode:internalnode")
+			var nb ByteNode
+			nb = cnt.Id
+			if len(nb) == 0 {
+				fmt.Println("wrong")
+			}
+			collapsed.Next = &nb
+		case *ByteNode:
+			log.Info("fold:collapsedNode:bytenode")
+			var nb ByteNode
+			nb, _ = cnt.cache()
+			if len(nb) == 0 {
+				fmt.Println("wrong")
+			}
+			collapsed.Next = &nb
+		default:
+			err := errors.New("fold: wrong collapsed node type")
+			return nil, err
+		}
+	}
+	return &collapsed, nil
+}
+func collapsedInternalNode(nt *internalNode) (*internalNode, error) {
+	var collapsed internalNode
+	if nt.Id == nil {
+		err := errors.New("empty node")
+		return nil, err
+	}
+	collapsed.Id = nt.Id
+	for i := 0; i < len(nt.Children); i++ {
+		if nt.Children[i] == nil {
+			err := errors.New("n.children is nil")
+			return nil, err
+		}
+		switch ct := (nt.Children[i]).(type) {
+		case childEncode:
+			err := errors.New("child is encoded in fold function")
+			return nil, err
+		case child:
+			if ct.Pointer != nil {
+				var pet ByteNode
+				switch pt := (ct.Pointer).(type) {
+				case *leafNode:
+					pet = pt.Id
+					var cchild child
+					cchild.Pointer = &pet
+					cchild.Value = ct.Value
+					collapsed.Children = append(collapsed.Children, cchild)
+				case *internalNode:
+					pet = pt.Id
+					var cchild child
+					cchild.Pointer = &pet
+					cchild.Value = ct.Value
+					collapsed.Children = append(collapsed.Children, cchild)
+				default:
+					err := errors.New("wrong type")
+					return nil, err
+				}
+			}
+		default:
+			err := errors.New("wrong type in child")
+			return nil, err
+		}
+	}
+	return &collapsed, nil
+}
+
+//ollapsed Node
+func collapsedNode(n EBTreen) (EBTreen, error) {
+	switch nt := (n).(type) {
+	case *leafNode:
+		return collapsedLeafNode(nt)
+	case *internalNode:
+		return collapsedInternalNode(nt)
+	default:
+		err := errors.New("wrong data type:default in collapsedNode")
+		return nil, err
+	}
+}
 func moveChildren(n *internalNode, pos int) (bool, *internalNode, error) {
 
 	n.Children = append(n.Children, child{})
@@ -621,19 +757,36 @@ func findFirstNode(n EBTreen, tree *EBTree) (*leafNode, EBTreen, error) {
 		switch ct := (nt.Children[0]).(type) {
 		case childEncode:
 			cd, _, err := decodeChild(ct)
-			decoden, err := tree.resolveHash(ct)
 			if err != nil {
+				wrapError(err, "find first node :decode wrong:when node is internal node")
 				return nil, nil, err
 			}
-			cd.Pointer = decoden
-			nt.Children[0] = cd
-			re, decoden, err := findFirstNode(decoden, tree)
-			if err != nil {
-				wrapError(err, "find first node wrong:when node is internal node")
-				return nil, nil, err
+			switch cpt := (cd.Pointer).(type) {
+			case *ByteNode:
+				cptid, _ := cpt.cache()
+				decoden, err := tree.resolveHash(cptid)
+				if err != nil {
+					return nil, nil, err
+				}
+				cd.Pointer = decoden
+				re, decoden, err := findFirstNode(decoden, tree)
+				if err != nil {
+					wrapError(err, "find first node wrong:when node is internal node")
+					return nil, nil, err
+				}
+				nt.Children[0] = cd
+				return re, nt, nil
+			case *leafNode, *internalNode:
+				cd.Pointer = cpt
+				re, _, err := findFirstNode(cpt, tree)
+				if err != nil {
+					wrapError(err, "find first node wrong:when node is internal node")
+					return nil, nil, err
+				}
+				nt.Children[0] = cd
+				return re, nt, nil
 			}
 
-			return re, nt, nil
 		case child:
 			re, decoden, err := findFirstNode(ct.Pointer, tree)
 			if err != nil {
@@ -769,16 +922,25 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 				if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
 					switch dt := (n.Data[i]).(type) {
 					case dataEncode:
-						//TODO:
-						return false, nil, nil
+						da, err := decodeData(dt)
+						if err != nil {
+							return false, nil, err
+						}
+						n.Data[i] = da
+						r := searchValue{da.Value, da.Keylist}
+						result = append(result, r)
 					case data:
 						r := searchValue{dt.Value, dt.Keylist}
 						result = append(result, r)
+						if len(result) == 86 {
+							fmt.Println("hello")
+						}
 					case *data:
 						r := searchValue{dt.Value, dt.Keylist}
 						result = append(result, r)
 					default:
-						return false, nil, nil
+						err := errors.New("data is default")
+						return false, nil, err
 					}
 
 				} else {
@@ -1395,8 +1557,8 @@ func (tree *EBTree) CombineSearchValueResult(result []searchValue, min []byte, k
 
 		}
 		if bytes.Compare(IntToBytes(uint64(len(finalR))), k) < 0 && top {
-			err := errors.New("there is less data than k")
-			return false, finalR, err
+			fmt.Println("there is less data than k")
+
 		}
 	}
 	return true, finalR, nil
@@ -1412,6 +1574,11 @@ func mustDecodeNode(id, buf []byte) EBTreen {
 
 // decodeNode parses the RLP encoding of a tree node.
 func decodeNode(id, buf []byte) (EBTreen, error) {
+	if BytesToInt(id) == uint64(33) {
+		elems, _, err := rlp.SplitList(buf)
+		n, err := decodeInternal(id, elems)
+		return n, wrapError(err, "full")
+	}
 	if len(buf) == 0 {
 		return nil, io.ErrUnexpectedEOF
 	}
@@ -1421,10 +1588,10 @@ func decodeNode(id, buf []byte) (EBTreen, error) {
 	}
 	switch c, _ := rlp.CountValues(elems); c {
 
-	case 3:
+	case 4:
 		n, err := decodeLeaf(id, elems)
 		return n, wrapError(err, "short")
-	case 2:
+	case 3:
 		n, err := decodeInternal(id, elems)
 		return n, wrapError(err, "full")
 	default:
@@ -1518,9 +1685,11 @@ func decodeLeaf(id, buf []byte) (EBTreen, error) {
 
 	elems = rest
 	nextid, _, _ := rlp.SplitString(elems)
-	var nextByteNode ByteNode
-	nextByteNode = nextid
-	le.Next = &nextByteNode
+	if len(nextid) > 0 {
+		var nextByteNode ByteNode
+		nextByteNode = nextid
+		le.Next = &nextByteNode
+	}
 
 	//fmt.Println(rest5)
 	return &le, nil
@@ -1578,7 +1747,7 @@ func encodeInternal(bb *[]byte, in *internalNode) error {
 			return err
 		}
 	}
-	in.Id = nil
+	//in.Id = nil
 	buff3 := bytes.Buffer{}
 	rlp.Encode(&buff3, &in)
 	b1 := buff3.Bytes()
@@ -1589,7 +1758,7 @@ func encodeInternal(bb *[]byte, in *internalNode) error {
 }
 
 func encodeLeaf(result *[]byte, le *leafNode) error {
-	fmt.Printf("into encode leaf,len of data is %d\n", len(le.Data))
+	//fmt.Printf("into encode leaf,len of data is %d\n", len(le.Data))
 	for i := 0; i < len(le.Data); i++ {
 		switch dt := (le.Data[i]).(type) {
 		case dataEncode:
@@ -1627,7 +1796,7 @@ func encodeLeaf(result *[]byte, le *leafNode) error {
 		}
 	}
 
-	le.Id = nil
+	//le.Id = nil
 	r1, err := rlp.EncodeToBytes(le)
 	if err != nil {
 		err := wrapError(err, "encode leaf wrong")

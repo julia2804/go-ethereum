@@ -17,8 +17,8 @@ package EBTree
 
 import (
 	"errors"
-	"fmt"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rlp"
 	"sync"
 )
 
@@ -81,7 +81,8 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 			return nil, err
 		}
 		collapsed.Id = nt.Id
-		collapsed.Data = nt.Data
+		da, err := CopyData(nt.Data)
+		collapsed.Data = da
 		if nt.Next != nil {
 			switch cnt := (nt.Next).(type) {
 			case *leafNode:
@@ -104,8 +105,8 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 				return nil, err
 			}
 		}
-		fmt.Println("we are going to store this node")
-		_, err := f.store(&collapsed, db, force)
+		//fmt.Println("we are going to store this node")
+		_, err = f.store(&collapsed, db, force)
 		if err != nil {
 			return nil, err
 		}
@@ -254,17 +255,28 @@ func (f *folder) foldChildren(original EBTreen, db *Database) (EBTreen, error) {
 		return nil, nil
 	}
 }
+func (f *folder) EncodeNode(n EBTreen) []byte {
+	f.tmp.Reset()
+	if err := rlp.Encode(&f.tmp, n); err != nil {
+		panic("encode error: " + err.Error())
+	}
+	return f.tmp
+}
 
 // store stores the node n and if we have a storage layer specified, it writes
 // the key/value pair to it and tracks any node->child references as well as any
 // node->external trie references.
 func (f *folder) store(n EBTreen, db *Database, force bool) ([]byte, error) {
 	// Don't store hashes or empty nodes.
-	db.Cap(1024)
-	fmt.Println("into folder.store")
+	//db.Cap(1024*1024*64)
+	//fmt.Println("into folder.store")
 	if db != nil {
 		// We are pooling the trie nodes into an intermediate memory cache
-
+		// Generate the RLP encoding of the node
+		f.tmp.Reset()
+		if err := rlp.Encode(&f.tmp, n); err != nil {
+			panic("encode error: " + err.Error())
+		}
 		db.lock.Lock()
 		switch nt := (n).(type) {
 		case *leafNode:
