@@ -91,8 +91,6 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 	}
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
-		//log.Info("dbcommit:before commit:next is rt.Data length")
-		//fmt.Println(len(rt.Data))
 		err := tree.Db.Commit(rt.Id, true)
 		if err != nil {
 			wrapError(err, "error in db.commit in func DBCommit")
@@ -121,7 +119,6 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 // New will panic if db is nil and returns a MissingNodeError if root does
 // not exist in the database. Accessing the trie loads nodes from db on demand.
 func New(root []byte, db *Database) (*EBTree, error) {
-	//log.Info("into new ebtree")
 	if db == nil {
 		panic("trie.New called without a database")
 	}
@@ -1311,8 +1308,6 @@ func (t *EBTree) InsertDataToNode(n *EBTreen, value []byte, da []byte) error {
 //special value被存储在特定结构中
 //其他值正常存储在tree中
 func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []byte, da []byte) (bool, *internalNode, error) {
-	//log.Info("into insert data,vaule is:")
-	//fmt.Println(value)
 	//判断value是否special
 	sp, p := t.isSpecial(value)
 	if sp {
@@ -1322,12 +1317,9 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 	case *leafNode:
 		return t.InsertDataToLeaf(nt, pos, parent, value, da)
 	case *internalNode:
-
 		return t.InsertDataToInternal(nt, pos, parent, value, da)
 	case *ByteNode:
 		nbb, _ := n.cache()
-		//log.Info("insertdata:next is bytenode id")
-		//fmt.Println(nbb)
 		if string(nbb) == "" {
 			dai, err := createData(value, da)
 			if err != nil {
@@ -1337,12 +1329,7 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			var da []data
 			da = append(da, dai)
 			newn, err := CreateLeafNode(t, da)
-			//log.Info("next is newn leaf node id:")
-			//fmt.Println(newn.Id)
 			t.Root = &newn
-			//outid := t.OutputRoot()
-			//log.Info("next is the root of tree:")
-			//fmt.Println(outid)
 			if err != nil {
 				log.Info("err in create leaf node")
 				return false, nil, err
@@ -1395,9 +1382,6 @@ func (t *EBTree) resolveLeaf(n []byte) (leafNode, error) {
 	return leafNode{}, err
 }
 func (t *EBTree) resolveHash(n []byte) (EBTreen, error) {
-	if BytesToInt(n) == uint64(20) {
-		fmt.Println("something wrong")
-	}
 
 	cacheMissCounter.Inc(1)
 

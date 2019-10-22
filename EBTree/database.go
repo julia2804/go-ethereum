@@ -514,24 +514,7 @@ func (db *Database) SetTreeMetas(key []byte, result []byte, batch ethdb.Batch) e
 // node retrieves a cached trie node from memory, or returns nil if none can be
 // found in the memory cache.
 func (db *Database) node(id []byte, cachegen uint16) EBTreen {
-	// todo:fix these problems:Retrieve the node from the clean cache if available
-	/*if db.cleans != nil {
-		if enc, err := db.cleans.Get(string(id[:])); err == nil && enc != nil {
-			fmt.Printf("find the data from db.cleans for  %v",id)
-			memcacheCleanHitMeter.Mark(1)
-			memcacheCleanReadMeter.Mark(int64(len(enc)))
-			return mustDecodeNode(id[:], enc)
-		}
-	}*/
-	// Retrieve the node from the dirty cache if available
-	db.lock.RLock()
-	dirty := db.dirties[string(id)]
-	db.lock.RUnlock()
 
-	if dirty != nil {
-		return dirty.node
-		//return dirty.obj(id, cachegen)
-	}
 	// Content unavailable in memory, attempt to retrieve from disk
 	//fmt.Printf("missing the id:%v, in dirties\n", id[:])
 	enc, err := db.diskdb.Get(id[:])
@@ -539,11 +522,6 @@ func (db *Database) node(id []byte, cachegen uint16) EBTreen {
 		fmt.Printf("not get the id from diskb, the error is:%s\n", err.Error())
 		return nil
 	}
-	/*if db.cleans != nil {
-		db.cleans.Set(string(id[:]), enc)
-		memcacheCleanMissMeter.Mark(1)
-		memcacheCleanWriteMeter.Mark(int64(len(enc)))
-	}*/
 	return mustDecodeNode(id[:], enc)
 }
 
