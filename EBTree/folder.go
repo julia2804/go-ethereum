@@ -17,8 +17,7 @@ package EBTree
 
 import (
 	"errors"
-	"fmt"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/rlp"
 	"sync"
 )
 
@@ -64,7 +63,7 @@ func returnFolderToPool(h *folder) {
 // fold folds a node , also returning a copy of the
 // original node without next field to replace the original one.
 func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
-	log.Info("into fold func")
+	//log.Info("into fold func")
 	// If we're not storing the node, just folding, use available cached data
 	if db == nil {
 		err := errors.New("the db given in fold is nil")
@@ -74,28 +73,29 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 	//var collapsedNode idNode
 	switch nt := (n).(type) {
 	case *leafNode:
-		log.Info("encode a leaf node")
+		//log.Info("encode a leaf node")
 		var collapsed leafNode
 		if nt.Id == nil {
 			err := errors.New("empty node")
 			return nil, err
 		}
 		collapsed.Id = nt.Id
-		collapsed.Data = nt.Data
+		da, err := CopyData(nt.Data)
+		collapsed.Data = da
 		if nt.Next != nil {
 			switch cnt := (nt.Next).(type) {
 			case *leafNode:
-				log.Info("fold:collapsedNode:leafnode")
+				//log.Info("fold:collapsedNode:leafnode")
 				var nb ByteNode
 				nb = cnt.Id
 				collapsed.Next = &nb
 			case *internalNode:
-				log.Info("fold:collapsedNode:internalnode")
+				//log.Info("fold:collapsedNode:internalnode")
 				var nb ByteNode
 				nb = cnt.Id
 				collapsed.Next = &nb
 			case *ByteNode:
-				log.Info("fold:collapsedNode:bytenode")
+				//log.Info("fold:collapsedNode:bytenode")
 				var nb ByteNode
 				nb, _ = cnt.cache()
 				collapsed.Next = &nb
@@ -104,8 +104,8 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 				return nil, err
 			}
 		}
-		fmt.Println("we are going to store this node")
-		_, err := f.store(&collapsed, db, force)
+		//fmt.Println("we are going to store this node")
+		_, err = f.store(&collapsed, db, force)
 		if err != nil {
 			return nil, err
 		}
@@ -150,6 +150,8 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 						if err != nil {
 							return &collapsed, err
 						}
+					case *ByteNode:
+						return pEncode,nil
 					default:
 						err := errors.New("wrong type")
 						return nil, err
@@ -161,6 +163,8 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 			}
 
 		}
+
+
 		/*_,err := f.foldChildren(collapsed, db)
 		if err != nil {
 			return nil, err
@@ -177,6 +181,9 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 		return &collapsed, nil
 
 		// Trie not processed yet or needs storage, walk the children
+	case *ByteNode:
+		return n, nil
+
 
 	}
 
@@ -254,26 +261,37 @@ func (f *folder) foldChildren(original EBTreen, db *Database) (EBTreen, error) {
 		return nil, nil
 	}
 }
+func (f *folder) EncodeNode(n EBTreen) []byte {
+	f.tmp.Reset()
+	if err := rlp.Encode(&f.tmp, n); err != nil {
+		panic("encode error: " + err.Error())
+	}
+	return f.tmp
+}
 
 // store stores the node n and if we have a storage layer specified, it writes
 // the key/value pair to it and tracks any node->child references as well as any
 // node->external trie references.
 func (f *folder) store(n EBTreen, db *Database, force bool) ([]byte, error) {
 	// Don't store hashes or empty nodes.
-	db.Cap(1024)
-	fmt.Println("into folder.store")
+	//db.Cap(1024*1024*64)
+	//fmt.Println("into folder.store")
 	if db != nil {
 		// We are pooling the trie nodes into an intermediate memory cache
-
+		// Generate the RLP encoding of the node
+		f.tmp.Reset()
+		if err := rlp.Encode(&f.tmp, n); err != nil {
+			panic("encode error: " + err.Error())
+		}
 		db.lock.Lock()
 		switch nt := (n).(type) {
 		case *leafNode:
-			log.Info("store:into leafnode")
+			//log.Info("store:into leafnode")
 			db.insert(nt.Id, f.tmp, n)
 			db.lock.Unlock()
 			return nt.Id, nil
 		case *internalNode:
-			log.Info("store:into internalnode")
+			//log.Info("store:into internalnode")
 			db.insert(nt.Id, f.tmp, n)
 			db.lock.Unlock()
 			return nt.Id, nil

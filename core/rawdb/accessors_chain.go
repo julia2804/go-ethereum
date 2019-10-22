@@ -235,7 +235,7 @@ func WriteBody(db DatabaseWriter, hash common.Hash, number uint64, body *types.B
 
 // WriteBodyWithIndex storea a block body into the database.
 func WriteBodyWithInex(db DatabaseWriter, hash common.Hash, number uint64, body *types.Body) error {
-	log.Info("into writebody with index func")
+	//log.Info("into writebody with index func")
 
 	data, err := rlp.EncodeToBytes(body)
 	if err != nil {
@@ -359,7 +359,7 @@ func ReadBlock(db DatabaseReader, hash common.Hash, number uint64) *types.Block 
 
 // WriteBlockWithIndex serializes a block into the database, header and body separately.
 func WriteBlockWithIndex(db DatabaseWriter, block *types.Block) error {
-	log.Info("into writeblock with index func")
+	//log.Info("into writeblock with index func")
 
 	err := WriteBodyWithInex(db, block.Hash(), block.NumberU64(), block.Body())
 

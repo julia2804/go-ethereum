@@ -48,7 +48,7 @@ func Split(b []byte) (k Kind, content, rest []byte, err error) {
 // SplitString splits b into the content of an RLP string
 // and any remaining bytes after the string.
 func SplitString(b []byte) (content, rest []byte, err error) {
-	fmt.Println("into splitString ：")
+	//fmt.Println("into splitString ：")
 	k, content, rest, err := Split(b)
 	if err != nil {
 		fmt.Println("splitString error：")

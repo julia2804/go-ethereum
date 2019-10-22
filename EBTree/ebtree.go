@@ -91,8 +91,8 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 	}
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
-		log.Info("dbcommit:before commit:next is rt.Data length")
-		fmt.Println(len(rt.Data))
+		//log.Info("dbcommit:before commit:next is rt.Data length")
+		//fmt.Println(len(rt.Data))
 		err := tree.Db.Commit(rt.Id, true)
 		if err != nil {
 			wrapError(err, "error in db.commit in func DBCommit")
@@ -121,7 +121,7 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 // New will panic if db is nil and returns a MissingNodeError if root does
 // not exist in the database. Accessing the trie loads nodes from db on demand.
 func New(root []byte, db *Database) (*EBTree, error) {
-	log.Info("into new ebtree")
+	//log.Info("into new ebtree")
 	if db == nil {
 		panic("trie.New called without a database")
 	}
@@ -1124,7 +1124,7 @@ func (t *EBTree) InsertDataToLeafNode(nt *leafNode, value []byte, da []byte) err
 	//向叶子节点插入数据
 	//若当前节点为空时，直接插入节点。
 	if len(nt.Data) == 0 {
-		log.Info("the data is nil")
+		//log.Info("the data is nil")
 		//create a data item for da
 		dai, err := createData(value, da)
 		if err != nil {
@@ -1139,7 +1139,7 @@ func (t *EBTree) InsertDataToLeafNode(nt *leafNode, value []byte, da []byte) err
 	//遍历当前节点的所有data，将da插入合适的位置
 	//value一定小于或等于当前节点到最大值
 	for i := 0; i < len(nt.Data); i++ {
-		log.Info("find the appropriate position in nt datas")
+		//log.Info("find the appropriate position in nt datas")
 		switch dt := (nt.Data[i]).(type) {
 		case dataEncode:
 			//decode the data
@@ -1178,7 +1178,7 @@ func (t *EBTree) InsertDataToLeafNode(nt *leafNode, value []byte, da []byte) err
 	}
 
 	//将该值插入到节点末尾
-	log.Info("the data should be put in the last ")
+	//log.Info("the data should be put in the last ")
 	dai, err := createData(value, da)
 	if err != nil {
 		err = wrapError(err, "insert data: when the data was added into the end of node, create data wrong")
@@ -1194,7 +1194,7 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 	//向叶子节点插入数据
 	//若当前节点为空时，直接插入节点。
 	if len(nt.Data) == 0 {
-		log.Info("the data is nil")
+		//log.Info("the data is nil")
 		//create a data item for da
 		dai, err := createData(value, da)
 		if err != nil {
@@ -1212,7 +1212,7 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 	//value一定小于或等于当前节点到最大值
 
 	for i := 0; i < len(nt.Data); i++ {
-		log.Info("find the appropriate position in nt datas")
+		//log.Info("find the appropriate position in nt datas")
 
 		switch dt := (nt.Data[i]).(type) {
 		case dataEncode:
@@ -1257,7 +1257,7 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 
 	//将该值插入到节点末尾
 	if !flag {
-		log.Info("the data should be put in the last ")
+		//log.Info("the data should be put in the last ")
 		dai, err := createData(value, da)
 		if err != nil {
 			err = wrapError(err, "insert data: when the data was added into the end of node, create data wrong")
@@ -1311,7 +1311,7 @@ func (t *EBTree) InsertDataToNode(n *EBTreen, value []byte, da []byte) error {
 //special value被存储在特定结构中
 //其他值正常存储在tree中
 func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []byte, da []byte) (bool, *internalNode, error) {
-	log.Info("into insert data,vaule is:")
+	//log.Info("into insert data,vaule is:")
 	//fmt.Println(value)
 	//判断value是否special
 	sp, p := t.isSpecial(value)
@@ -1326,8 +1326,8 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 		return t.InsertDataToInternal(nt, pos, parent, value, da)
 	case *ByteNode:
 		nbb, _ := n.cache()
-		log.Info("insertdata:next is bytenode id")
-		fmt.Println(nbb)
+		//log.Info("insertdata:next is bytenode id")
+		//fmt.Println(nbb)
 		if string(nbb) == "" {
 			dai, err := createData(value, da)
 			if err != nil {
@@ -1337,12 +1337,12 @@ func (t *EBTree) InsertData(n EBTreen, pos uint8, parent *internalNode, value []
 			var da []data
 			da = append(da, dai)
 			newn, err := CreateLeafNode(t, da)
-			log.Info("next is newn leaf node id:")
-			fmt.Println(newn.Id)
+			//log.Info("next is newn leaf node id:")
+			//fmt.Println(newn.Id)
 			t.Root = &newn
-			outid := t.OutputRoot()
-			log.Info("next is the root of tree:")
-			fmt.Println(outid)
+			//outid := t.OutputRoot()
+			//log.Info("next is the root of tree:")
+			//fmt.Println(outid)
 			if err != nil {
 				log.Info("err in create leaf node")
 				return false, nil, err
@@ -1421,8 +1421,8 @@ func IntToBytes(i uint64) []byte {
 }
 
 func (t *EBTree) newSequence() ([]byte, error) {
-	log.Info("into new sequece")
-	log.Info(string(t.sequence))
+	//log.Info("into new sequece")
+	//log.Info(string(t.sequence))
 	re := BytesToInt(t.sequence)
 	re = re + 1
 
@@ -1432,20 +1432,20 @@ func (t *EBTree) newSequence() ([]byte, error) {
 	}
 	id := IntToBytes(uint64(re))
 	t.sequence = id
-	fmt.Println(t.sequence)
+	//fmt.Println(t.sequence)
 	return id, nil
 }
 func (t *EBTree) OutputRoot() []byte {
 	switch rt := (t.Root).(type) {
 	case *leafNode:
-		log.Info("outputroot:root node type: leafnode")
-		log.Info(string(rt.Id))
+		//log.Info("outputroot:root node type: leafnode")
+		//log.Info(string(rt.Id))
 		return rt.Id
 	case *internalNode:
-		log.Info("outputroot:root node type: internalnode")
+		//log.Info("outputroot:root node type: internalnode")
 		return rt.Id
 	case *ByteNode:
-		log.Info("outputroot:root node type: bytenode")
+		//log.Info("outputroot:root node type: bytenode")
 		id, _ := rt.cache()
 		return id
 	default:
@@ -1474,12 +1474,12 @@ func (t *EBTree) Commit(onleaf LeafCallback) ([]byte, error) {
 		return nil, err
 	}
 	rt, _ := collapsedNode.cache()
-	log.Info(string(rt))
+	//log.Info(string(rt))
 	return rt, nil
 }
 
 func (t *EBTree) foldRoot(db *Database, onleaf LeafCallback) (EBTreen, error) {
-	log.Info("into fold root ")
+	//log.Info("into fold root ")
 	if t.Root == nil {
 		err := errors.New("tree is nil")
 		return nil, err

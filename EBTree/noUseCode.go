@@ -1,6 +1,21 @@
 package EBTree
 
 /*
+
+
+
+
+eth.topkVSearch()
+miner.start()
+personal.newAccount("ju")
+personal.unlockAccount(eth.coinbase)
+miner.stop()
+./geth --port 30060 --rpcport 60060 --networkid 2805 --datadir /home/mimota/data/ console
+./geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
+build/bin/geth --port 30060 --rpcport 60060 --networkid 2805 --datadir /home/mimota/data/ console
+build/bin/geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
+
+
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.1,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.2,'ether')})
@@ -11,6 +26,7 @@ eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.7,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.3,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.9,'ether')})
+
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.6,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.01,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.82,'ether')})
@@ -18,11 +34,10 @@ eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.8,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.001,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.3,'ether')})
-
-
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.81,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.92,'ether')})
+
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.37,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.0401,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.272,'ether')})
@@ -33,18 +48,18 @@ eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.6,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.081,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.892,'ether')})
+
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.899,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.8,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.7701,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.683,'ether')})
-
-
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.97,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.0081,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.09892,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.478737,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.79870401,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.687272,'ether')})
+
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.78677,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(3.007,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.7868763,'ether')})
@@ -55,12 +70,39 @@ eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.0899,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.687678,'ether')})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.997701,'ether')})
-eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(3.683,'ether')})
+
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(3.6831,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.8991,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.81,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.77011,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.6183,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.917,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.00811,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.098192,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.4718737,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.719801,'ether')})
+
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(0.617272,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.718677,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(3.1007,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.781663,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.099879,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.871806,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.651081,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(3.8192,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.08199,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1.681678,'ether')})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(2.971701,'ether')})
 
 eth.topkVSearch()
 miner.start()
+personal.newAccount("ju")
 personal.unlockAccount(eth.coinbase)
 miner.stop()
+./geth --port 30060 --rpcport 60060 --networkid 2805 --datadir /home/mimota/data/ console
+./geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
+build/bin/geth --port 30060 --rpcport 60060 --networkid 2805 --datadir /home/mimota/data/ console
+build/bin/geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
 */
 /*test topkValueSearch
 var k []byte
