@@ -118,7 +118,7 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 // trie is initially empty and does not require a database. Otherwise,
 // New will panic if db is nil and returns a MissingNodeError if root does
 // not exist in the database. Accessing the trie loads nodes from db on demand.
-func New(root []byte, db *Database) (*EBTree, error) {
+func New(rid []byte, db *Database) (*EBTree, error) {
 	if db == nil {
 		panic("trie.New called without a database")
 	}
@@ -134,20 +134,20 @@ func New(root []byte, db *Database) (*EBTree, error) {
 
 	ebt.Db = db
 
-	if len(root) != 0 {
+	if len(rid) != 0 {
 
-		rootNode, err := ebt.resolveHash(root[:])
+		rootNode, err := ebt.resolveHash(rid[:])
 		if err != nil {
 			return ebt, err
 		}
 
 		switch rt := (rootNode).(type) {
 		case *idNode:
-			rt.Id = root
+			rt.Id = rid
 		case *leafNode:
-			rt.Id = root
+			rt.Id = rid
 		case *internalNode:
-			rt.Id = root
+			rt.Id = rid
 		default:
 			err := errors.New("wrong type")
 			return nil, err
@@ -460,6 +460,7 @@ func (t *EBTree) InsertToChild(i int, nt *internalNode, cd *child, value []byte,
 		return false, false, parent, decoden, nil
 	}
 }
+
 func (t *EBTree) InsertToChildEncode(ct childEncode, nt *internalNode, i int, value []byte, da []byte, parent *internalNode) (bool, bool, *internalNode, *child, error) {
 	cd, _, err := decodeChild(ct)
 	decoden, err := t.resolveHash(ct)
@@ -1268,6 +1269,7 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 	}
 	return true, nil, nil
 }
+
 func (t *EBTree) InsertDataToTree(value []byte, da []byte) error {
 	err := t.InsertDataToNode(&t.Root, value, da)
 	if err != nil {
@@ -1278,6 +1280,7 @@ func (t *EBTree) InsertDataToTree(value []byte, da []byte) error {
 
 //将value插入到该节点或节点的子节点中
 func (t *EBTree) InsertDataToNode(n *EBTreen, value []byte, da []byte) error {
+
 	switch nt := (*n).(type) {
 	case *leafNode:
 		//insert into leafNode

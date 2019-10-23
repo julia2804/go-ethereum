@@ -1172,17 +1172,18 @@ func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 	var t *EBTree.EBTree
 	if len(txs) > 0 {
 		fmt.Println("begin insert EBtree")
-		//恢复树
+		//恢复根节点
 		rid, _ := bc.GetEbtreeRoot()
 		t, _ = EBTree.New(rid, bc.ebtreeCache)
-		//插入交易
+		//插入交易,会生成部分的树，根据部分树进行commit
 		r, err := bc.InsertTransactionEbtree(rid, bc.ebtreeCache, txs, t)
 		if err != nil {
-			fmt.Println("error in func : InsertEBtree" + err.Error())
+			fmt.Println("error in func : InsertEBtree(), " + err.Error())
 		}
 		t.DBCommit()
 
 		if len(r) != 0 {
+			//更改tree中的root以及数据库中的root
 			bc.SetBlockChainEbtreeRot(r)
 			bc.SetBlockChainEbtreeDB(t.Db)
 		}
@@ -1194,14 +1195,12 @@ func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 }
 
 //insertTransactonEBtree
-func (bc *BlockChain) InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions types.Transactions, tree *EBTree.EBTree) ([]byte, error) {
+func (bc *BlockChain) InsertTransactionEbtree(rid []byte, ebtdb *EBTree.Database, transactions types.Transactions, tree *EBTree.EBTree) ([]byte, error) {
 	if tree == nil {
 		fmt.Println("error in func insertTransactionEbtree() : tree is nil")
 		err := errors.New("tree is nil in insertTransactionEbtree")
 		return nil, err
 	}
-	var rb EBTree.ByteNode
-	rb = root
 	if len(transactions) > 0 {
 
 		for _, t := range transactions {
@@ -1219,12 +1218,7 @@ func (bc *BlockChain) InsertTransactionEbtree(root []byte, ebtdb *EBTree.Databas
 
 			data, _ := rlp.EncodeToBytes(datastr)
 
-			var err error
-			if tree.Root == nil {
-				 err = tree.InsertDataToTree( amount.Bytes(), data)
-			} else {
-				 err = tree.InsertDataToTree( amount.Bytes(), data)
-			}
+			err := tree.InsertDataToTree(amount.Bytes(), data)
 
 			if err != nil {
 				return nil, err
