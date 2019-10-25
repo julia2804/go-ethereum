@@ -127,7 +127,7 @@ func New(rid []byte, db *Database) (*EBTree, error) {
 	}
 	se, err := db.GetTreeMetas([]byte("sequence"))
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Info(err.Error())
 		se = IntToBytes(0)
 	}
 	ebt := &EBTree{
@@ -584,7 +584,6 @@ func (t *EBTree) splitIntoTwoLeafNode(n *leafNode, pos int) (*leafNode, error) {
 
 //split node(recontruct)
 func (t *EBTree) splitNode(n *EBTreen, parent *internalNode, i int) error {
-	//fmt.Println("into split ebtree")
 	switch nt := (*n).(type) {
 	case *leafNode:
 		if uint8(len(nt.Data)) <= maxLeafNodeCount {

@@ -270,6 +270,7 @@ func (db *Database) Commit(root EBTreen, report bool) error {
 
 	return nil
 }
+
 func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) ([]byte, error) {
 	//enode the node
 	var result []byte
@@ -383,150 +384,142 @@ func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) (
 		}
 		return result, nil
 	case *ByteNode:
-		//ntid, _ := nt.cache()
-		//
-		////fmt.Println("into node type:bytenode")
-		//err := errors.New("into node type:bytenode")
-		//fmt.Println(ntid)
 		return nil, nil
 	default:
-		log.Info("into node type:wrong type")
-		err := errors.New("wrong node type")
+		log.Info("error int func : EncodeNode().388")
+		err := errors.New("error int func : EncodeNode().388")
 		return nil, err
 	}
 }
 
-// commit is the private locked version of Commit.
+// 提交保存以node为根节点的树
 func (db *Database) commit(node EBTreen, batch ethdb.Batch) error {
-	// If the node does not exist, it's a previously committed node
-	//log.Info("into commit func")
-	//node, ok := db.dirties[string(id)]
 	nid,_ := node.cache()
 	fmt.Print("we are commit id : ")
 	fmt.Println(nid)
-	//if !ok {
-	//	//todo:why this node is not in dirty(maybe related to the limited size of dirty)
-	//	fmt.Println("this node is not dirty, should not be commit")
-	//	err := errors.New("this node is not dirty, should not be commit")
-	//	return err
-	//}
-	result, err := db.EncodeNode(node, true, batch)
-	if err != nil {
-		return err
-	}
-	/*enode the node
+
+	//保存encode的结果
 	var result []byte
 	result = nil
+	var err error
+	encodeChild := true
 
-	switch nt := (node.node).(type) {
+	switch nt := (node).(type) {
+	//如果是叶子节点，需要先将原来的next更改为id
 	case *leafNode:
-		log.Info("into node type:leafnode")
+		var nb ByteNode
+		if(nt.Next != nil){
+			nb, _ = nt.Next.cache()
+			nt.Next = &nb
+		}
 		var enode leafNode
 		for _, d := range nt.Data {
 			var cd data
 			switch dt := (d).(type) {
 			case dataEncode:
-				err := errors.New("wrong data type")
-				return err
+				err = errors.New("wrong data type")
 			case data:
 				cd.Value = dt.Value
 				cd.Keylist = dt.Keylist
 			case *dataEncode:
-				err := errors.New("wrong data type")
-				return err
+				err = errors.New("wrong data type")
 			case *data:
 				cd.Value = dt.Value
 				cd.Keylist = dt.Keylist
 			default:
-				err := errors.New("wrong data")
-				return err
+				err = errors.New("wrong data")
 			}
 			enode.Data = append(enode.Data, cd)
 		}
 		enode.Id = nt.Id
 		enode.Next = nt.Next
-		if err := encodeLeaf(&result, &enode); err != nil {
+		if err = encodeLeaf(&result, &enode); err != nil {
 			panic("encode error: " + err.Error())
 		}
-
-		//fmt.Print(result)
+	//如果是中间节点，需要递归先保存子树；然后再保存自身
 	case *internalNode:
-		log.Info("into node type:internal node")
 		var enode internalNode
 		enode.Id = nt.Id
-		for _, c := range nt.Children {
+		for i := 0; i < len(nt.Children); i++{
 			var ec child
-			switch ct := (c).(type) {
-			case childEncode:
-				log.Info("into childrens:child encode")
-				err := errors.New("wrong type:childEncode")
-				return err
+			switch ct := (nt.Children[i]).(type) {
 			case child:
-				log.Info("into childrens:child")
+				//子节点有三种可能，其中如果是ByteNode的话是不需要递归操作
 				switch cpt := (ct.Pointer).(type) {
 				case *ByteNode:
-					ec.Value = ct.Value
-					ec.Pointer = cpt
-					cptb, _ := cpt.cache()
-					err := db.commit(cptb, batch)
-					if err != nil {
-						err := wrapError(err, "something wrong in child pointer commit as bytenode")
-						return err
+					if encodeChild {
+						ec.Value = ct.Value
+						ec.Pointer = cpt
+						//err = db.commit(cpt, batch)
+						//if err != nil {
+						//	err = wrapError(err, "something wrong in child pointer commit as bytenode")
+						//}
 					}
 				case *leafNode:
-					err := db.commit(cpt.Id, batch)
-					if err != nil {
-						err := wrapError(err, "something wrong in child pointer commit as leafnode")
-						return err
+					var nb ByteNode
+					nb=cpt.Id
+					ct.Pointer=&nb
+					nt.Children[i]=ct
+					if encodeChild {
+						ec.Value = ct.Value
+						ec.Pointer = &nb
+						err = db.commit(cpt, batch)
+						if err != nil {
+							err = wrapError(err, "something wrong in child pointer commit as leafnode")
+						}
 					}
 				case *internalNode:
-					err := db.commit(cpt.Id, batch)
-					if err != nil {
-						err := wrapError(err, "something wrong in child pointer commit as internalnode")
-						return err
+					var nb ByteNode
+					nb=cpt.Id
+					ct.Pointer=&nb
+					nt.Children[i]=ct
+					if encodeChild {
+						ec.Value = ct.Value
+						ec.Pointer = &nb
+						err = db.commit(cpt, batch)
+						if err != nil {
+							err = wrapError(err, "something wrong in child pointer commit as internalnode")
+						}
 					}
 				default:
-					log.Info("into childres:child:pointer type:default")
-					err := errors.New("wrong child pointer type:default")
-					return err
+					err = errors.New("wrong child pointer type : default")
 				}
 			default:
-				log.Info("into childrens:wrong child type")
-				err := errors.New("wrong child type")
-				return err
+				log.Info("into childrens : wrong child type")
+				err = errors.New("wrong child type")
 			}
 			enode.Children = append(enode.Children, ec)
 		}
 		if err := encodeInternal(&result, &enode); err != nil {
 			panic("encode error: " + err.Error())
 		}
+	//如果是ByteNode，那么不需要任何操作
 	case *ByteNode:
-		ntid, err := nt.cache()
-		fmt.Println(err)
-		fmt.Println("into node type:bytenode,id：")
-		fmt.Println(ntid)
-	default:
-		log.Info("into node type:wrong type")
-		err := errors.New("wrong node type")
-		return err
-	}*/
-
-	if result == nil {
-		//err := errors.New("wrong encode")
 		return nil
+	default:
+		log.Info("error int func : EncodeNode().388")
+		err = errors.New("error int func : EncodeNode().388")
 	}
+
+	if err != nil {
+		return err
+	}
+	if result == nil {
+		return errors.New("no result in func commit()")
+	}
+
+	//将result放入batch中
 	if err := batch.Put(nid[:], result); err != nil {
 		return err
 	}
 	// If we've reached an optimal batch size, commit and start over
 	//if batch.ValueSize() >= ethdb.IdealBatchSize {
-	if batch.ValueSize() >= 0 {
+	if batch.ValueSize() >= ethdb.IdealBatchSize {
 	if err := batch.Write(); err != nil {
 			return err
 		}
 		batch.Reset()
 	}
-	//db.uncache(nid)
 
 	return nil
 }

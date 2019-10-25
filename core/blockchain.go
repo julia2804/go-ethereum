@@ -723,18 +723,10 @@ func (bc *BlockChain) TopkVSearch(k []byte, root []byte) ([][]byte, error) {
 // 返回root对应的id
 func (bc *BlockChain) GetEbtreeRoot() ([]byte, error) {
 	if len(bc.ebtreeRoot) == 0 {
-		//fmt.Println("there is no ebtree in get ebtree root")
-		inDb, _ := bc.db.Has([]byte("TEbtreeRoot"))
-		if inDb {
-			rid, _ := bc.db.Get([]byte("TEbtreeRoot"))
-			bc.ebtreeRoot = rid
-
-			return rid, nil
-		}
-		return nil, nil
-
+		rid, _ := bc.db.Get([]byte("TEbtreeRoot"))
+		bc.ebtreeRoot = rid
+		return rid, nil
 	}
-	//fmt.Println("there is ebtree in blockchain")
 	return bc.ebtreeRoot, nil
 }
 
@@ -1178,13 +1170,13 @@ func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 		fmt.Print("rid is :")
 		fmt.Println(rid)
 		t, _ = EBTree.New(rid, bc.ebtreeCache)
-		//插入交易,会生成部分的树，根据部分树进行commit
+
+		//将交易插入树中
 		r, err := bc.InsertTransactionEbtree(rid, bc.ebtreeCache, txs, t)
 		if err != nil {
 			fmt.Println("error in func : InsertEBtree(), " + err.Error())
 		}
 
-		//t.Commit(nil)
 		t.DBCommit()
 
 		if len(r) != 0 {
@@ -1207,13 +1199,12 @@ func (bc *BlockChain) InsertTransactionEbtree(rid []byte, ebtdb *EBTree.Database
 		return nil, err
 	}
 	if len(transactions) > 0 {
-
-		for _, t := range transactions {
-			amount := t.Value()
+		for _, tran := range transactions {
+			amount := tran.Value()
 			fmt.Printf("we are insert trans whose vale is : %d", amount)
 			fmt.Println()
 
-			th := t.GetHash()
+			th := tran.GetHash()
 			if len(th.Bytes()) == 0 {
 				fmt.Println("transaction  hash is nil")
 				err := errors.New("transaction  hash is nil")
