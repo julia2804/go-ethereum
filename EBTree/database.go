@@ -207,7 +207,7 @@ func (db *Database) Commit(node []byte, report bool) error {
 	db.lock.Lock()
 	defer db.lock.Unlock()
 
-	db.uncache(node)
+	//db.uncache(node)
 
 	memcacheCommitTimeTimer.Update(time.Since(start))
 	memcacheCommitSizeMeter.Mark(int64(storage - db.dirtiesSize))
@@ -278,9 +278,10 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 		log.Info("into node type:internal node")
 		var enode internalNode
 		enode.Id = nt.Id
-		for _, c := range nt.Children {
+		for i := 0; i < len(nt.Children); i++ {
+			//for _, c := range nt.Children {
 			var ec child
-			switch ct := (c).(type) {
+			switch ct := (nt.Children[i]).(type) {
 			case childEncode:
 				log.Info("into childrens:child encode")
 				err := errors.New("wrong type:childEncode")
@@ -291,19 +292,22 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 				case *ByteNode:
 					ec.Value = ct.Value
 					ec.Pointer = cpt
-					cptb, _ := cpt.cache()
-					err := db.commit(cptb, batch)
-					if err != nil {
-						err := wrapError(err, "something wrong in child pointer commit as bytenode")
-						return err
-					}
+
 				case *leafNode:
+					var cptid ByteNode
+					cptid = cpt.Id
+					ct.Pointer = &cptid
+					nt.Children[i] = ct
 					err := db.commit(cpt.Id, batch)
 					if err != nil {
 						err := wrapError(err, "something wrong in child pointer commit as leafnode")
 						return err
 					}
 				case *internalNode:
+					var cptid ByteNode
+					cptid = cpt.Id
+					ct.Pointer = &cptid
+					nt.Children[i] = ct
 					err := db.commit(cpt.Id, batch)
 					if err != nil {
 						err := wrapError(err, "something wrong in child pointer commit as internalnode")

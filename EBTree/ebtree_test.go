@@ -98,13 +98,13 @@ func RandString(len int) []byte {
 }
 
 func updateString(tree *EBTree) {
-	var a [49]int
+	var a [509]int
 
 	var v []byte
-	for i := 1; i < 49; i++ {
+	for i := 1; i < 500; i++ {
 		var j int
 		v = []byte("qwerqwerqwerqwerqwerqwerqwerqwer")
-		j = rand.Intn(1000)
+		j = rand.Intn(30000)
 
 		a[i-1] = j
 
@@ -119,13 +119,13 @@ func updateString(tree *EBTree) {
 
 }
 func updateString2(tree *EBTree) {
-	var a [89]int
+	var a [509]int
 
 	var v []byte
-	for i := 1; i < 89; i++ {
+	for i := 1; i < 500; i++ {
 		var j int
 		v = []byte("qwerqwerqwerqwerqwerqwerqwerqwer")
-		j = rand.Intn(2000 - 10)
+		j = rand.Intn(30000 - 10)
 		if j < 0 {
 			j = 0 - j
 		}
@@ -180,7 +180,7 @@ func TestTopkDataSearch(t *testing.T) {
 	tree, _ := newEmpty()
 	updateString(tree)
 	var k []byte
-	k = IntToBytes(uint64(50))
+	k = IntToBytes(uint64(3000))
 	/*su, result, err := tree.TopkDataSearch(k, true)
 	if !su {
 		fmt.Printf("something may be wrong in top-k search\n")
@@ -198,15 +198,22 @@ func TestTopkDataSearch(t *testing.T) {
 	tree.DBCommit()
 	rid, _ := tree.Root.cache()
 	triedb = tree.Db
-	triedb.Cap(1024)
+	//triedb.Cap(1024)
 	tri, _ := New(rid, triedb)
 	updateString2(tri)
-	su, result, _ := tri.TopkValueSearch(k, true)
+	_, _ = tri.Commit(nil)
+	var tridb *Database
+	tri.DBCommit()
+	rid, _ = tri.Root.cache()
+	tridb = tri.Db
+	//triedb.Cap(1024)
+	tri2, _ := New(rid, tridb)
+	su, result, _ := tri2.TopkValueSearch(k, true)
 	if !su {
 		fmt.Printf("something wrong in top-k search")
 	}
 
-	combineAndPrintSearchValue(result, IntToBytes(uint64(0)), tri, k, true)
+	combineAndPrintSearchValue(result, IntToBytes(uint64(0)), tri2, k, true)
 }
 
 func TestTopkValueSearch(t *testing.T) {

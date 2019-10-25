@@ -150,6 +150,15 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 						if err != nil {
 							return &collapsed, err
 						}
+					case *ByteNode:
+						pet, _ = pt.cache()
+						var cchild child
+						cchild.Pointer = &pet
+						cchild.Value = ct.Value
+						collapsed.Children = append(collapsed.Children, cchild)
+						if err != nil {
+							return &collapsed, err
+						}
 					default:
 						err := errors.New("wrong type")
 						return nil, err
@@ -177,11 +186,13 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 		return &collapsed, nil
 
 		// Trie not processed yet or needs storage, walk the children
-
+	case *ByteNode:
+		return n, nil
+	default:
+		err := errors.New("wrong in node type")
+		return nil, err
 	}
 
-	err := errors.New("there is something wrong in  fold when swich the type of node")
-	return nil, err
 }
 
 // foldChildren replaces the children of a node with their id .
@@ -260,7 +271,7 @@ func (f *folder) foldChildren(original EBTreen, db *Database) (EBTreen, error) {
 // node->external trie references.
 func (f *folder) store(n EBTreen, db *Database, force bool) ([]byte, error) {
 	// Don't store hashes or empty nodes.
-	db.Cap(1024)
+	//db.Cap(1024)
 	fmt.Println("into folder.store")
 	if db != nil {
 		// We are pooling the trie nodes into an intermediate memory cache
