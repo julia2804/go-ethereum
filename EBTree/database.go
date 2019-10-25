@@ -178,10 +178,51 @@ func (db *Database) insert(id []byte, blob []byte, node EBTreen) {
 	db.dirtiesSize += common.StorageSize(2*common.HashLength + entry.size)
 }
 
+//折叠树并且放入batch中
+func (db *Database) CommitA(node EBTreen, batch ethdb.Batch) (*ByteNode, error) {
+	var result []byte
+	switch nt := (node).(type) {
+	case *leafNode:
+		var enode leafNode
+		for _, d := range nt.Data {
+			var cd data
+			switch dt := (d).(type) {
+			case dataEncode:
+				err := errors.New("wrong data type")
+				return nil, err
+			case data:
+				cd.Value = dt.Value
+				cd.Keylist = dt.Keylist
+			case *dataEncode:
+				err := errors.New("wrong data type")
+				return nil, err
+			case *data:
+				cd.Value = dt.Value
+				cd.Keylist = dt.Keylist
+			default:
+				err := errors.New("wrong data")
+				return nil, err
+			}
+			enode.Data = append(enode.Data, cd)
+		}
+		enode.Id = nt.Id
+		enode.Next = nt.Next
+		if err := encodeLeaf(&result, &enode); err != nil {
+			panic("encode error: " + err.Error())
+		}
+		return nil, nil
+
+	case *internalNode:
+
+	case *ByteNode:
+		return nt, nil
+	}
+	return nil,nil
+}
 // Commit iterates over all the children of a particular node, writes them out
 // to disk, forcefully tearing down all references in both directions.
 //
-func (db *Database) Commit(node []byte, report bool) error {
+func (db *Database) Commit(root EBTreen, report bool) error {
 	// Create a database batch to flush persistent data out. It is important that
 	// outside code doesn't see an inconsistent state (referenced data removed from
 	// memory cache during commit but not yet in persistent storage). This is ensured
@@ -191,10 +232,10 @@ func (db *Database) Commit(node []byte, report bool) error {
 	start := time.Now()
 	batch := db.diskdb.NewBatch()
 	// Move the trie itself into the batch, flushing if enough data is accumulated
-	nodes, storage := len(db.dirties), db.dirtiesSize
-	if err := db.commit(node, batch); err != nil {
+	//nodes, storage := len(db.dirties), db.dirtiesSize
+	if err := db.commit(root, batch); err != nil {
 		log.Error("Failed to commit trie from trie database", "err", err)
-		fmt.Println(node)
+		fmt.Println(root.cache())
 		db.lock.RUnlock()
 		return err
 	}
@@ -213,8 +254,8 @@ func (db *Database) Commit(node []byte, report bool) error {
 	//db.uncache(node)
 
 	memcacheCommitTimeTimer.Update(time.Since(start))
-	memcacheCommitSizeMeter.Mark(int64(storage - db.dirtiesSize))
-	memcacheCommitNodesMeter.Mark(int64(nodes - len(db.dirties)))
+	//memcacheCommitSizeMeter.Mark(int64(storage - db.dirtiesSize))
+	//memcacheCommitNodesMeter.Mark(int64(nodes - len(db.dirties)))
 
 	//logger := log.Info
 	//if !report {
@@ -236,6 +277,11 @@ func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) (
 
 	switch nt := (n).(type) {
 	case *leafNode:
+		var nb ByteNode
+		if(nt.Next != nil){
+			nb, _ = nt.Next.cache()
+			nt.Next = &nb
+		}
 		//log.Info("into node type:leafnode")
 		var enode leafNode
 		for _, d := range nt.Data {
@@ -270,9 +316,9 @@ func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) (
 		//log.Info("into node type:internal node")
 		var enode internalNode
 		enode.Id = nt.Id
-		for _, c := range nt.Children {
+		for i := 0; i < len(nt.Children); i++{
 			var ec child
-			switch ct := (c).(type) {
+			switch ct := (nt.Children[i]).(type) {
 			case childEncode:
 				//log.Info("into childrens:child encode")
 				err := errors.New("wrong type:childEncode")
@@ -284,8 +330,8 @@ func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) (
 					if encodeChild {
 						ec.Value = ct.Value
 						ec.Pointer = cpt
-						cptb, _ := cpt.cache()
-						err := db.commit(cptb, batch)
+						//cptb, _ := cpt.cache()
+						err := db.commit(cpt, batch)
 						if err != nil {
 							err := wrapError(err, "something wrong in child pointer commit as bytenode")
 							return nil, err
@@ -293,22 +339,28 @@ func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) (
 					}
 
 				case *leafNode:
+					var nb ByteNode
+					nb=cpt.Id
+					ct.Pointer=&nb
+					nt.Children[i]=ct
 					if encodeChild {
-						var b ByteNode
-						b = (cpt.Id)
-						ct.Pointer = &b
-						err := db.commit(cpt.Id, batch)
+						ec.Value = ct.Value
+						ec.Pointer = &nb
+						err := db.commit(cpt, batch)
 						if err != nil {
 							err := wrapError(err, "something wrong in child pointer commit as leafnode")
 							return nil, err
 						}
 					}
 				case *internalNode:
+					var nb ByteNode
+					nb=cpt.Id
+					ct.Pointer=&nb
+					nt.Children[i]=ct
 					if encodeChild {
-						var b ByteNode
-						b = (cpt.Id)
-						ct.Pointer = &b
-						err := db.commit(cpt.Id, batch)
+						ec.Value = ct.Value
+						ec.Pointer = &nb
+						err := db.commit(cpt, batch)
 						if err != nil {
 							err := wrapError(err, "something wrong in child pointer commit as internalnode")
 							return nil, err
@@ -331,12 +383,12 @@ func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) (
 		}
 		return result, nil
 	case *ByteNode:
-		ntid, _ := nt.cache()
-
-		//fmt.Println("into node type:bytenode")
-		err := errors.New("into node type:bytenode")
-		fmt.Println(ntid)
-		return nil, err
+		//ntid, _ := nt.cache()
+		//
+		////fmt.Println("into node type:bytenode")
+		//err := errors.New("into node type:bytenode")
+		//fmt.Println(ntid)
+		return nil, nil
 	default:
 		log.Info("into node type:wrong type")
 		err := errors.New("wrong node type")
@@ -345,19 +397,20 @@ func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) (
 }
 
 // commit is the private locked version of Commit.
-func (db *Database) commit(id []byte, batch ethdb.Batch) error {
+func (db *Database) commit(node EBTreen, batch ethdb.Batch) error {
 	// If the node does not exist, it's a previously committed node
 	//log.Info("into commit func")
-	node, ok := db.dirties[string(id)]
+	//node, ok := db.dirties[string(id)]
+	nid,_ := node.cache()
 	fmt.Print("we are commit id : ")
-	fmt.Println(id)
-	if !ok {
-		//todo:why this node is not in dirty(maybe related to the limited size of dirty)
-		fmt.Println("this node is not dirty, should not be commit")
-		err := errors.New("this node is not dirty, should not be commit")
-		return err
-	}
-	result, err := db.EncodeNode(node.node, true, batch)
+	fmt.Println(nid)
+	//if !ok {
+	//	//todo:why this node is not in dirty(maybe related to the limited size of dirty)
+	//	fmt.Println("this node is not dirty, should not be commit")
+	//	err := errors.New("this node is not dirty, should not be commit")
+	//	return err
+	//}
+	result, err := db.EncodeNode(node, true, batch)
 	if err != nil {
 		return err
 	}
@@ -459,13 +512,10 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 	}*/
 
 	if result == nil {
-		err := errors.New("wrong encode")
-		return err
+		//err := errors.New("wrong encode")
+		return nil
 	}
-	if BytesToInt(id[:]) == 20 {
-		fmt.Println("hello")
-	}
-	if err := batch.Put(id[:], result); err != nil {
+	if err := batch.Put(nid[:], result); err != nil {
 		return err
 	}
 	// If we've reached an optimal batch size, commit and start over
@@ -476,7 +526,7 @@ func (db *Database) commit(id []byte, batch ethdb.Batch) error {
 		}
 		batch.Reset()
 	}
-	db.uncache(id)
+	//db.uncache(nid)
 
 	return nil
 }

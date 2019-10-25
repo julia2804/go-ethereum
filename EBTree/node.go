@@ -1574,11 +1574,11 @@ func mustDecodeNode(id, buf []byte) EBTreen {
 
 // decodeNode parses the RLP encoding of a tree node.
 func decodeNode(id, buf []byte) (EBTreen, error) {
-	if BytesToInt(id) == uint64(33) {
-		elems, _, err := rlp.SplitList(buf)
-		n, err := decodeInternal(id, elems)
-		return n, wrapError(err, "full")
-	}
+	//if BytesToInt(id) == uint64(33) {
+	//	elems, _, err := rlp.SplitList(buf)
+	//	n, err := decodeInternal(id, elems)
+	//	return n, wrapError(err, "full")
+	//}
 	if len(buf) == 0 {
 		return nil, io.ErrUnexpectedEOF
 	}

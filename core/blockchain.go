@@ -1171,19 +1171,24 @@ func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 
 	var t *EBTree.EBTree
 	if len(txs) > 0 {
+
 		fmt.Println("begin insert EBtree")
 		//恢复根节点
 		rid, _ := bc.GetEbtreeRoot()
+		fmt.Print("rid is :")
+		fmt.Println(rid)
 		t, _ = EBTree.New(rid, bc.ebtreeCache)
 		//插入交易,会生成部分的树，根据部分树进行commit
 		r, err := bc.InsertTransactionEbtree(rid, bc.ebtreeCache, txs, t)
 		if err != nil {
 			fmt.Println("error in func : InsertEBtree(), " + err.Error())
 		}
+
+		//t.Commit(nil)
 		t.DBCommit()
 
 		if len(r) != 0 {
-			//更改tree中的root以及数据库中的root
+			//单纯保存rid
 			bc.SetBlockChainEbtreeRot(r)
 			bc.SetBlockChainEbtreeDB(t.Db)
 		}

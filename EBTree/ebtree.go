@@ -89,9 +89,12 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 	if err != nil {
 		wrapError(err, "something wrong in store tree.sequence")
 	}
+	//首先拿到root
+	//调用递归commit操作
+
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
-		err := tree.Db.Commit(rt.Id, true)
+		err := tree.Db.Commit(rt, true)
 		if err != nil {
 			wrapError(err, "error in db.commit in func DBCommit")
 			return nil, err
@@ -99,7 +102,7 @@ func (tree *EBTree) DBCommit() ([]byte, error) {
 
 		return rt.Id, nil
 	case *internalNode:
-		err := tree.Db.Commit(rt.Id, true)
+		err := tree.Db.Commit(rt, true)
 		if err != nil {
 			wrapError(err, "error in db.commit in func DBCommit")
 			return nil, err
@@ -160,7 +163,7 @@ func New(rid []byte, db *Database) (*EBTree, error) {
 //split leafnode into two leaf nodes
 func (t *EBTree) splitIntoTwoLeaf(n *leafNode, pos int) (bool, *leafNode, *leafNode, error) {
 	var datalist []data
-	fmt.Println("split leafnode into two leaf nodes")
+	//fmt.Println("split leafnode into two leaf nodes")
 	newn, err := CreateLeafNode(t, datalist)
 	if err != nil {
 		err = wrapError(err, "split into two leaf node: create leaf node error")
@@ -562,7 +565,7 @@ func (t *EBTree) InsertDataToInternal(nt *internalNode, pos uint8, parent *inter
 //split leafnode into two leaf nodes(recontruct)
 func (t *EBTree) splitIntoTwoLeafNode(n *leafNode, pos int) (*leafNode, error) {
 	var datalist []data
-	fmt.Println("split leafnode into two leaf nodes")
+	//fmt.Println("split leafnode into two leaf nodes")
 	newn, err := CreateLeafNode(t, datalist)
 	if err != nil {
 		err = wrapError(err, "split into two leaf node: create leaf node error")
@@ -1271,6 +1274,8 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 }
 
 func (t *EBTree) InsertDataToTree(value []byte, da []byte) error {
+	fmt.Print("start to insert value :")
+	fmt.Println(value)
 	err := t.InsertDataToNode(&t.Root, value, da)
 	if err != nil {
 		return err
@@ -1298,6 +1303,21 @@ func (t *EBTree) InsertDataToNode(n *EBTreen, value []byte, da []byte) error {
 		}
 		n = &decoden
 		return t.InsertDataToNode(n, value, da)
+	case nil:
+		dai, err := createData(value, da)
+		if err != nil {
+			err = wrapError(err, "insert data: create data wrong")
+			return err
+		}
+		var da []data
+		da = append(da, dai)
+		newn, err := CreateLeafNode(t, da)
+		t.Root = &newn
+		if err != nil {
+			log.Info("err in create leaf node")
+			return err
+		}
+		return nil
 	default:
 		log.Info("n with wrong node type")
 		err := errors.New("the node is not leaf or internal, something wrong")
@@ -1373,8 +1393,13 @@ func (t *EBTree) resolveLeaf(n []byte) (leafNode, error) {
 					ds = append(ds, dt)
 				}
 			}
-			nextid, _ := nt.Next.cache()
-			le, _ := constructLeafNode(nt.Id, uint8(len(nt.Data)), ds, false, true, nt.Next, nextid, 0)
+			var le leafNode
+			if(nt.Next == nil){
+				le, _ = constructLeafNode(nt.Id, uint8(len(nt.Data)), ds, false, true, nt.Next, nil, 0)
+			}else{
+				nextid, _ := nt.Next.cache()
+				le, _ = constructLeafNode(nt.Id, uint8(len(nt.Data)), ds, false, true, nt.Next, nextid, 0)
+			}
 			return le, nil
 		}
 

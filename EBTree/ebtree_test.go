@@ -58,8 +58,8 @@ func init() {
 // Used for testing :create a new tree without root
 func newEmpty() (*EBTree, error) {
 	se := IntToBytes(uint64(1))
-	root, _ := constructLeafNode(se, 0, nil, false, true, nil, nil, 0)
-	tree := &EBTree{NewDatabase(ethdb.NewMemDatabase()), &root, se, nil, 0, 0}
+	//root, _ := constructLeafNode(se, 0, nil, false, true, nil, nil, 0)
+	tree := &EBTree{NewDatabase(ethdb.NewMemDatabase()), nil, se, nil, 0, 0}
 	tree.special = SetSpecialData(tree)
 	return tree, nil
 }
@@ -95,6 +95,34 @@ func RandString(len int) []byte {
 		bytes[i] = byte(b)
 	}
 	return bytes
+}
+
+func printNTrans(n int){
+	//pre := "eth.sendTransaction({from:eth.coinbase,to:\"0x4751c4cd1ef729afc3232b2064565f1d692a9346\",value:web3.toWei(%d,'ether')})"
+	for i:= 1; i<=n; i++{
+		rand.Seed(time.Now().UnixNano())
+		j := rand.Float32()
+		fmt.Printf("eth.sendTransaction({from:eth.coinbase,to:\"0x4751c4cd1ef729afc3232b2064565f1d692a9346\",value:web3.toWei(%f,'ether')})",j)
+		fmt.Println()
+	}
+
+}
+
+func insertN(tree *EBTree, n int) {
+	var v []byte
+	for i := 1; i <= n; i++ {
+		var j int
+		v = []byte("qwerqwerqwerqwerqwerqwerqwerqwer")
+		j = rand.Intn(1000)
+		err := tree.InsertDataToTree(IntToBytes(uint64(j)), v)
+		if err != nil {
+			fmt.Sprintf("the error is not nil,%v", err)
+		}
+
+	}
+
+	fmt.Println()
+
 }
 
 func updateString(tree *EBTree) {
@@ -175,6 +203,42 @@ func combineAndPrintSearchValue(result []searchValue, pos []byte, tree *EBTree, 
 		fmt.Println()
 	}
 }
+
+func TestPrint(t *testing.T){
+	for i := 1; i <=7 ;i++{
+		printNTrans(100)
+		fmt.Println()
+		fmt.Println()
+		fmt.Println()
+		fmt.Println()
+	}
+}
+
+func TestDBcommit(t *testing.T){
+	tree, _ := newEmpty()
+	insertN(tree, 25)
+	tree.DBCommit()
+	var k []byte
+	k = IntToBytes(uint64(100))
+	su, result, _ := tree.TopkValueSearch(k, true)
+	if !su {
+		fmt.Printf("something wrong in top-k search")
+	}
+
+	combineAndPrintSearchValue(result, IntToBytes(uint64(0)), tree, k, true)
+
+	insertN(tree, 25)
+	tree.DBCommit()
+
+	su, result, _ = tree.TopkValueSearch(k, true)
+	if !su {
+		fmt.Printf("something wrong in top-k search")
+	}
+
+	combineAndPrintSearchValue(result, IntToBytes(uint64(0)), tree, k, true)
+
+}
+
 
 func TestTopkDataSearch(t *testing.T) {
 	tree, _ := newEmpty()
@@ -384,14 +448,14 @@ func testMissingNode(t *testing.T, memonly bool) {
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
 
-		tree.Db.Commit(rt.Id, true)
+		tree.Db.Commit(rt, true)
 
 		triedb = tree.Db
 
 		tree, _ = New(rt.Id, triedb)
 	case *internalNode:
 
-		tree.Db.Commit(rt.Id, true)
+		tree.Db.Commit(rt, true)
 
 		triedb = tree.Db
 
@@ -957,14 +1021,14 @@ func TestReadCsv(t *testing.T) {
 	switch rt := (tree.Root).(type) {
 	case *leafNode:
 
-		tree.Db.Commit(rt.Id, true)
+		tree.Db.Commit(rt, true)
 
 		triedb = tree.Db
 
 		rid = rt.Id
 	case *internalNode:
 
-		tree.Db.Commit(rt.Id, true)
+		tree.Db.Commit(rt, true)
 
 		triedb = tree.Db
 
