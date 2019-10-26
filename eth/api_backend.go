@@ -21,9 +21,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/ethereum/go-ethereum/EBTree"
-	"math/big"
-	"unsafe"
-
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -38,6 +35,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"math/big"
 )
 
 // EthAPIBackend implements ethapi.Backend for full nodes
@@ -105,19 +103,18 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	return stateDb, header, err
 }
 
-func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k *int) ([][]byte, error) {
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, error) {
 	//k, e := new(big.Int).SetString("1000", 10)
 	//
 	//if e != true {
 	//	fmt.Println(e)
 	//}
 	fmt.Print("top k search :")
-	fmt.Println(*k)
+	fmt.Println(k)
 	root, err := b.GetEbtreeRoot(ctx)
 
 	var buf = make([]byte, 8)
-	uk := (*uint64)(unsafe.Pointer(k))
-	binary.BigEndian.PutUint64(buf, *uk)
+	binary.BigEndian.PutUint64(buf, k)
 
 	data, err := b.eth.blockchain.TopkVSearch(buf, root)
 	return data, err
