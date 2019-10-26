@@ -25,7 +25,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/metrics"
 	"github.com/pkg/errors"
-	"reflect"
 )
 
 var (
@@ -78,9 +77,7 @@ func (t *EBTree) isSpecial(value []byte) (bool, uint8) {
 	}
 	return false, 0
 }
-func typeof(v interface{}) string {
-	return reflect.TypeOf(v).String()
-}
+
 func (tree *EBTree) DBCommit() ([]byte, error) {
 	//store the metas for tree
 	batch := tree.Db.diskdb.NewBatch()
@@ -1648,34 +1645,4 @@ func (t *EBTree) tryGet(origNode EBTreen, value []byte, pos int) ([][]byte, EBTr
 
 }
 
-func testInsert(nt *leafNode, i uint64) (bool, error) {
-	//test if the data is inserted right
-	switch dt := (nt.Data[i]).(type) {
-	case dataEncode:
-		err := errors.New("insertData in  leaf node:data[i] is encoded.")
-		return false, err
-	case data:
-		if i > 0 {
-			switch ddt := (nt.Data[i-1]).(type) {
-			case dataEncode:
-				err := errors.New("insertData in  leaf node:data[i-1] is encoded.")
-				return false, err
-			case data:
-				if bytes.Compare(ddt.Value, dt.Value) >= 0 {
-					err := errors.New("insertData in leaf node: smaller than last data")
-					return false, err
-				}
-				return true, nil
-			default:
-				err := errors.New("insertData in  leaf node:data[i-1] is in wrong format.")
-				return false, err
 
-			}
-		}
-
-	default:
-		err := errors.New("insertData in  leaf node:data[i] is in wrong format.")
-		return false, err
-	}
-	return true, nil
-}
