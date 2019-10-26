@@ -19,7 +19,6 @@ package EBTree
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -1421,15 +1420,6 @@ func (t *EBTree) resolveHash(n []byte) (EBTreen, error) {
 	return nil, err
 }
 
-func BytesToInt(b []byte) (i uint64) {
-	return binary.BigEndian.Uint64(b)
-}
-
-func IntToBytes(i uint64) []byte {
-	var buf = make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, i)
-	return buf
-}
 
 func (t *EBTree) newSequence() ([]byte, error) {
 	//log.Info("into new sequece")

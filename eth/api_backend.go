@@ -18,9 +18,11 @@ package eth
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
+	"unsafe"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -103,15 +105,21 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	return stateDb, header, err
 }
 
-func (b *EthAPIBackend) TopkVSearch(ctx context.Context) ([][]byte, error) {
-	k, e := new(big.Int).SetString("1000", 10)
-
-	if e != true {
-		fmt.Println(e)
-
-	}
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k *int) ([][]byte, error) {
+	//k, e := new(big.Int).SetString("1000", 10)
+	//
+	//if e != true {
+	//	fmt.Println(e)
+	//}
+	fmt.Print("top k search :")
+	fmt.Println(*k)
 	root, err := b.GetEbtreeRoot(ctx)
-	data, err := b.eth.blockchain.TopkVSearch(k.Bytes(), root)
+
+	var buf = make([]byte, 8)
+	uk := (*uint64)(unsafe.Pointer(k))
+	binary.BigEndian.PutUint64(buf, *uk)
+
+	data, err := b.eth.blockchain.TopkVSearch(buf, root)
 	return data, err
 }
 
