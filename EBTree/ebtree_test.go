@@ -436,7 +436,7 @@ func testMissingNode(t *testing.T, memonly bool) {
 	src := []byte("hello")
 	encodeStr := hex.EncodeToString(src)
 	test, _ := hex.DecodeString(encodeStr)
-	fmt.Println(bytes.Compare(test, src))
+	fmt.Println(Compare(test, src))
 	diskdb := ethdb.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 
@@ -1138,7 +1138,7 @@ func testInsert(nt *leafNode, i uint64) (bool, error) {
 				err := errors.New("insertData in  leaf node:data[i-1] is encoded.")
 				return false, err
 			case data:
-				if bytes.Compare(ddt.Value, dt.Value) >= 0 {
+				if Compare(ddt.Value, dt.Value) >= 0 {
 					err := errors.New("insertData in leaf node: smaller than last data")
 					return false, err
 				}

@@ -400,13 +400,13 @@ func (t *EBTree) insertInternalNode(n *internalNode, pos int, parent *internalNo
 
 //insert into dataNode
 func (t *EBTree) InsertToDataNode(i int, nt *leafNode, d *data, value []byte, da []byte, flag bool, parent *internalNode) (bool, bool, *internalNode, error) {
-	if bytes.Compare(d.Value, value) == 0 {
+	if Compare(d.Value, value) == 0 {
 		//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
 		d.Keylist = append(d.Keylist, da)
 		flag = true
 		nt.Data[i] = d
 		return flag, true, parent, nil
-	} else if bytes.Compare(d.Value, value) > 0 {
+	} else if Compare(d.Value, value) > 0 {
 
 		flag = true
 		//说明EBTree中不存在value值，此时，需要构建data，并将其加入到节点中
@@ -437,7 +437,7 @@ func (t *EBTree) InsertToDataNode(i int, nt *leafNode, d *data, value []byte, da
 
 //insert data into internalnode child
 func (t *EBTree) InsertToChild(i int, nt *internalNode, cd *child, value []byte, da []byte, parent *internalNode, decoden EBTreen) (bool, bool, *internalNode, EBTreen, error) {
-	if bytes.Compare(cd.Value, value) >= 0 {
+	if Compare(cd.Value, value) >= 0 {
 
 		//call the insert function to
 		su, _, err := t.InsertData(decoden, uint8(i), nt, value, da)
@@ -502,7 +502,7 @@ func (t *EBTree) InsertDataToInternal(nt *internalNode, pos uint8, parent *inter
 				return su, parent, err
 			}
 		case child:
-			if bytes.Compare(ct.Value, value) >= 0 {
+			if Compare(ct.Value, value) >= 0 {
 				_, su, parent, cn, err := t.InsertToChild(j, nt, &ct, value, da, parent, ct.Pointer)
 				ct.Pointer = cn
 				//nt.Children[j] = ct
@@ -994,7 +994,7 @@ func (t *EBTree) InsertToInternalChild(cd *child, value []byte, da []byte) error
 			wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
 			return err
 		}
-		if bytes.Compare(cd.Value, value) < 0 {
+		if Compare(cd.Value, value) < 0 {
 			cd.Value = value
 		}
 		return nil
@@ -1014,7 +1014,7 @@ func (t *EBTree) InsertToInternalChild(cd *child, value []byte, da []byte) error
 			wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
 			return err
 		}
-		if bytes.Compare(cd.Value, value) < 0 {
+		if Compare(cd.Value, value) < 0 {
 			cd.Value = value
 		}
 		return nil
@@ -1035,7 +1035,7 @@ func (t *EBTree) InsertDataToInternalNode(nt *internalNode, value []byte, da []b
 			err := errors.New("child is encoded in InsertDataToInternalNode")
 			return err
 		case child:
-			if bytes.Compare(ct.Value, value) >= 0 {
+			if Compare(ct.Value, value) >= 0 {
 				//将数据插入到对应的child中
 				err := t.InsertToInternalChild(&ct, value, da)
 				nt.Children[j] = ct
@@ -1094,7 +1094,7 @@ func (t *EBTree) InsertDataToInternalNode(nt *internalNode, value []byte, da []b
 
 //insert into dataNode（reconstruct)
 func (t *EBTree) InsertToLeafData(nt *leafNode, i int, d *data, value []byte, da []byte) error {
-	if bytes.Compare(d.Value, value) == 0 {
+	if Compare(d.Value, value) == 0 {
 		//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
 		d.Keylist = append(d.Keylist, da)
 		return nil
@@ -1143,7 +1143,7 @@ func (t *EBTree) InsertDataToLeafNode(nt *leafNode, value []byte, da []byte) err
 			err := errors.New("data type is *dataEncode")
 			return err
 		case data:
-			if bytes.Compare(dt.Value, value) < 0 {
+			if Compare(dt.Value, value) < 0 {
 				continue
 			} else {
 				err := t.InsertToLeafData(nt, i, &dt, value, da)
@@ -1153,7 +1153,7 @@ func (t *EBTree) InsertDataToLeafNode(nt *leafNode, value []byte, da []byte) err
 				return nil
 			}
 		case *data:
-			if bytes.Compare(dt.Value, value) < 0 {
+			if Compare(dt.Value, value) < 0 {
 				continue
 			} else {
 				err := t.InsertToLeafData(nt, i, dt, value, da)
@@ -1527,7 +1527,7 @@ func (t *EBTree) tryGet(origNode EBTreen, value []byte, pos int) ([][]byte, EBTr
 						err := errors.New("child is encoded")
 						return nil, nil, false, err
 					case child:
-						if bytes.Compare(ctt.Value, value) < 0 {
+						if Compare(ctt.Value, value) < 0 {
 							continue
 						} else {
 							switch cpt := (ctt.Pointer).(type) {
@@ -1587,7 +1587,7 @@ func (t *EBTree) tryGet(origNode EBTreen, value []byte, pos int) ([][]byte, EBTr
 				err := errors.New("data is encoded for data len")
 				return nil, nil, false, err
 			case data:
-				if bytes.Compare(value, dt.Value) < 0 || bytes.Compare(value, dmt.Value) > 0 {
+				if Compare(value, dt.Value) < 0 || Compare(value, dmt.Value) > 0 {
 					// key not found in trie
 					err := errors.New("key not found")
 					return nil, n, false, err
@@ -1599,7 +1599,7 @@ func (t *EBTree) tryGet(origNode EBTreen, value []byte, pos int) ([][]byte, EBTr
 						err := errors.New("data is encoded for data 0")
 						return nil, nil, false, err
 					case data:
-						if bytes.Compare(dt.Value, value) == 0 {
+						if Compare(dt.Value, value) == 0 {
 							return dt.Keylist, n, true, nil
 						}
 					default:
@@ -1624,7 +1624,7 @@ func (t *EBTree) tryGet(origNode EBTreen, value []byte, pos int) ([][]byte, EBTr
 				err := errors.New("data is encoded for data len")
 				return nil, nil, false, err
 			case child:
-				if bytes.Compare(ct.Value, value) >= 0 {
+				if Compare(ct.Value, value) >= 0 {
 					result, decodeChild, su, err := t.tryGet(ct.Pointer, value, 0)
 					ct.Pointer = decodeChild
 					n.Children[i] = ct
