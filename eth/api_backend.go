@@ -104,11 +104,6 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 }
 
 func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, error) {
-	//k, e := new(big.Int).SetString("1000", 10)
-	//
-	//if e != true {
-	//	fmt.Println(e)
-	//}
 	fmt.Print("top k search :")
 	fmt.Println(k)
 	root, err := b.GetEbtreeRoot(ctx)
@@ -120,6 +115,18 @@ func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, er
 	return data, err
 }
 
+
+func (b *EthAPIBackend)RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error){
+	fmt.Print("starting range search : ")
+	fmt.Print(begin)
+	fmt.Print("    ")
+	fmt.Println(end)
+
+	root, err := b.GetEbtreeRoot(ctx)
+	data, err :=b.eth.blockchain.RangeVSearch(begin, end, root)
+	return data, err
+}
+
 func (b *EthAPIBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error) {
 	ebtree, err := b.eth.blockchain.CreateEbtree()
 	return ebtree, err
@@ -127,6 +134,7 @@ func (b *EthAPIBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error
 func (b *EthAPIBackend) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
 	key := []byte("TEbtreeRoot")
 	root, err := b.eth.chainDb.Get(key)
+	fmt.Print("rid is :")
 	fmt.Println(root)
 	//root, err := b.eth.blockchain.GetEbtreeRoot()
 	if err != nil {

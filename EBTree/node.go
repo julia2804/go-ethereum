@@ -1289,7 +1289,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 
 }
 
-//top-k data search
+//range data search
 func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []searchData, error) {
 	var result []searchData
 
@@ -1417,6 +1417,20 @@ func (tree *EBTree) CombineAndPrintSearchData(result []searchData, pos []byte, k
 	}
 	return nil
 }
+
+func (tree *EBTree) CombineAndPrintSearchValue(result []searchValue, pos []byte, k []byte, top bool) error {
+	log.Info("into comine and print searchValue")
+	if pos == nil {
+		pos = IntToBytes(uint64(0))
+	}
+	for i, r := range result {
+		fmt.Printf("the %dth value is %d,the data is:\n", i, r.value)
+		fmt.Println(r.data)
+	}
+	return nil
+}
+
+
 func (tree *EBTree) CombineSearchDataResult(result []searchData, min []byte, k []byte, top bool) (bool, []searchData, error) {
 	log.Info("into CombineSearchDataResult in EBtree")
 	var finalR []searchData

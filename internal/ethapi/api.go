@@ -503,6 +503,11 @@ func (s *PublicBlockChainAPI) TopkVSearch(ctx context.Context, k uint64) ([][]by
 	return data, err
 }
 
+func (s *PublicBlockChainAPI) RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error) {
+	data, err := s.b.RangeVSearch(ctx, begin, end)
+	return data, err
+}
+
 // CreateEbtree init an ebtree.
 func (s *PublicBlockChainAPI) CreateEbtree(ctx context.Context) ([]byte, error) {
 	ebtree, err := s.b.CreateEbtree(ctx)

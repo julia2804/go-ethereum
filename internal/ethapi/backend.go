@@ -53,7 +53,7 @@ type Backend interface {
 	BlockByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Block, error)
 	CreateEbtree(ctx context.Context) (*EBTree.EBTree, error)
 	TopkVSearch(ctx context.Context, k uint64) ([][]byte, error)
-	//rangeSearch(ctx context.Context, begin *int, ) ([][]byte, error)
+	RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error)
 	GetEbtreeRoot(ctx context.Context) ([]byte, error)
 	StateAndHeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*state.StateDB, *types.Header, error)
 	GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error)

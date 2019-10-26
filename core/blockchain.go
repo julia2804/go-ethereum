@@ -18,6 +18,7 @@
 package core
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/EBTree"
@@ -706,7 +707,6 @@ func (bc *BlockChain) TopkVSearch(k []byte, root []byte) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Printf("produce the tree success!")
 
 	su, result, err := tree.TopkDataSearch(k, true)
 	if err != nil {
@@ -718,6 +718,33 @@ func (bc *BlockChain) TopkVSearch(k []byte, root []byte) ([][]byte, error) {
 	}
 	tree.CombineAndPrintSearchData(result, nil, k, true)
 	return nil, err
+}
+
+func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, root []byte) ([][]byte, error) {
+	tree, err := EBTree.New(root, bc.ebtreeCache)
+	if err != nil {
+		return nil, err
+	}
+
+	var buf1 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf1, begin)
+	var buf2 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf2, end)
+
+	var buf3 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf3, uint64(5000))
+
+	su, result, err := tree.RangeValueSearch(buf1, buf2, buf3)
+	if err != nil {
+		fmt.Printf("something wrong in range search with error")
+		return nil, err
+	}
+	if !su {
+		fmt.Println("something wrong in range search without error")
+	}
+	tree.CombineAndPrintSearchValue(result, nil, buf3, true)
+	return nil, err
+
 }
 
 // 返回root对应的id

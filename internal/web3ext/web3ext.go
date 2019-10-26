@@ -473,6 +473,11 @@ web3._extend({
 			params: 1
 		}),
 		new web3._extend.Method({
+			name: 'rangeVSearch',
+			call: 'eth_rangeVSearch',
+			params: 2
+		}),
+		new web3._extend.Method({
 			name: 'sign',
 			call: 'eth_sign',
 			params: 2,
