@@ -492,7 +492,7 @@ func getLeafNodePosition(n *leafNode, parent *internalNode, t *EBTree) (bool, *i
 				//change the parent's child value
 				//fmt.Printf("this node id is:%v, n id is %v\n", le.Id, n.Id)
 				//fix bug.when n is split, the length of n'data is different from le. to get the position, we just to compare the node id
-				if bytes.Compare(le.Id, n.Id) == 0 {
+				if Compare(le.Id, n.Id) == 0 {
 					switch dt := (n.Data[len(n.Data)-1]).(type) {
 					case dataEncode:
 						err := errors.New("data is encoded in getLeafNodePosition")
@@ -680,7 +680,7 @@ func SearchInternalNode(value []byte, n *internalNode, t *EBTree) ([][]byte, err
 		case childEncode:
 			return nil, nil
 		case child:
-			if bytes.Compare(ct.Value, value) >= 0 {
+			if Compare(ct.Value, value) >= 0 {
 				switch dt := (ct.Pointer).(type) {
 				case *leafNode:
 					return SearchLeafNode(value, dt)
@@ -834,7 +834,7 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 				err := errors.New("data is encoded in getLeafNodePosition")
 				return false, nil, 0, err
 			case data:
-				if bytes.Compare(dt.Value, value) < 0 {
+				if Compare(dt.Value, value) < 0 {
 					//EBTree叶子节点按升序排列，继续向后查找
 					continue
 				} else {
@@ -846,7 +846,7 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 				err := errors.New("data is encoded in getLeafNodePosition")
 				return false, nil, 0, err
 			case *data:
-				if bytes.Compare(dt.Value, value) < 0 {
+				if Compare(dt.Value, value) < 0 {
 					//EBTree叶子节点按升序排列，继续向后查找
 					continue
 				} else {
@@ -867,7 +867,7 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 			case childEncode:
 				return false, nil, 0, nil
 			case child:
-				if bytes.Compare(ct.Value, value) < 0 {
+				if Compare(ct.Value, value) < 0 {
 					continue
 				} else {
 
@@ -914,12 +914,12 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 			if n == nil {
 				break
 			}
-			if bytes.Compare(IntToBytes(uint64(len(result))), k) >= 0 {
+			if Compare(IntToBytes(uint64(len(result))), k) >= 0 {
 				break
 			}
 			flag := false
 			for i := 0; i < len(n.Data); i++ {
-				if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
+				if Compare(IntToBytes(uint64(len(result))), k) < 0 {
 					switch dt := (n.Data[i]).(type) {
 					case dataEncode:
 						da, err := decodeData(dt)
@@ -975,10 +975,10 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 				break
 			}
 		}
-		if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
+		if Compare(IntToBytes(uint64(len(result))), k) < 0 {
 			fmt.Println("top-k value search wrong:not enough data")
 			return true, result, nil
-		} else if bytes.Compare(IntToBytes(uint64(len(result))), k) > 0 {
+		} else if Compare(IntToBytes(uint64(len(result))), k) > 0 {
 			fmt.Println("top-k value search wrong:get too much data")
 			return false, result, nil
 		} else {
@@ -1023,7 +1023,7 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 		//fmt.Println("find the first node sucess")
 		b := false
 		for {
-			if b || n == nil || bytes.Compare(IntToBytes(uint64(len(result))), k) >= 0 {
+			if b || n == nil || Compare(IntToBytes(uint64(len(result))), k) >= 0 {
 				break
 			}
 			flag := false
@@ -1034,7 +1034,7 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 					return false, nil, err
 				case data:
 					for _, kl := range dt.Keylist {
-						if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
+						if Compare(IntToBytes(uint64(len(result))), k) < 0 {
 							r := searchData{dt.Value, kl}
 							result = append(result, r)
 						} else {
@@ -1047,7 +1047,7 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 					return false, nil, err
 				case *data:
 					for _, kl := range dt.Keylist {
-						if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
+						if Compare(IntToBytes(uint64(len(result))), k) < 0 {
 							r := searchData{dt.Value, kl}
 							result = append(result, r)
 						} else {
@@ -1096,10 +1096,10 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 			}
 		}
 		//fmt.Println("out of for")
-		if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 {
+		if Compare(IntToBytes(uint64(len(result))), k) < 0 {
 			err = wrapError(err, "top-k search data wrong:not enough data")
 			return false, result, err
-		} else if bytes.Compare(IntToBytes(uint64(len(result))), k) > 0 {
+		} else if Compare(IntToBytes(uint64(len(result))), k) > 0 {
 			err = wrapError(err, "top-k search data wrong:get too much data")
 			return false, result, err
 		} else {
@@ -1112,53 +1112,10 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 	return false, nil, err
 }
 
-//used to indent the bytes
-func (t *EBTree) IndentBytes(f []byte, s []byte) ([]byte, []byte) {
-	var lev []byte
-	var lemax []byte
-	if len(f) < len(s) {
-		t := len(s)
-
-		b0 := byte(0)
-		for i := 0; i < t-len(f); i++ {
-			lev = append(lev, b0)
-		}
-		for j := 0; j < len(f); j++ {
-			lev = append(lev, f[j])
-		}
-		for j := 0; j < len(s); j++ {
-			lemax = append(lemax, s[j])
-		}
-		return lev, lemax
-	} else if len(f) > len(s) {
-		t := len(f)
-
-		b0 := byte(0)
-		for i := 0; i < t-len(s); i++ {
-			lemax = append(lemax, b0)
-		}
-		for j := 0; j < len(s); j++ {
-			lemax = append(lev, s[j])
-		}
-		for j := 0; j < len(f); j++ {
-			lev = append(lev, f[j])
-		}
-		return lev, lemax
-	} else {
-		for j := 0; j < len(f); j++ {
-			lev = append(lev, f[j])
-		}
-		for j := 0; j < len(s); j++ {
-			lemax = append(lemax, s[j])
-		}
-		return lev, lemax
-	}
-}
 
 //search in leafNode data
 func (t *EBTree) RangeValueSearchLeaf(dt *data, max []byte, k []byte, result []searchValue) (bool, bool, []searchValue, error) {
-	lev, lemax := t.IndentBytes(dt.Value, max)
-	if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 && bytes.Compare(lev, lemax) <= 0 {
+	if Compare(IntToBytes(uint64(len(result))), k) < 0 && Compare(dt.Value, max) <= 0 {
 		r := searchValue{dt.Value, dt.Keylist}
 		result = append(result, r)
 		return false, true, result, nil
@@ -1223,7 +1180,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 		if n == nil {
 			break
 		}
-		if bytes.Compare(IntToBytes(uint64(len(result))), k) >= 0 {
+		if Compare(IntToBytes(uint64(len(result))), k) >= 0 {
 			break
 		}
 		flag := false
@@ -1280,7 +1237,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 			break
 		}
 	}
-	if bytes.Compare(IntToBytes(uint64(len(result))), k) > 0 {
+	if Compare(IntToBytes(uint64(len(result))), k) > 0 {
 		wrapError(err, "top-k value search wrong:get too much data")
 		return false, result, err
 	} else {
@@ -1289,7 +1246,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 
 }
 
-//top-k data search
+//range data search
 func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []searchData, error) {
 	var result []searchData
 
@@ -1305,7 +1262,7 @@ func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []sear
 			return false, nil, nil
 		case data:
 			for _, kl := range dt.Keylist {
-				if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 && bytes.Compare(dt.Value, max) <= 0 {
+				if Compare(IntToBytes(uint64(len(result))), k) < 0 && Compare(dt.Value, max) <= 0 {
 					r := searchData{dt.Value, kl}
 					result = append(result, r)
 				} else {
@@ -1331,7 +1288,7 @@ func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []sear
 		if n == nil {
 			break
 		}
-		if bytes.Compare(IntToBytes(uint64(len(result))), k) >= 0 {
+		if Compare(IntToBytes(uint64(len(result))), k) >= 0 {
 			break
 		}
 		flag := false
@@ -1342,7 +1299,7 @@ func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []sear
 				return false, nil, nil
 			case data:
 				for _, kl := range dt.Keylist {
-					if bytes.Compare(IntToBytes(uint64(len(result))), k) < 0 && bytes.Compare(dt.Value, max) <= 0 {
+					if Compare(IntToBytes(uint64(len(result))), k) < 0 && Compare(dt.Value, max) <= 0 {
 						r := searchData{dt.Value, kl}
 						result = append(result, r)
 					} else {
@@ -1368,7 +1325,7 @@ func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []sear
 			break
 		}
 	}
-	if bytes.Compare(IntToBytes(uint64(len(result))), k) > 0 {
+	if Compare(IntToBytes(uint64(len(result))), k) > 0 {
 		wrapError(err, "top-k search data wrong:get too much data")
 		return false, result, err
 	} else {
@@ -1390,7 +1347,7 @@ func (t *EBTree) CompareSpeacial(min []byte, max []byte) (bool, uint64, uint64, 
 	count = 0
 	//判断special值是否应该包含在结果集中
 	for i := uint64(0); i < uint64(len(t.special)); i++ {
-		if bytes.Compare(t.special[i].value, max) <= 0 && bytes.Compare(t.special[i].value, min) >= 0 {
+		if Compare(t.special[i].value, max) <= 0 && Compare(t.special[i].value, min) >= 0 {
 			count++
 			if !false {
 				pos = i
@@ -1417,6 +1374,20 @@ func (tree *EBTree) CombineAndPrintSearchData(result []searchData, pos []byte, k
 	}
 	return nil
 }
+
+func (tree *EBTree) CombineAndPrintSearchValue(result []searchValue, pos []byte, k []byte, top bool) error {
+	log.Info("into comine and print searchValue")
+	if pos == nil {
+		pos = IntToBytes(uint64(0))
+	}
+	for i, r := range result {
+		fmt.Printf("the %dth value is %d,the data is:\n", i, r.value)
+		fmt.Println(r.data)
+	}
+	return nil
+}
+
+
 func (tree *EBTree) CombineSearchDataResult(result []searchData, min []byte, k []byte, top bool) (bool, []searchData, error) {
 	log.Info("into CombineSearchDataResult in EBtree")
 	var finalR []searchData
@@ -1450,7 +1421,7 @@ func (tree *EBTree) CombineSearchDataResult(result []searchData, min []byte, k [
 				i++
 				continue
 			}
-			if bytes.Compare(result[i].value, tree.special[pos].value) > 0 {
+			if Compare(result[i].value, tree.special[pos].value) > 0 {
 				for i := uint64(0); i <= pos; i++ {
 					if len(finalR) >= len(result) {
 						break
@@ -1475,12 +1446,12 @@ func (tree *EBTree) CombineSearchDataResult(result []searchData, min []byte, k [
 				finalR = append(finalR, sd)
 				i++
 			}
-			if i >= uint64(len(result)) || bytes.Compare(IntToBytes(uint64(i)), k) >= 0 {
+			if i >= uint64(len(result)) || Compare(IntToBytes(uint64(i)), k) >= 0 {
 				break
 			}
 
 		}
-		if bytes.Compare(IntToBytes(uint64(len(finalR))), k) < 0 {
+		if Compare(IntToBytes(uint64(len(finalR))), k) < 0 {
 			err := errors.New("there is less data than k")
 			return false, finalR, err
 		}
@@ -1538,7 +1509,7 @@ func (tree *EBTree) CombineSearchValueResult(result []searchValue, min []byte, k
 				i++
 				continue
 			}
-			if bytes.Compare(result[i].value, tree.special[pos].value) > 0 {
+			if Compare(result[i].value, tree.special[pos].value) > 0 {
 				sd.value = tree.special[pos].value
 				sd.data = tree.special[pos].data
 				finalR = append(finalR, sd)
@@ -1551,12 +1522,12 @@ func (tree *EBTree) CombineSearchValueResult(result []searchValue, min []byte, k
 				finalR = append(finalR, sd)
 				i++
 			}
-			if i >= uint64(len(result)) || bytes.Compare(IntToBytes(i), k) >= 0 {
+			if i >= uint64(len(result)) || Compare(IntToBytes(i), k) >= 0 {
 				break
 			}
 
 		}
-		if bytes.Compare(IntToBytes(uint64(len(finalR))), k) < 0 && top {
+		if Compare(IntToBytes(uint64(len(finalR))), k) < 0 && top {
 			fmt.Println("there is less data than k")
 
 		}
@@ -1574,11 +1545,11 @@ func mustDecodeNode(id, buf []byte) EBTreen {
 
 // decodeNode parses the RLP encoding of a tree node.
 func decodeNode(id, buf []byte) (EBTreen, error) {
-	if BytesToInt(id) == uint64(33) {
-		elems, _, err := rlp.SplitList(buf)
-		n, err := decodeInternal(id, elems)
-		return n, wrapError(err, "full")
-	}
+	//if BytesToInt(id) == uint64(33) {
+	//	elems, _, err := rlp.SplitList(buf)
+	//	n, err := decodeInternal(id, elems)
+	//	return n, wrapError(err, "full")
+	//}
 	if len(buf) == 0 {
 		return nil, io.ErrUnexpectedEOF
 	}

@@ -18,10 +18,9 @@ package eth
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"github.com/ethereum/go-ethereum/EBTree"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
@@ -36,6 +35,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
+	"math/big"
 )
 
 // EthAPIBackend implements ethapi.Backend for full nodes
@@ -103,15 +103,27 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	return stateDb, header, err
 }
 
-func (b *EthAPIBackend) TopkVSearch(ctx context.Context) ([][]byte, error) {
-	k, e := new(big.Int).SetString("1000", 10)
-
-	if e != true {
-		fmt.Println(e)
-
-	}
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, error) {
+	fmt.Print("top k search :")
+	fmt.Println(k)
 	root, err := b.GetEbtreeRoot(ctx)
-	data, err := b.eth.blockchain.TopkVSearch(k.Bytes(), root)
+
+	var buf = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, k)
+
+	data, err := b.eth.blockchain.TopkVSearch(buf, root)
+	return data, err
+}
+
+
+func (b *EthAPIBackend)RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error){
+	fmt.Print("starting range search : ")
+	fmt.Print(begin)
+	fmt.Print("    ")
+	fmt.Println(end)
+
+	root, err := b.GetEbtreeRoot(ctx)
+	data, err :=b.eth.blockchain.RangeVSearch(begin, end, root)
 	return data, err
 }
 
@@ -122,6 +134,7 @@ func (b *EthAPIBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error
 func (b *EthAPIBackend) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
 	key := []byte("TEbtreeRoot")
 	root, err := b.eth.chainDb.Get(key)
+	fmt.Print("rid is :")
 	fmt.Println(root)
 	//root, err := b.eth.blockchain.GetEbtreeRoot()
 	if err != nil {

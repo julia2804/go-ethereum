@@ -470,7 +470,12 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'topkVSearch',
 			call: 'eth_topkVSearch',
-			params: 0
+			params: 1
+		}),
+		new web3._extend.Method({
+			name: 'rangeVSearch',
+			call: 'eth_rangeVSearch',
+			params: 2
 		}),
 		new web3._extend.Method({
 			name: 'sign',

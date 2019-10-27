@@ -477,6 +477,11 @@ func (self *LightChain) TopkVSearch() ([][]byte, error) {
 	return nil, nil
 }
 
+func (self *LightChain) RangeVSearch() ([][]byte, error) {
+
+	return nil, nil
+}
+
 // GetEbtreeRoot create a ebtree .
 func (self *LightChain) GetEbtreeRoot() ([]byte, error) {
 

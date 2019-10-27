@@ -18,6 +18,7 @@
 package core
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/EBTree"
@@ -706,7 +707,6 @@ func (bc *BlockChain) TopkVSearch(k []byte, root []byte) ([][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Printf("produce the tree success!")
 
 	su, result, err := tree.TopkDataSearch(k, true)
 	if err != nil {
@@ -720,21 +720,40 @@ func (bc *BlockChain) TopkVSearch(k []byte, root []byte) ([][]byte, error) {
 	return nil, err
 }
 
-// .
+func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, root []byte) ([][]byte, error) {
+	tree, err := EBTree.New(root, bc.ebtreeCache)
+	if err != nil {
+		return nil, err
+	}
+
+	var buf1 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf1, begin)
+	var buf2 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf2, end)
+
+	var buf3 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf3, uint64(5000))
+
+	su, result, err := tree.RangeValueSearch(buf1, buf2, buf3)
+	if err != nil {
+		fmt.Printf("something wrong in range search with error")
+		return nil, err
+	}
+	if !su {
+		fmt.Println("something wrong in range search without error")
+	}
+	tree.CombineAndPrintSearchValue(result, nil, buf3, true)
+	return nil, err
+
+}
+
+// 返回root对应的id
 func (bc *BlockChain) GetEbtreeRoot() ([]byte, error) {
 	if len(bc.ebtreeRoot) == 0 {
-		//fmt.Println("there is no ebtree in get ebtree root")
-		inDb, _ := bc.db.Has([]byte("TEbtreeRoot"))
-		if inDb {
-			rid, _ := bc.db.Get([]byte("TEbtreeRoot"))
-			bc.ebtreeRoot = rid
-
-			return rid, nil
-		}
-		return nil, nil
-
+		rid, _ := bc.db.Get([]byte("TEbtreeRoot"))
+		bc.ebtreeRoot = rid
+		return rid, nil
 	}
-	//fmt.Println("there is ebtree in blockchain")
 	return bc.ebtreeRoot, nil
 }
 
@@ -1165,25 +1184,30 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 
 	return status, nil
 }
+
+//将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 
-
-	//insertTransaction to ebtree
 	var t *EBTree.EBTree
 	if len(txs) > 0 {
+
 		fmt.Println("begin insert EBtree")
+		//恢复根节点
 		rid, _ := bc.GetEbtreeRoot()
+		fmt.Print("rid is :")
+		fmt.Println(rid)
 		t, _ = EBTree.New(rid, bc.ebtreeCache)
+
+		//将交易插入树中
 		r, err := bc.InsertTransactionEbtree(rid, bc.ebtreeCache, txs, t)
-		//fmt.Println("the result for insertTransaction ebtree:")
-		//fmt.Println(r)
 		if err != nil {
-			fmt.Println("error in func : InsertEBtree" + err.Error())
+			fmt.Println("error in func : InsertEBtree(), " + err.Error())
 		}
-		t.Commit(nil)
+
 		t.DBCommit()
 
 		if len(r) != 0 {
+			//单纯保存rid
 			bc.SetBlockChainEbtreeRot(r)
 			bc.SetBlockChainEbtreeDB(t.Db)
 		}
@@ -1195,30 +1219,19 @@ func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 }
 
 //insertTransactonEBtree
-func (bc *BlockChain) InsertTransactionEbtree(root []byte, ebtdb *EBTree.Database, transactions types.Transactions, tree *EBTree.EBTree) ([]byte, error) {
-	//log.Info("into InsertTransactionEbtree func")
+func (bc *BlockChain) InsertTransactionEbtree(rid []byte, ebtdb *EBTree.Database, transactions types.Transactions, tree *EBTree.EBTree) ([]byte, error) {
 	if tree == nil {
-		fmt.Println("insertTransactionEbtree tree is nil")
+		fmt.Println("error in func insertTransactionEbtree() : tree is nil")
 		err := errors.New("tree is nil in insertTransactionEbtree")
 		return nil, err
 	}
-	var rb EBTree.ByteNode
-	rb = root
 	if len(transactions) > 0 {
-		//fmt.Println("InsertTransactionEbtree:print the root")
-		//fmt.Println(root)
-
-		for _, t := range transactions {
-			//log.Info("get transaction")
-			amount := t.Value()
+		for _, tran := range transactions {
+			amount := tran.Value()
 			fmt.Printf("we are insert trans whose vale is : %d", amount)
 			fmt.Println()
 
-			th := t.GetHash()
-			//fmt.Printf("we are insert trans whose hash is : %d", th)
-
-			//log.Info("get a transaction in insert ebtree")
-			//fmt.Println(t.Value())
+			th := tran.GetHash()
 			if len(th.Bytes()) == 0 {
 				fmt.Println("transaction  hash is nil")
 				err := errors.New("transaction  hash is nil")
@@ -1228,26 +1241,13 @@ func (bc *BlockChain) InsertTransactionEbtree(root []byte, ebtdb *EBTree.Databas
 
 			data, _ := rlp.EncodeToBytes(datastr)
 
-			var err error
-			if tree.Root == nil {
-				//fmt.Println("this tree is empty")
-
-				_, _, err = tree.InsertData(&rb, 0, nil, amount.Bytes(), data)
-			} else {
-				//fmt.Println("this tree is not empty")
-				_, _, err = tree.InsertData(tree.Root, 0, nil, amount.Bytes(), data)
-			}
+			err := tree.InsertDataToTree(amount.Bytes(), data)
 
 			if err != nil {
 				return nil, err
 			}
-
 		}
-		//tree.Commit(nil);
-		//tree.DBCommit();
-		return tree.OutputRoot(), nil
 	}
-
 	return tree.OutputRoot(), nil
 }
 
@@ -1454,6 +1454,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 
 		cache, _ := bc.stateCache.TrieDB().Size()
 		stats.report(chain, it.index, cache)
+		bc.InsertEBtree(block.Transactions())
 	}
 	// Any blocks remaining here? The only ones we care about are the future ones
 	if block != nil && err == consensus.ErrFutureBlock {
