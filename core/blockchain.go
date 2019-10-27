@@ -245,14 +245,6 @@ func (bc *BlockChain) loadLastState() error {
 			return err
 		}
 	}
-
-	// Make sure the ebtree is available
-	if _, err := EBTree.New(bc.ebtreeRoot, bc.ebtreeCache); err != nil {
-		// Dangling block without a state associated, init from scratch
-		log.Warn("ebtree missing, repairing chain", "root", bc.ebtreeRoot)
-		//todo：if the tree is missing
-	}
-
 	// Everything seems to be fine, set as the head block
 	bc.currentBlock.Store(currentBlock)
 
@@ -283,6 +275,7 @@ func (bc *BlockChain) loadLastState() error {
 	log.Info("Loaded most recent local header", "number", currentHeader.Number, "hash", currentHeader.Hash(), "td", headerTd, "age", common.PrettyAge(time.Unix(int64(currentHeader.Time), 0)))
 	log.Info("Loaded most recent local full block", "number", currentBlock.Number(), "hash", currentBlock.Hash(), "td", blockTd, "age", common.PrettyAge(time.Unix(int64(currentBlock.Time()), 0)))
 	log.Info("Loaded most recent local fast block", "number", currentFastBlock.Number(), "hash", currentFastBlock.Hash(), "td", fastTd, "age", common.PrettyAge(time.Unix(int64(currentFastBlock.Time()), 0)))
+
 	return nil
 }
 
@@ -320,7 +313,6 @@ func (bc *BlockChain) SetHead(head uint64) error {
 			bc.currentBlock.Store(bc.genesisBlock)
 		}
 	}
-
 	// Rewind the fast block in a simpleton way to the target head
 	if currentFastBlock := bc.CurrentFastBlock(); currentFastBlock != nil && currentHeader.Number.Uint64() < currentFastBlock.NumberU64() {
 		bc.currentFastBlock.Store(bc.GetBlock(currentHeader.Hash(), currentHeader.Number.Uint64()))
@@ -1040,7 +1032,7 @@ func (bc *BlockChain) WriteBlockWithoutState(block *types.Block, td *big.Int) (e
 	if err := bc.hc.WriteTd(block.Hash(), block.NumberU64(), td); err != nil {
 		return err
 	}
-	rawdb.WriteBlockWithIndex(bc.db, block)
+	rawdb.WriteBlock(bc.db, block)
 
 	return nil
 }
@@ -1067,13 +1059,7 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	if err := bc.hc.WriteTd(block.Hash(), block.NumberU64(), externTd); err != nil {
 		return NonStatTy, err
 	}
-	//log.Info("into write block with state")
-	//fmt.Println(block.Number())
-
-	err = rawdb.WriteBlockWithIndex(bc.db, block)
-	if err != nil {
-		return NonStatTy, err
-	}
+	rawdb.WriteBlock(bc.db, block)
 
 	root, err := state.Commit(bc.chainConfig.IsEIP158(block.Number()))
 	if err != nil {
@@ -1097,7 +1083,6 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 				nodes, imgs = triedb.Size()
 				limit       = common.StorageSize(bc.cacheConfig.TrieDirtyLimit) * 1024 * 1024
 			)
-
 			if nodes > limit || imgs > 4*1024*1024 {
 				triedb.Cap(limit - ethdb.IdealBatchSize)
 			}
@@ -1181,7 +1166,6 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 		bc.insert(block)
 	}
 	bc.futureBlocks.Remove(block.Hash())
-
 	return status, nil
 }
 
@@ -1454,7 +1438,6 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 
 		cache, _ := bc.stateCache.TrieDB().Size()
 		stats.report(chain, it.index, cache)
-		bc.InsertEBtree(block.Transactions())
 	}
 	// Any blocks remaining here? The only ones we care about are the future ones
 	if block != nil && err == consensus.ErrFutureBlock {
@@ -1592,21 +1575,25 @@ func (bc *BlockChain) insertSidechain(block *types.Block, it *insertIterator) (i
 	return 0, nil, nil, nil
 }
 
-// reorgs takes two blocks, an old chain and a new chain and will reconstruct the blocks and inserts them
-// to be part of the new canonical chain and accumulates potential missing transactions and post an
-// event about them
+// reorg takes two blocks, an old chain and a new chain and will reconstruct the
+// blocks and inserts them to be part of the new canonical chain and accumulates
+// potential missing transactions and post an event about them.
 func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	var (
 		newChain    types.Blocks
 		oldChain    types.Blocks
 		commonBlock *types.Block
-		deletedTxs  types.Transactions
+
+		deletedTxs types.Transactions
+		addedTxs   types.Transactions
+
 		deletedLogs []*types.Log
+		rebirthLogs []*types.Log
+
 		// collectLogs collects the logs that were generated during the
 		// processing of the block that corresponds with the given hash.
-		// These logs are later announced as deleted.
-		collectLogs = func(hash common.Hash) {
-			// Coalesce logs and set 'Removed'.
+		// These logs are later announced as deleted or reborn
+		collectLogs = func(hash common.Hash, removed bool) {
 			number := bc.hc.GetBlockNumber(hash)
 			if number == nil {
 				return
@@ -1614,53 +1601,60 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 			receipts := rawdb.ReadReceipts(bc.db, hash, *number)
 			for _, receipt := range receipts {
 				for _, log := range receipt.Logs {
-					del := *log
-					del.Removed = true
-					deletedLogs = append(deletedLogs, &del)
+					l := *log
+					if removed {
+						l.Removed = true
+						deletedLogs = append(deletedLogs, &l)
+					} else {
+						rebirthLogs = append(rebirthLogs, &l)
+					}
 				}
 			}
 		}
 	)
-
-	// first reduce whoever is higher bound
+	// Reduce the longer chain to the same number as the shorter one
 	if oldBlock.NumberU64() > newBlock.NumberU64() {
-		// reduce old chain
+		// Old chain is longer, gather all transactions and logs as deleted ones
 		for ; oldBlock != nil && oldBlock.NumberU64() != newBlock.NumberU64(); oldBlock = bc.GetBlock(oldBlock.ParentHash(), oldBlock.NumberU64()-1) {
 			oldChain = append(oldChain, oldBlock)
 			deletedTxs = append(deletedTxs, oldBlock.Transactions()...)
-
-			collectLogs(oldBlock.Hash())
+			collectLogs(oldBlock.Hash(), true)
 		}
 	} else {
-		// reduce new chain and append new chain blocks for inserting later on
+		// New chain is longer, stash all blocks away for subsequent insertion
 		for ; newBlock != nil && newBlock.NumberU64() != oldBlock.NumberU64(); newBlock = bc.GetBlock(newBlock.ParentHash(), newBlock.NumberU64()-1) {
 			newChain = append(newChain, newBlock)
 		}
 	}
 	if oldBlock == nil {
-		return fmt.Errorf("Invalid old chain")
+		return fmt.Errorf("invalid old chain")
 	}
 	if newBlock == nil {
-		return fmt.Errorf("Invalid new chain")
+		return fmt.Errorf("invalid new chain")
 	}
-
+	// Both sides of the reorg are at the same number, reduce both until the common
+	// ancestor is found
 	for {
+		// If the common ancestor was found, bail out
 		if oldBlock.Hash() == newBlock.Hash() {
 			commonBlock = oldBlock
 			break
 		}
-
+		// Remove an old block as well as stash away a new block
 		oldChain = append(oldChain, oldBlock)
-		newChain = append(newChain, newBlock)
 		deletedTxs = append(deletedTxs, oldBlock.Transactions()...)
-		collectLogs(oldBlock.Hash())
+		collectLogs(oldBlock.Hash(), true)
 
-		oldBlock, newBlock = bc.GetBlock(oldBlock.ParentHash(), oldBlock.NumberU64()-1), bc.GetBlock(newBlock.ParentHash(), newBlock.NumberU64()-1)
+		newChain = append(newChain, newBlock)
+
+		// Step back with both chains
+		oldBlock = bc.GetBlock(oldBlock.ParentHash(), oldBlock.NumberU64()-1)
 		if oldBlock == nil {
-			return fmt.Errorf("Invalid old chain")
+			return fmt.Errorf("invalid old chain")
 		}
+		newBlock = bc.GetBlock(newBlock.ParentHash(), newBlock.NumberU64()-1)
 		if newBlock == nil {
-			return fmt.Errorf("Invalid new chain")
+			return fmt.Errorf("invalid new chain")
 		}
 	}
 	// Ensure the user sees large reorgs
@@ -1675,35 +1669,46 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		log.Error("Impossible reorg, please file an issue", "oldnum", oldBlock.Number(), "oldhash", oldBlock.Hash(), "newnum", newBlock.Number(), "newhash", newBlock.Hash())
 	}
 	// Insert the new chain, taking care of the proper incremental order
-	var addedTxs types.Transactions
 	for i := len(newChain) - 1; i >= 0; i-- {
-		// insert the block in the canonical way, re-writing history
+		// Insert the block in the canonical way, re-writing history
 		bc.insert(newChain[i])
-		// write lookup entries for hash based transaction/receipt searches
+
+		// Collect reborn logs due to chain reorg (except head block (reverse order))
+		if i != 0 {
+			collectLogs(newChain[i].Hash(), false)
+		}
+		// Write lookup entries for hash based transaction/receipt searches
 		rawdb.WriteTxLookupEntries(bc.db, newChain[i])
 		addedTxs = append(addedTxs, newChain[i].Transactions()...)
 	}
-	// calculate the difference between deleted and added transactions
-	diff := types.TxDifference(deletedTxs, addedTxs)
-	// When transactions get deleted from the database that means the
-	// receipts that were created in the fork must also be deleted
+	// When transactions get deleted from the database, the receipts that were
+	// created in the fork must also be deleted
 	batch := bc.db.NewBatch()
-	for _, tx := range diff {
+	for _, tx := range types.TxDifference(deletedTxs, addedTxs) {
 		rawdb.DeleteTxLookupEntry(batch, tx.Hash())
 	}
 	batch.Write()
 
-	if len(deletedLogs) > 0 {
-		go bc.rmLogsFeed.Send(RemovedLogsEvent{deletedLogs})
-	}
-	if len(oldChain) > 0 {
-		go func() {
+	// If any logs need to be fired, do it now. In theory we could avoid creating
+	// this goroutine if there are no events to fire, but realistcally that only
+	// ever happens if we're reorging empty blocks, which will only happen on idle
+	// networks where performance is not an issue either way.
+	//
+	// TODO(karalabe): Can we get rid of the goroutine somehow to guarantee correct
+	// event ordering?
+	go func() {
+		if len(deletedLogs) > 0 {
+			bc.rmLogsFeed.Send(RemovedLogsEvent{deletedLogs})
+		}
+		if len(rebirthLogs) > 0 {
+			bc.logsFeed.Send(rebirthLogs)
+		}
+		if len(oldChain) > 0 {
 			for _, block := range oldChain {
 				bc.chainSideFeed.Send(ChainSideEvent{Block: block})
 			}
-		}()
-	}
-
+		}
+	}()
 	return nil
 }
 

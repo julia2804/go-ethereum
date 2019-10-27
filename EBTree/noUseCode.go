@@ -10,7 +10,7 @@ miner.start()
 personal.newAccount("ju")
 personal.unlockAccount(eth.coinbase)
 miner.stop()
-./geth --port 30060 --rpcport 60060 --networkid 2805 --datadir /home/mimota/data/ console
+./geth --port 30060 --rpcport 60060 -net.p-networkid 2805 --datadir /home/mimota/data/ console
 ./geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
 build/bin/geth --port 30060 --rpcport 60060 --networkid 2805 --datadir /home/mimota/data/ console
 build/bin/geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data

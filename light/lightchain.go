@@ -195,8 +195,7 @@ func (bc *LightChain) ResetWithGenesisBlock(genesis *types.Block) {
 
 	// Prepare the genesis block and reinitialise the chain
 	rawdb.WriteTd(bc.chainDb, genesis.Hash(), genesis.NumberU64(), genesis.Difficulty())
-
-	rawdb.WriteBlockWithIndex(bc.chainDb, genesis)
+	rawdb.WriteBlock(bc.chainDb, genesis)
 
 	bc.genesisBlock = genesis
 	bc.hc.SetGenesis(bc.genesisBlock.Header())

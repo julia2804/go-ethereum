@@ -18,7 +18,6 @@ package core
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 	"math/rand"
 	"sync"
@@ -165,14 +164,7 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 		}
 		blockchain.mu.Lock()
 		rawdb.WriteTd(blockchain.db, block.Hash(), block.NumberU64(), new(big.Int).Add(block.Difficulty(), blockchain.GetTdByHash(block.ParentHash())))
-		var tree *EBTree.EBTree
-		if len(block.Transactions()) > 0 {
-			rid, _ := blockchain.GetEbtreeRoot()
-			tree, _ = EBTree.New(rid, blockchain.ebtreeCache)
-		} else {
-			tree = nil
-		}
-		rawdb.WriteBlockWithIndex(blockchain.db, block, blockchain.ebtreeRoot, blockchain.ebtreeCache, tree)
+		rawdb.WriteBlock(blockchain.db, block)
 		statedb.Commit(false)
 		blockchain.mu.Unlock()
 	}
