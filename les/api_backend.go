@@ -74,9 +74,23 @@ func (b *LesApiBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, er
 	return data, err
 }
 
+func (b *LesApiBackend) TopkVSearchTime(ctx context.Context)  {
+	b.eth.blockchain.TopkVSearchTime()
+
+}
+
 func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error) {
 	data, err := b.eth.blockchain.RangeVSearch()
 	return data, err
+}
+
+func (b *LesApiBackend) RangeVSearchTime(ctx context.Context) {
+	b.eth.blockchain.RangeVSearchTime()
+
+}
+
+func (b *LesApiBackend) InsertTime(ctx context.Context){
+	b.eth.blockchain.InsertTime()
 }
 
 func (b *LesApiBackend) GetEbtreeRoot(ctx context.Context) ([]byte, error) {

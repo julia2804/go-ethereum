@@ -476,9 +476,21 @@ func (self *LightChain) TopkVSearch() ([][]byte, error) {
 	return nil, nil
 }
 
+func (self *LightChain) TopkVSearchTime() {
+
+}
+
 func (self *LightChain) RangeVSearch() ([][]byte, error) {
 
 	return nil, nil
+}
+
+func (self *LightChain) RangeVSearchTime()  {
+
+}
+
+func (self *LightChain) InsertTime() {
+
 }
 
 // GetEbtreeRoot create a ebtree .

@@ -12,7 +12,7 @@ personal.unlockAccount(eth.coinbase)
 miner.stop()
 ./geth --port 30060 --rpcport 60060 -net.p-networkid 2805 --datadir /home/mimota/data/ console
 ./geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
-build/bin/geth --port 30060 --rpcport 60060 --networkid 2805 --datadir /home/mimota/data/ console
+build/bin/geth --port 30060 --rpcport 60060 --networkid 2804 --datadir /home/mimota/data/ console
 build/bin/geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
 
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:10})

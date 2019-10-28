@@ -739,6 +739,11 @@ func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, root []byte) ([][]b
 
 }
 
+func (bc *BlockChain) InsertTime(){
+	fmt.Println("topkv search total time ：", insertTotalTime)
+}
+
+
 // 返回root对应的id
 func (bc *BlockChain) GetEbtreeRoot() ([]byte, error) {
 	if len(bc.ebtreeRoot) == 0 {
@@ -1168,10 +1173,10 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	bc.futureBlocks.Remove(block.Hash())
 	return status, nil
 }
-
+var insertTotalTime int64
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
-
+	t1 := time.Now()
 	var t *EBTree.EBTree
 	if len(txs) > 0 {
 
@@ -1200,6 +1205,9 @@ func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 		t = nil
 	}
 
+	t2 := time.Now()
+	t3 := t2.Sub(t1).Milliseconds()
+	insertTotalTime = insertTotalTime + t3
 }
 
 //insertTransactonEBtree

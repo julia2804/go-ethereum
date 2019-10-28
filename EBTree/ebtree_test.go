@@ -1156,3 +1156,23 @@ func testInsert(nt *leafNode, i uint64) (bool, error) {
 	}
 	return true, nil
 }
+var totalTime int64
+func TestCalTime(t *testing.T) {
+	t1 := time.Now()
+	for i := 0; i < 10000; i++ {
+		fmt.Print()
+	}
+	t2 := time.Now()
+	t3 := t2.Sub(t1).Milliseconds()
+	totalTime = totalTime + t3
+	fmt.Println("App elapsed: ", t3)
+}
+
+func TestTotalTime(t *testing.T){
+	TestCalTime(t)
+	fmt.Println("total time", totalTime)
+	TestCalTime(t)
+	fmt.Println("total time", totalTime)
+	TestCalTime(t)
+	fmt.Println("total time", totalTime)
+}
