@@ -479,6 +479,10 @@ func (self *LightChain) TopkVSearch() ([][]byte, error) {
 func (self *LightChain) TopkVSearchTime() {
 
 }
+func (self *LightChain) ClearTopkVSearchTime() {
+
+}
+
 
 func (self *LightChain) RangeVSearch() ([][]byte, error) {
 
@@ -486,6 +490,10 @@ func (self *LightChain) RangeVSearch() ([][]byte, error) {
 }
 
 func (self *LightChain) RangeVSearchTime()  {
+
+}
+
+func (self *LightChain) ClearRangeVSearchTime()  {
 
 }
 

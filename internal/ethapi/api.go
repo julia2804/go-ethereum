@@ -507,6 +507,10 @@ func (s *PublicBlockChainAPI) TopkVSearchTime(ctx context.Context) {
 	s.b.TopkVSearchTime(ctx)
 }
 
+func (s *PublicBlockChainAPI) ClearTopkVSearchTime(ctx context.Context) {
+	s.b.ClearTopkVSearchTime(ctx)
+}
+
 func (s *PublicBlockChainAPI) RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error) {
 	data, err := s.b.RangeVSearch(ctx, begin, end)
 	return data, err
@@ -514,6 +518,10 @@ func (s *PublicBlockChainAPI) RangeVSearch(ctx context.Context, begin uint64, en
 
 func (s *PublicBlockChainAPI) RangeVSearchTime(ctx context.Context) {
 	s.b.RangeVSearchTime(ctx)
+}
+
+func (s *PublicBlockChainAPI) ClearRangeVSearchTime(ctx context.Context) {
+	s.b.ClearRangeVSearchTime(ctx)
 }
 
 func (s *PublicBlockChainAPI) InsertTime(ctx context.Context){

@@ -478,6 +478,11 @@ web3._extend({
 			params: 0
 		}),
 		new web3._extend.Method({
+			name: 'clearTopkVSearchTime',
+			call: 'eth_clearTopkVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
 			name: 'insertTime',
 			call: 'eth_insertTime',
 			params: 0
@@ -490,6 +495,11 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'rangeVSearchTime',
 			call: 'eth_rangeVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'clearRangeVSearchTime',
+			call: 'eth_clearRangeVSearchTime',
 			params: 0
 		}),
 		new web3._extend.Method({

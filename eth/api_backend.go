@@ -125,6 +125,11 @@ func (b *EthAPIBackend) TopkVSearchTime(ctx context.Context){
 	fmt.Println(topkVSearchTotalTime)
 }
 
+func (b *EthAPIBackend) ClearTopkVSearchTime(ctx context.Context){
+	topkVSearchTotalTime = 0
+	fmt.Println("cleared topkVSearchTotalTime")
+}
+
 var rangeVSearchTotalTime int64
 func (b *EthAPIBackend)RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error){
 	t1 := time.Now()
@@ -144,6 +149,11 @@ func (b *EthAPIBackend)RangeVSearch(ctx context.Context, begin uint64, end uint6
 
 func (b *EthAPIBackend) RangeVSearchTime(ctx context.Context){
 	fmt.Println(rangeVSearchTotalTime)
+}
+
+func (b *EthAPIBackend) ClearRangeVSearchTime(ctx context.Context){
+	rangeVSearchTotalTime = 0
+	fmt.Println("cleared rangeVSearchTotalTime")
 }
 
 func (b *EthAPIBackend) InsertTime(ctx context.Context){

@@ -76,8 +76,12 @@ func (b *LesApiBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, er
 
 func (b *LesApiBackend) TopkVSearchTime(ctx context.Context)  {
 	b.eth.blockchain.TopkVSearchTime()
-
 }
+
+func (b *LesApiBackend) ClearTopkVSearchTime(ctx context.Context)  {
+	b.eth.blockchain.ClearTopkVSearchTime()
+}
+
 
 func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error) {
 	data, err := b.eth.blockchain.RangeVSearch()
@@ -86,7 +90,10 @@ func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin uint64, end uint
 
 func (b *LesApiBackend) RangeVSearchTime(ctx context.Context) {
 	b.eth.blockchain.RangeVSearchTime()
+}
 
+func (b *LesApiBackend) ClearRangeVSearchTime(ctx context.Context) {
+	b.eth.blockchain.ClearRangeVSearchTime()
 }
 
 func (b *LesApiBackend) InsertTime(ctx context.Context){
