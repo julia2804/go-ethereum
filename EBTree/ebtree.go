@@ -994,7 +994,7 @@ func (t *EBTree) InsertToInternalChild(cd *child, value []byte, da []byte) error
 			wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
 			return err
 		}
-		if Compare(cd.Value, value) < 0 {
+		if Compare(cd.Value, value) > 0 {
 			cd.Value = value
 		}
 		return nil
@@ -1014,7 +1014,7 @@ func (t *EBTree) InsertToInternalChild(cd *child, value []byte, da []byte) error
 			wrapError(err, "insert data: when the data was added into appropriate child, something wrong")
 			return err
 		}
-		if Compare(cd.Value, value) < 0 {
+		if Compare(cd.Value, value) > 0 {
 			cd.Value = value
 		}
 		return nil
@@ -1035,7 +1035,7 @@ func (t *EBTree) InsertDataToInternalNode(nt *internalNode, value []byte, da []b
 			err := errors.New("child is encoded in InsertDataToInternalNode")
 			return err
 		case child:
-			if Compare(ct.Value, value) >= 0 {
+			if Compare(ct.Value, value) <= 0 {
 				//将数据插入到对应的child中
 				err := t.InsertToInternalChild(&ct, value, da)
 				nt.Children[j] = ct
@@ -1143,7 +1143,7 @@ func (t *EBTree) InsertDataToLeafNode(nt *leafNode, value []byte, da []byte) err
 			err := errors.New("data type is *dataEncode")
 			return err
 		case data:
-			if Compare(dt.Value, value) < 0 {
+			if Compare(dt.Value, value) > 0 {
 				continue
 			} else {
 				err := t.InsertToLeafData(nt, i, &dt, value, da)
@@ -1153,7 +1153,7 @@ func (t *EBTree) InsertDataToLeafNode(nt *leafNode, value []byte, da []byte) err
 				return nil
 			}
 		case *data:
-			if Compare(dt.Value, value) < 0 {
+			if Compare(dt.Value, value) > 0 {
 				continue
 			} else {
 				err := t.InsertToLeafData(nt, i, dt, value, da)
