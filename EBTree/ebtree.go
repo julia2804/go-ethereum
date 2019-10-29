@@ -35,10 +35,10 @@ var (
 	emptyState = crypto.Keccak256Hash(nil)
 
 	//maxInternalNodeCount
-	maxInternalNodeCount = uint8(3)
+	maxInternalNodeCount = uint8(32)
 
 	//maxLeafNodeCount
-	maxLeafNodeCount = uint8(3)
+	maxLeafNodeCount = uint8(16)
 
 	cacheMissCounter   = metrics.NewRegisteredCounter("trie/cachemiss", nil)
 	cacheUnloadCounter = metrics.NewRegisteredCounter("trie/cacheunload", nil)
