@@ -195,8 +195,7 @@ func (bc *LightChain) ResetWithGenesisBlock(genesis *types.Block) {
 
 	// Prepare the genesis block and reinitialise the chain
 	rawdb.WriteTd(bc.chainDb, genesis.Hash(), genesis.NumberU64(), genesis.Difficulty())
-
-	rawdb.WriteBlockWithIndex(bc.chainDb, genesis)
+	rawdb.WriteBlock(bc.chainDb, genesis)
 
 	bc.genesisBlock = genesis
 	bc.hc.SetGenesis(bc.genesisBlock.Header())
@@ -477,9 +476,29 @@ func (self *LightChain) TopkVSearch() ([][]byte, error) {
 	return nil, nil
 }
 
+func (self *LightChain) TopkVSearchTime() {
+
+}
+func (self *LightChain) ClearTopkVSearchTime() {
+
+}
+
+
 func (self *LightChain) RangeVSearch() ([][]byte, error) {
 
 	return nil, nil
+}
+
+func (self *LightChain) RangeVSearchTime()  {
+
+}
+
+func (self *LightChain) ClearRangeVSearchTime()  {
+
+}
+
+func (self *LightChain) InsertTime() {
+
 }
 
 // GetEbtreeRoot create a ebtree .

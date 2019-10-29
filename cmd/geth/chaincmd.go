@@ -247,7 +247,6 @@ func importChain(ctx *cli.Context) error {
 		}
 	}
 	chain.Stop()
-
 	fmt.Printf("Import done in %v.\n\n", time.Since(start))
 
 	// Output pre-compaction stats mostly to see the import trashing

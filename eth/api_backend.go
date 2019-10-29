@@ -36,6 +36,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
+	"time"
 )
 
 // EthAPIBackend implements ethapi.Backend for full nodes
@@ -103,7 +104,10 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	return stateDb, header, err
 }
 
+var topkVSearchTotalTime int64
+var topkVSearchNum int64
 func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, error) {
+	t1 := time.Now()
 	fmt.Print("top k search :")
 	fmt.Println(k)
 	root, err := b.GetEbtreeRoot(ctx)
@@ -112,19 +116,56 @@ func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, er
 	binary.BigEndian.PutUint64(buf, k)
 
 	data, err := b.eth.blockchain.TopkVSearch(buf, root)
+	t2 := time.Now()
+	t3 := t2.Sub(t1).Microseconds()
+	topkVSearchTotalTime = topkVSearchTotalTime + t3
+	topkVSearchNum ++
 	return data, err
 }
 
+func (b *EthAPIBackend) TopkVSearchTime(ctx context.Context){
+	fmt.Println("topkVSearchTotalTime:", topkVSearchTotalTime, "us")
+	fmt.Println("times：", topkVSearchNum)
+}
 
+func (b *EthAPIBackend) ClearTopkVSearchTime(ctx context.Context){
+	topkVSearchTotalTime = 0
+	topkVSearchNum = 0
+	fmt.Println("cleared topkVSearchTotalTime")
+}
+
+var rangeVSearchTotalTime int64
+var rangeVSearchNum int64
 func (b *EthAPIBackend)RangeVSearch(ctx context.Context, begin uint64, end uint64) ([][]byte, error){
+	t1 := time.Now()
 	fmt.Print("starting range search : ")
 	fmt.Print(begin)
-	fmt.Print("    ")
+	fmt.Print("--->")
 	fmt.Println(end)
 
 	root, err := b.GetEbtreeRoot(ctx)
 	data, err :=b.eth.blockchain.RangeVSearch(begin, end, root)
+	t2 := time.Now()
+	t3 := t2.Sub(t1).Microseconds()
+	rangeVSearchTotalTime = rangeVSearchTotalTime + t3
+	rangeVSearchNum ++
 	return data, err
+}
+
+
+func (b *EthAPIBackend) RangeVSearchTime(ctx context.Context){
+	fmt.Println("rangeVSearchTotalTime:", rangeVSearchTotalTime, "us")
+	fmt.Println("times: ", rangeVSearchNum)
+}
+
+func (b *EthAPIBackend) ClearRangeVSearchTime(ctx context.Context){
+	rangeVSearchTotalTime = 0
+	rangeVSearchNum = 0
+	fmt.Println("cleared rangeVSearchTotalTime")
+}
+
+func (b *EthAPIBackend) InsertTime(ctx context.Context){
+	b.eth.blockchain.InsertTime()
 }
 
 func (b *EthAPIBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error) {

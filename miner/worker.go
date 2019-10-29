@@ -19,7 +19,6 @@ package miner
 import (
 	"bytes"
 	"errors"
-
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -576,7 +575,6 @@ func (w *worker) resultLoop() {
 				}
 				logs = append(logs, receipt.Logs...)
 			}
-
 			// Commit block and state to database.
 			stat, err := w.chain.WriteBlockWithState(block, receipts, task.state)
 			if err != nil {

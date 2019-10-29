@@ -473,9 +473,34 @@ web3._extend({
 			params: 1
 		}),
 		new web3._extend.Method({
+			name: 'topkVSearchTime',
+			call: 'eth_topkVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'clearTopkVSearchTime',
+			call: 'eth_clearTopkVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'insertTime',
+			call: 'eth_insertTime',
+			params: 0
+		}),
+		new web3._extend.Method({
 			name: 'rangeVSearch',
 			call: 'eth_rangeVSearch',
 			params: 2
+		}),
+		new web3._extend.Method({
+			name: 'rangeVSearchTime',
+			call: 'eth_rangeVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'clearRangeVSearchTime',
+			call: 'eth_clearRangeVSearchTime',
+			params: 0
 		}),
 		new web3._extend.Method({
 			name: 'sign',
