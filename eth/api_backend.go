@@ -106,16 +106,19 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 
 var topkVSearchTotalTime int64
 var topkVSearchNum int64
-func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64) ([][]byte, error) {
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([][]byte, error) {
 	t1 := time.Now()
 	fmt.Print("top k search :")
 	fmt.Println(k)
 	root, err := b.GetEbtreeRoot(ctx)
 
-	var buf = make([]byte, 8)
-	binary.BigEndian.PutUint64(buf, k)
+	var buf1 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf1, k)
 
-	data, err := b.eth.blockchain.TopkVSearch(buf, root)
+	var buf2 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf2, bn)
+
+	data, err := b.eth.blockchain.TopkVSearch(buf1, buf2, root)
 	t2 := time.Now()
 	t3 := t2.Sub(t1).Microseconds()
 	topkVSearchTotalTime = topkVSearchTotalTime + t3

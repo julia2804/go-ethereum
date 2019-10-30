@@ -25,6 +25,7 @@ import (
 	"io"
 	"math/big"
 	mrand "math/rand"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -694,13 +695,13 @@ func (bc *BlockChain) CreateEbtree() (*EBTree.EBTree, error) {
 }
 
 // .
-func (bc *BlockChain) TopkVSearch(k []byte, root []byte) ([][]byte, error) {
+func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, error) {
 	tree, err := EBTree.New(root, bc.ebtreeCache)
 	if err != nil {
 		return nil, err
 	}
 
-	su, result, err := tree.TopkDataSearch(k, true)
+	su, result, err := tree.TopkDataSearch(k, bn, true)
 	if err != nil {
 		fmt.Printf("something wrong in topk  search with error")
 		return nil, err
@@ -1177,8 +1178,9 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 var insertTotalTime int64
 var insertNum int64
 //将交易保存到索引中
-func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
-
+func (bc *BlockChain) InsertEBtree(block *types.Block) {
+	txs := block.Transactions()
+	blockno := int64(block.NumberU64())
 	var t *EBTree.EBTree
 	if len(txs) > 0 {
 		t1 := time.Now()
@@ -1190,7 +1192,7 @@ func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 		t, _ = EBTree.New(rid, bc.ebtreeCache)
 
 		//将交易插入树中
-		r, err := bc.InsertTransactionEbtree(rid, bc.ebtreeCache, txs, t)
+		r, err := bc.InsertTransactionEbtree(rid, bc.ebtreeCache, txs, blockno, t)
 		if err != nil {
 			fmt.Println("error in func : InsertEBtree(), " + err.Error())
 		}
@@ -1214,27 +1216,27 @@ func (bc *BlockChain) InsertEBtree(txs types.Transactions) {
 }
 
 //insertTransactonEBtree
-func (bc *BlockChain) InsertTransactionEbtree(rid []byte, ebtdb *EBTree.Database, transactions types.Transactions, tree *EBTree.EBTree) ([]byte, error) {
+func (bc *BlockChain) InsertTransactionEbtree(rid []byte, ebtdb *EBTree.Database, transactions types.Transactions, blockno int64, tree *EBTree.EBTree) ([]byte, error) {
 	if tree == nil {
 		fmt.Println("error in func insertTransactionEbtree() : tree is nil")
 		err := errors.New("tree is nil in insertTransactionEbtree")
 		return nil, err
 	}
 	if len(transactions) > 0 {
-		for _, tran := range transactions {
-			amount := tran.Value()
+		for i:= 0; i< len(transactions); i++{
+			amount := transactions[i].Value()
 			fmt.Printf("we are insert trans whose vale is : %d", amount)
 			fmt.Println()
-
-			th := tran.GetHash()
+			s := strconv.FormatInt(blockno, 10) + "," + strconv.Itoa(i)
+			/*th := transactions[i].GetHash()
 			if len(th.Bytes()) == 0 {
 				fmt.Println("transaction  hash is nil")
 				err := errors.New("transaction  hash is nil")
 				return nil, err
 			}
-			datastr := th.String()[2:]
+			datastr := th.String()[2:]*/
 
-			data, _ := rlp.EncodeToBytes(datastr)
+			data, _ := rlp.EncodeToBytes(s)
 
 			err := tree.InsertDataToTree(amount.Bytes(), data)
 
@@ -1449,7 +1451,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 
 		cache, _ := bc.stateCache.TrieDB().Size()
 		stats.report(chain, it.index, cache)
-		bc.InsertEBtree(block.Transactions())
+		bc.InsertEBtree(block)
 	}
 	// Any blocks remaining here? The only ones we care about are the future ones
 	if block != nil && err == consensus.ErrFutureBlock {

@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -1023,7 +1024,7 @@ func (t *EBTree) TopkDataSearch(k []byte, bn []byte, max bool) (bool, []searchDa
 		b := false
 
 		notCompareBlockNum := false
-		if Compare(bn, IntToBytes(0)) < 0{
+		if Compare(bn, IntToBytes(0)) <= 0{
 			notCompareBlockNum = true
 		}
 		for {
@@ -1038,10 +1039,12 @@ func (t *EBTree) TopkDataSearch(k []byte, bn []byte, max bool) (bool, []searchDa
 					return false, nil, err
 				case data:
 					for _, kl := range dt.Keylist {
-						var tmp []byte
-						rlp.DecodeBytes(kl, &tmp)
+						var ss string
+						rlp.DecodeBytes(kl, &ss)
+						sss := strings.Split(ss, ",")
+						num,_ := strconv.Atoi(sss[0])
 						if Compare(IntToBytes(uint64(len(result))), k) < 0 {
-							if notCompareBlockNum || Compare(tmp, bn) > 0{
+							if notCompareBlockNum || Compare(IntToBytes(uint64(num)), bn) <= 0{
 								r := searchData{dt.Value, kl}
 								result = append(result, r)
 							}
