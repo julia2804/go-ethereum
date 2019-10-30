@@ -1010,7 +1010,7 @@ func (t *EBTree) ResolveByteNode(dt *ByteNode) (*leafNode, error) {
 }
 
 //top-k data search
-func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) {
+func (t *EBTree) TopkDataSearch(k []byte, bn []byte, max bool) (bool, []searchData, error) {
 	var result []searchData
 	if max {
 		n, _, err := findFirstNode(t.Root, t)
@@ -1020,8 +1020,12 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 		}
 		_ = n
 		_ = result
-		//fmt.Println("find the first node sucess")
 		b := false
+
+		notCompareBlockNum := false
+		if Compare(bn, IntToBytes(0)) < 0{
+			notCompareBlockNum = true
+		}
 		for {
 			if b || n == nil || Compare(IntToBytes(uint64(len(result))), k) >= 0 {
 				break
@@ -1034,9 +1038,13 @@ func (t *EBTree) TopkDataSearch(k []byte, max bool) (bool, []searchData, error) 
 					return false, nil, err
 				case data:
 					for _, kl := range dt.Keylist {
+						var tmp []byte
+						rlp.DecodeBytes(kl, &tmp)
 						if Compare(IntToBytes(uint64(len(result))), k) < 0 {
-							r := searchData{dt.Value, kl}
-							result = append(result, r)
+							if notCompareBlockNum || Compare(tmp, bn) > 0{
+								r := searchData{dt.Value, kl}
+								result = append(result, r)
+							}
 						} else {
 							flag = true
 							break

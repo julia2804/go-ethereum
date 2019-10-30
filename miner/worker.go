@@ -601,7 +601,7 @@ func (w *worker) resultLoop() {
 			w.unconfirmed.Insert(block.NumberU64(), block.Hash())
 
 			//insertTransaction to ebtree
-			w.chain.InsertEBtree(block.Transactions())
+			w.chain.InsertEBtree(block)
 
 		case <-w.exitCh:
 			return
