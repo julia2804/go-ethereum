@@ -682,7 +682,7 @@ func (bc *BlockChain) CreateEbtree() (*EBTree.EBTree, error) {
 		err := errors.New("wrong in create ebtree")
 		return nil, err
 	}
-	rid, err := ebt.Commit(nil)
+	rid, err := ebt.DBCommit()
 	if err != nil {
 		return nil, err
 	}
@@ -741,11 +741,10 @@ func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, root []byte) ([][]b
 
 }
 
-func (bc *BlockChain) InsertTime(){
+func (bc *BlockChain) InsertTime() {
 	fmt.Println("insert total time ：", insertTotalTime, "us")
 	fmt.Println("times: ", insertNum)
 }
-
 
 // 返回root对应的id
 func (bc *BlockChain) GetEbtreeRoot() ([]byte, error) {
@@ -1176,8 +1175,10 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 	bc.futureBlocks.Remove(block.Hash())
 	return status, nil
 }
+
 var insertTotalTime int64
 var insertNum int64
+
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(block *types.Block) {
 	txs := block.Transactions()
@@ -1210,7 +1211,7 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 		t2 := time.Now()
 		t3 := t2.Sub(t1).Microseconds()
 		insertTotalTime = insertTotalTime + t3
-		insertNum ++
+		insertNum++
 	} else {
 		t = nil
 	}
@@ -1224,7 +1225,7 @@ func (bc *BlockChain) InsertTransactionEbtree(rid []byte, ebtdb *EBTree.Database
 		return nil, err
 	}
 	if len(transactions) > 0 {
-		for i:= 0; i< len(transactions); i++{
+		for i := 0; i < len(transactions); i++ {
 			amount := transactions[i].Value()
 			//fmt.Printf("we are insert trans whose vale is : %d", amount)
 			//fmt.Println()
