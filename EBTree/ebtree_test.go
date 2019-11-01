@@ -239,6 +239,44 @@ func TestDBcommit(t *testing.T){
 
 }
 
+func TestZero(t *testing.T) {
+	var g big.Int
+	g = *big.NewInt(0)
+	kk := g.Bytes()
+	fmt.Print(kk)
+	//kk为空
+	//blockchain.InsertTransactionEbtreee()
+	//rr := tree.InsertDataToTree(amount.Bytes(), data)
+	//该处有问题
+	tree, _ := newEmpty()
+	var v []byte
+	var j int
+	v = []byte("qwerqwerqwerqwerqwerqwerqwerqwer")
+	j = 0
+	err := tree.InsertDataToTree(IntToBytes(uint64(j)), v)
+	if err != nil {
+		fmt.Sprintf("the error is not nil,%v", err)
+	}
+
+	var k []byte
+	k = IntToBytes(uint64(50))
+	//_, _ = tree.Commit(nil)
+	//var triedb *Database
+	tree.DBCommit()
+	//triedb = tree.Db
+	//triedb.Cap(1024)
+	//su, result, _ := tree.TopkValueSearch(k, true)
+	su, result, _ := tree.TopkDataSearch(k, k,true)
+
+	if !su {
+		fmt.Printf("something wrong in top-k search")
+	}
+
+	fmt.Print(result)
+	//combineAndPrintSearchValue(result, IntToBytes(uint64(0)), tree, k, true)
+
+}
+
 
 func TestTopkDataSearch(t *testing.T) {
 	tree, _ := newEmpty()

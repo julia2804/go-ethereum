@@ -16,6 +16,7 @@ build/bin/geth --port 30060 --rpcport 60060 --networkid 2804 --datadir /home/mim
 build/bin/geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
 
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:10})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:0})
 
 
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1,'ether')})

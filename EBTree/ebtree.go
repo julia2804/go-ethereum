@@ -1269,6 +1269,9 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 }
 
 func (t *EBTree) InsertDataToTree(value []byte, da []byte) error {
+	if(len(value) == 0){
+		value = IntToBytes(0)
+	}
 	//fmt.Print("start to insert value :")
 	//fmt.Println(value)
 	err := t.InsertDataToNode(&t.Root, value, da)
