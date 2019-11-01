@@ -21,7 +21,7 @@ func typeof(v interface{}) string {
 }
 
 //compare a and b
-func Compare(a, b []byte) int{
+func Compare(a, b []byte) int {
 	lev, lemax := IndentBytes(a, b)
 	return bytes.Compare(lev, lemax)
 }
@@ -67,4 +67,14 @@ func IndentBytes(f []byte, s []byte) ([]byte, []byte) {
 		}
 		return lev, lemax
 	}
+}
+
+func add(b []byte, i uint64) []byte {
+	f := BytesToInt(b)
+	return IntToBytes(f + i)
+}
+
+func minus(b []byte, i uint64) []byte {
+	f := BytesToInt(b)
+	return IntToBytes(f - i)
 }

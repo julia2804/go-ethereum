@@ -60,6 +60,40 @@ func returnFolderToPool(h *folder) {
 	folderPool.Put(h)
 }
 
+func CopyData(da []DataInterface) ([]DataInterface, error) {
+	var result []DataInterface
+	for i := 0; i < len(da); i++ {
+		var d data
+		di := da[i]
+		switch dt := (di).(type) {
+		case data:
+			d.Value = dt.Value
+			var ks [][]byte
+			for j := 0; j < len(dt.Keylist); j++ {
+				var key []byte
+				key = dt.Keylist[j]
+				ks = append(ks, key)
+			}
+			d.Keylist = ks
+		case *data:
+			d.Value = dt.Value
+			for j := 0; j < len(dt.Keylist); j++ {
+				var key []byte
+				key = dt.Keylist[j]
+				d.Keylist = append(d.Keylist, key)
+			}
+		case dataEncode:
+			err := errors.New("wrong data type:dataEncode")
+			return nil, err
+		default:
+			err := errors.New("wrong data type:default")
+			return nil, err
+		}
+		result = append(result, d)
+	}
+	return result, nil
+}
+
 // fold folds a node , also returning a copy of the
 // original node without next field to replace the original one.
 func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
@@ -151,7 +185,7 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 							return &collapsed, err
 						}
 					case *ByteNode:
-						return pEncode,nil
+						return pEncode, nil
 					default:
 						err := errors.New("wrong type")
 						return nil, err
@@ -163,7 +197,6 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 			}
 
 		}
-
 
 		/*_,err := f.foldChildren(collapsed, db)
 		if err != nil {
@@ -183,7 +216,6 @@ func (f *folder) fold(n EBTreen, db *Database, force bool) (EBTreen, error) {
 		// Trie not processed yet or needs storage, walk the children
 	case *ByteNode:
 		return n, nil
-
 
 	}
 

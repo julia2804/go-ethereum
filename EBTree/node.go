@@ -201,23 +201,6 @@ func constructInternalNode(id []byte, count uint8, childlist []ChildInterface, g
 	return newn, nil
 }
 
-func addData(leaf leafNode, da data, position int) {
-	var i int
-	for i = len(leaf.Data); i > position; i-- {
-		leaf.Data[i] = leaf.Data[i-1]
-	}
-	leaf.Data[i] = da
-}
-func add(b []byte, i uint64) []byte {
-	f := BytesToInt(b)
-	return IntToBytes(f + i)
-}
-
-func minus(b []byte, i uint64) []byte {
-	f := BytesToInt(b)
-	return IntToBytes(f - i)
-}
-
 func addChild(internal internalNode, chil child, position int) (bool, internalNode, error) {
 
 	internal.Children = append(internal.Children, child{})
@@ -241,39 +224,7 @@ func moveData(n *leafNode, pos int) (bool, *leafNode, error) {
 	}
 	return true, n, nil
 }
-func CopyData(da []DataInterface) ([]DataInterface, error) {
-	var result []DataInterface
-	for i := 0; i < len(da); i++ {
-		var d data
-		di := da[i]
-		switch dt := (di).(type) {
-		case data:
-			d.Value = dt.Value
-			var ks [][]byte
-			for j := 0; j < len(dt.Keylist); j++ {
-				var key []byte
-				key = dt.Keylist[j]
-				ks = append(ks, key)
-			}
-			d.Keylist = ks
-		case *data:
-			d.Value = dt.Value
-			for j := 0; j < len(dt.Keylist); j++ {
-				var key []byte
-				key = dt.Keylist[j]
-				d.Keylist = append(d.Keylist, key)
-			}
-		case dataEncode:
-			err := errors.New("wrong data type:dataEncode")
-			return nil, err
-		default:
-			err := errors.New("wrong data type:default")
-			return nil, err
-		}
-		result = append(result, d)
-	}
-	return result, nil
-}
+
 func collapsedLeafNode(nt *leafNode) (*leafNode, error) {
 	//log.Info("encode a leaf node")
 	var collapsed leafNode
@@ -320,81 +271,6 @@ func collapsedLeafNode(nt *leafNode) (*leafNode, error) {
 		}
 	}
 	return &collapsed, nil
-}
-func collapsedInternalNode(nt *internalNode) (*internalNode, error) {
-	var collapsed internalNode
-	if nt.Id == nil {
-		err := errors.New("empty node")
-		return nil, err
-	}
-	collapsed.Id = nt.Id
-	for i := 0; i < len(nt.Children); i++ {
-		if nt.Children[i] == nil {
-			err := errors.New("n.children is nil")
-			return nil, err
-		}
-		switch ct := (nt.Children[i]).(type) {
-		case childEncode:
-			err := errors.New("child is encoded in fold function")
-			return nil, err
-		case child:
-			if ct.Pointer != nil {
-				var pet ByteNode
-				switch pt := (ct.Pointer).(type) {
-				case *leafNode:
-					pet = pt.Id
-					var cchild child
-					cchild.Pointer = &pet
-					cchild.Value = ct.Value
-					collapsed.Children = append(collapsed.Children, cchild)
-				case *internalNode:
-					pet = pt.Id
-					var cchild child
-					cchild.Pointer = &pet
-					cchild.Value = ct.Value
-					collapsed.Children = append(collapsed.Children, cchild)
-				default:
-					err := errors.New("wrong type")
-					return nil, err
-				}
-			}
-		default:
-			err := errors.New("wrong type in child")
-			return nil, err
-		}
-	}
-	return &collapsed, nil
-}
-
-//ollapsed Node
-func collapsedNode(n EBTreen) (EBTreen, error) {
-	switch nt := (n).(type) {
-	case *leafNode:
-		return collapsedLeafNode(nt)
-	case *internalNode:
-		return collapsedInternalNode(nt)
-	default:
-		err := errors.New("wrong data type:default in collapsedNode")
-		return nil, err
-	}
-}
-func moveChildren(n *internalNode, pos int) (bool, *internalNode, error) {
-
-	n.Children = append(n.Children, child{})
-
-	if pos > len(n.Children) {
-		err := errors.New("the length of n.children is smaller than count,something wrong")
-		return false, n, err
-	}
-
-	//如果需要在最后一个节点插入，那么，不需要移动元素
-	if pos == len(n.Children) {
-		return true, n, nil
-	}
-	for i := len(n.Children) - 1; i > pos; i-- {
-		n.Children[i] = n.Children[i-1]
-	}
-	return true, n, nil
 }
 
 func createChild(val []byte, po EBTreen) (child, error) {
@@ -989,6 +865,7 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 	return false, nil, nil
 
 }
+
 func (t *EBTree) ResolveByteNode(dt *ByteNode) (*leafNode, error) {
 	dtc, _ := dt.cache()
 	decoden, err := t.resolveHash(dtc)
@@ -1009,6 +886,7 @@ func (t *EBTree) ResolveByteNode(dt *ByteNode) (*leafNode, error) {
 		return nil, err
 	}
 }
+
 func AddToSearchValue(d DataInterface, result []searchValue, bn []byte, value []byte) ([]searchValue, error) {
 
 	switch dt := d.(type) {
@@ -1524,6 +1402,7 @@ func (t *EBTree) CompareSpeacial(min []byte, max []byte) (bool, uint64, uint64, 
 	return flag, pos, count, nil
 	//如果结果集中应包含special值，special值应该放在哪里
 }
+
 func (tree *EBTree) CombineAndPrintSearchData(result []searchData, pos []byte, k []byte, top bool) error {
 	log.Info("into comine and print searchdata")
 	if pos == nil {
