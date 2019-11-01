@@ -56,7 +56,7 @@ func SplitString(b []byte) (content, rest []byte, err error) {
 		return nil, b, err
 	}
 	if k == List {
-		fmt.Println("splitString error：k is list")
+		//fmt.Println("splitString error：k is list")
 		return nil, b, ErrExpectedString
 	}
 	return content, rest, nil

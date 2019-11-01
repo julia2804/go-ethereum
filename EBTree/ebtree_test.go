@@ -97,12 +97,12 @@ func RandString(len int) []byte {
 	return bytes
 }
 
-func printNTrans(n int){
+func printNTrans(n int) {
 	//pre := "eth.sendTransaction({from:eth.coinbase,to:\"0x4751c4cd1ef729afc3232b2064565f1d692a9346\",value:web3.toWei(%d,'ether')})"
-	for i:= 1; i<=n; i++{
+	for i := 1; i <= n; i++ {
 		rand.Seed(time.Now().UnixNano())
 		j := rand.Float32()
-		fmt.Printf("eth.sendTransaction({from:eth.coinbase,to:\"0x4751c4cd1ef729afc3232b2064565f1d692a9346\",value:web3.toWei(%f,'ether')})",j)
+		fmt.Printf("eth.sendTransaction({from:eth.coinbase,to:\"0x4751c4cd1ef729afc3232b2064565f1d692a9346\",value:web3.toWei(%f,'ether')})", j)
 		fmt.Println()
 	}
 
@@ -149,10 +149,10 @@ func updateString(tree *EBTree) {
 func updateString2(tree *EBTree) {
 	var a [89]int
 
-	var v []byte
 	for i := 1; i < 89; i++ {
 		var j int
-		v = []byte("qwerqwerqwerqwerqwerqwerqwerqwer")
+		s := strconv.FormatInt(100000, 10) + "," + strconv.Itoa(i)
+		v, _ := rlp.EncodeToBytes(s)
 		j = rand.Intn(2000 - 10)
 		if j < 0 {
 			j = 0 - j
@@ -204,8 +204,8 @@ func combineAndPrintSearchValue(result []searchValue, pos []byte, tree *EBTree, 
 	}
 }
 
-func TestPrint(t *testing.T){
-	for i := 1; i <=7 ;i++{
+func TestPrint(t *testing.T) {
+	for i := 1; i <= 7; i++ {
 		printNTrans(100)
 		fmt.Println()
 		fmt.Println()
@@ -214,7 +214,7 @@ func TestPrint(t *testing.T){
 	}
 }
 
-func TestDBcommit(t *testing.T){
+func TestDBcommit(t *testing.T) {
 	tree, _ := newEmpty()
 	insertN(tree, 25)
 	tree.DBCommit()
@@ -266,7 +266,7 @@ func TestZero(t *testing.T) {
 	//triedb = tree.Db
 	//triedb.Cap(1024)
 	//su, result, _ := tree.TopkValueSearch(k, true)
-	su, result, _ := tree.TopkDataSearch(k, k,true)
+	su, result, _ := tree.TopkDataSearch(k, k, true)
 
 	if !su {
 		fmt.Printf("something wrong in top-k search")
@@ -276,7 +276,6 @@ func TestZero(t *testing.T) {
 	//combineAndPrintSearchValue(result, IntToBytes(uint64(0)), tree, k, true)
 
 }
-
 
 func TestTopkDataSearch(t *testing.T) {
 	tree, _ := newEmpty()
@@ -303,8 +302,9 @@ func TestTopkDataSearch(t *testing.T) {
 	triedb.Cap(1024)
 	tri, _ := New(rid, triedb)
 	updateString2(tri)
-	su, result, _ := tri.TopkValueSearch(k, true)
-	if !su {
+	result, err := tri.SpecificValueSearch(IntToBytes(1676), IntToBytes(1000000))
+	//su, result, _ := tri.TopkValueSearch(k, true)
+	if err != nil {
 		fmt.Printf("something wrong in top-k search")
 	}
 
@@ -1194,7 +1194,9 @@ func testInsert(nt *leafNode, i uint64) (bool, error) {
 	}
 	return true, nil
 }
+
 var totalTime int64
+
 func TestCalTime(t *testing.T) {
 	t1 := time.Now()
 	for i := 0; i < 10000; i++ {
@@ -1206,7 +1208,7 @@ func TestCalTime(t *testing.T) {
 	fmt.Println("App elapsed: ", t3)
 }
 
-func TestTotalTime(t *testing.T){
+func TestTotalTime(t *testing.T) {
 	TestCalTime(t)
 	fmt.Println("total time", totalTime)
 	TestCalTime(t)
