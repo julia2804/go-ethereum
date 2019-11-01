@@ -1269,8 +1269,8 @@ func (t *EBTree) InsertDataToLeaf(nt *leafNode, pos uint8, parent *internalNode,
 }
 
 func (t *EBTree) InsertDataToTree(value []byte, da []byte) error {
-	fmt.Print("start to insert value :")
-	fmt.Println(value)
+	//fmt.Print("start to insert value :")
+	//fmt.Println(value)
 	err := t.InsertDataToNode(&t.Root, value, da)
 	if err != nil {
 		return err

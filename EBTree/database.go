@@ -395,8 +395,8 @@ func (db *Database) EncodeNode(n EBTreen, encodeChild bool, batch ethdb.Batch) (
 // 提交保存以node为根节点的树
 func (db *Database) commit(node EBTreen, batch ethdb.Batch) error {
 	nid,_ := node.cache()
-	fmt.Print("we are commit id : ")
-	fmt.Println(nid)
+	//fmt.Print("we are commit id : ")
+	//fmt.Println(nid)
 
 	//保存encode的结果
 	var result []byte

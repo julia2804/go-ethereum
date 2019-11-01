@@ -709,7 +709,8 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, e
 	if !su {
 		fmt.Println("something wrong in topk  search without error")
 	}
-	tree.CombineAndPrintSearchData(result, nil, k, true)
+	fmt.Println("we totally find", len(result), "data")
+	//tree.CombineAndPrintSearchData(result, nil, k, true)
 	return nil, err
 }
 
@@ -741,7 +742,7 @@ func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, root []byte) ([][]b
 }
 
 func (bc *BlockChain) InsertTime(){
-	fmt.Println("insert total time ：", insertTotalTime, "ms")
+	fmt.Println("insert total time ：", insertTotalTime, "us")
 	fmt.Println("times: ", insertNum)
 }
 
@@ -1207,7 +1208,7 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 
 		fmt.Println("end insert EBtree")
 		t2 := time.Now()
-		t3 := t2.Sub(t1).Milliseconds()
+		t3 := t2.Sub(t1).Microseconds()
 		insertTotalTime = insertTotalTime + t3
 		insertNum ++
 	} else {
@@ -1225,8 +1226,8 @@ func (bc *BlockChain) InsertTransactionEbtree(rid []byte, ebtdb *EBTree.Database
 	if len(transactions) > 0 {
 		for i:= 0; i< len(transactions); i++{
 			amount := transactions[i].Value()
-			fmt.Printf("we are insert trans whose vale is : %d", amount)
-			fmt.Println()
+			//fmt.Printf("we are insert trans whose vale is : %d", amount)
+			//fmt.Println()
 			s := strconv.FormatInt(blockno, 10) + "," + strconv.Itoa(i)
 			/*th := transactions[i].GetHash()
 			if len(th.Bytes()) == 0 {
