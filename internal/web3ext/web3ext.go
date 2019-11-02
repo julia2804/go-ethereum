@@ -490,7 +490,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'rangeVSearch',
 			call: 'eth_rangeVSearch',
-			params: 2
+			params: 3
 		}),
 		new web3._extend.Method({
 			name: 'rangeVSearchTime',

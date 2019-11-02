@@ -17,6 +17,9 @@ build/bin/geth init /home/mimota/ethenv/genesis.json --datadir /home/mimota/data
 
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:10})
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:0})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:100})
+eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:90})
+
 
 
 eth.sendTransaction({from:eth.coinbase,to:"0x4751c4cd1ef729afc3232b2064565f1d692a9346",value:web3.toWei(1,'ether')})
@@ -1050,6 +1053,94 @@ func SearchLeafNode(value []byte, n *leafNode) ([][]byte, error) {
 	}
 	err := errors.New("none data matches!")
 	return nil, err
+
+}
+
+//top-k value search
+func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error) {
+	var result []searchValue
+	if max {
+		n, _, err := findFirstNode(t.Root, t)
+		if err != nil {
+			wrapError(err, "top-k search value wrong:find first node wrong")
+			return false, nil, err
+		}
+		for {
+			if n == nil {
+				break
+			}
+			if Compare(IntToBytes(uint64(len(result))), k) >= 0 {
+				break
+			}
+			flag := false
+			for i := 0; i < len(n.Data); i++ {
+				if Compare(IntToBytes(uint64(len(result))), k) < 0 {
+					switch dt := (n.Data[i]).(type) {
+					case dataEncode:
+						da, err := decodeData(dt)
+						if err != nil {
+							return false, nil, err
+						}
+						n.Data[i] = da
+						r := searchValue{da.Value, da.Keylist}
+						result = append(result, r)
+					case data:
+						r := searchValue{dt.Value, dt.Keylist}
+						result = append(result, r)
+						if len(result) == 86 {
+							fmt.Println("hello")
+						}
+					case *data:
+						r := searchValue{dt.Value, dt.Keylist}
+						result = append(result, r)
+					default:
+						err := errors.New("data is default")
+						return false, nil, err
+					}
+
+				} else {
+					flag = true
+					break
+				}
+			}
+			if n.Next == nil {
+				break
+			}
+			if !flag {
+				switch nnt := (n.Next).(type) {
+				case *leafNode:
+					n = nnt
+				case *ByteNode:
+					nntid, _ := nnt.cache()
+					if nntid == nil {
+						return true, result, nil
+					}
+					decoden, err := t.resolveLeaf(nntid)
+					if err != nil {
+						return false, nil, err
+					}
+					n.Next = &decoden
+					n = &decoden
+				default:
+					err := errors.New("wrong type")
+					return false, nil, err
+				}
+
+			} else {
+				break
+			}
+		}
+		if Compare(IntToBytes(uint64(len(result))), k) < 0 {
+			fmt.Println("top-k value search wrong:not enough data")
+			return true, result, nil
+		} else if Compare(IntToBytes(uint64(len(result))), k) > 0 {
+			fmt.Println("top-k value search wrong:get too much data")
+			return false, result, nil
+		} else {
+			return true, result, nil
+		}
+	}
+	return false, nil, nil
 
 }
 

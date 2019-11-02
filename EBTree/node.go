@@ -696,46 +696,34 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 
 	switch nt := n.(type) {
 	case *leafNode:
-
 		//若当前节点为空时,返回空
 		if len(nt.Data) == 0 {
 			err := errors.New("find node wrong: n.count==0")
 			return false, nil, uint8(0), err
 		}
 
-		//遍历当前节点的所有data
-		//value一定小于或等于当前节点到最大值
 		for i := 0; i < len(nt.Data); i++ {
 			switch dt := (nt.Data[i]).(type) {
-			case dataEncode:
-				err := errors.New("data is encoded in getLeafNodePosition")
-				return false, nil, 0, err
 			case data:
-				if Compare(dt.Value, value) < 0 {
+				if Compare(dt.Value, value) > 0 {
 					//EBTree叶子节点按升序排列，继续向后查找
 					continue
 				} else {
 					//找到节点
-
 					return true, nt, uint8(i), nil
 				}
-			case *dataEncode:
-				err := errors.New("data is encoded in getLeafNodePosition")
-				return false, nil, 0, err
 			case *data:
-				if Compare(dt.Value, value) < 0 {
+				if Compare(dt.Value, value) > 0 {
 					//EBTree叶子节点按升序排列，继续向后查找
 					continue
 				} else {
 					//找到节点
-
 					return true, nt, uint8(i), nil
 				}
 			default:
-				err := errors.New("wront data type")
+				err := errors.New("error in func findnode()")
 				return false, nt, 0, err
 			}
-
 		}
 	case *internalNode:
 		var i int
@@ -744,10 +732,9 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 			case childEncode:
 				return false, nil, 0, nil
 			case child:
-				if Compare(ct.Value, value) < 0 {
+				if Compare(ct.Value, value) > 0 {
 					continue
 				} else {
-
 					//call the find node function to
 					if ct.Pointer != nil {
 						su, re, po, err := t.findNode(ct.Pointer, value)
@@ -763,7 +750,6 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 					}
 				}
 			}
-
 		}
 	case *ByteNode:
 		ntid, _ := nt.cache()
@@ -774,96 +760,8 @@ func (t *EBTree) findNode(n EBTreen, value []byte) (bool, *leafNode, uint8, erro
 		err := errors.New("the node is not leaf or internal, something wrong")
 		return false, nil, 0, err
 	}
-	err := errors.New("find node wrong, something wrong")
-	return false, nil, 0, err
-}
-
-//top-k value search
-func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error) {
-	var result []searchValue
-	if max {
-		n, _, err := findFirstNode(t.Root, t)
-		if err != nil {
-			wrapError(err, "top-k search value wrong:find first node wrong")
-			return false, nil, err
-		}
-		for {
-			if n == nil {
-				break
-			}
-			if Compare(IntToBytes(uint64(len(result))), k) >= 0 {
-				break
-			}
-			flag := false
-			for i := 0; i < len(n.Data); i++ {
-				if Compare(IntToBytes(uint64(len(result))), k) < 0 {
-					switch dt := (n.Data[i]).(type) {
-					case dataEncode:
-						da, err := decodeData(dt)
-						if err != nil {
-							return false, nil, err
-						}
-						n.Data[i] = da
-						r := searchValue{da.Value, da.Keylist}
-						result = append(result, r)
-					case data:
-						r := searchValue{dt.Value, dt.Keylist}
-						result = append(result, r)
-						if len(result) == 86 {
-							fmt.Println("hello")
-						}
-					case *data:
-						r := searchValue{dt.Value, dt.Keylist}
-						result = append(result, r)
-					default:
-						err := errors.New("data is default")
-						return false, nil, err
-					}
-
-				} else {
-					flag = true
-					break
-				}
-			}
-			if n.Next == nil {
-				break
-			}
-			if !flag {
-				switch nnt := (n.Next).(type) {
-				case *leafNode:
-					n = nnt
-				case *ByteNode:
-					nntid, _ := nnt.cache()
-					if nntid == nil {
-						return true, result, nil
-					}
-					decoden, err := t.resolveLeaf(nntid)
-					if err != nil {
-						return false, nil, err
-					}
-					n.Next = &decoden
-					n = &decoden
-				default:
-					err := errors.New("wrong type")
-					return false, nil, err
-				}
-
-			} else {
-				break
-			}
-		}
-		if Compare(IntToBytes(uint64(len(result))), k) < 0 {
-			fmt.Println("top-k value search wrong:not enough data")
-			return true, result, nil
-		} else if Compare(IntToBytes(uint64(len(result))), k) > 0 {
-			fmt.Println("top-k value search wrong:get too much data")
-			return false, result, nil
-		} else {
-			return true, result, nil
-		}
-	}
-	return false, nil, nil
-
+	//err := errors.New("find node wrong, something wrong")
+	return false, nil, 0, nil
 }
 
 func (t *EBTree) ResolveByteNode(dt *ByteNode) (*leafNode, error) {
@@ -1141,8 +1039,8 @@ func (t *EBTree) SpecificValueSearchInNode(n EBTreen, value []byte, bn []byte) (
 }
 
 //search in leafNode data
-func (t *EBTree) RangeValueSearchLeaf(dt *data, max []byte, k []byte, result []searchValue) (bool, bool, []searchValue, error) {
-	if Compare(IntToBytes(uint64(len(result))), k) < 0 && Compare(dt.Value, max) <= 0 {
+func (t *EBTree) RangeValueSearchLeaf(dt *data, max []byte, bn []byte, result []searchValue) (bool, bool, []searchValue, error) {
+	if Compare(IntToBytes(uint64(len(result))), bn) < 0 && Compare(dt.Value, max) <= 0 {
 		r := searchValue{dt.Value, dt.Keylist}
 		result = append(result, r)
 		return false, true, result, nil
@@ -1169,11 +1067,15 @@ func (t *EBTree) SpecificValueSearch(value []byte, bn []byte) ([]searchValue, er
 }
 
 //range value search
-func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []searchValue, error) {
+func (t *EBTree) RangeValueSearch(min []byte, max []byte, bn []byte) (bool, []searchValue, error) {
 
 	var result []searchValue
+	notCompareBlockNum := false
+	if Compare(bn, IntToBytes(0)) <= 0 {
+		notCompareBlockNum = true
+	}
 
-	su, n, pos, err := t.findNode(t.Root, min)
+	su, n, pos, err := t.findNode(t.Root, max)
 	if !su {
 		wrapError(err, "range search value wrong:find node wrong")
 		return false, nil, err
@@ -1183,16 +1085,40 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 		switch dt := (n.Data[i]).(type) {
 
 		case data:
-			flag, su, rd, err := t.RangeValueSearchLeaf(&dt, max, k, result)
-			result = rd
-			if flag {
+			if Compare((&dt).Value, min) < 0 {
 				return su, result, err
 			}
+
+			for _, kl := range (&dt).Keylist {
+				if !notCompareBlockNum {
+					var ss string
+					rlp.DecodeBytes(kl, &ss)
+					sss := strings.Split(ss, ",")
+					num, _ := strconv.Atoi(sss[0])
+					//fmt.Println("num:", num)
+					if Compare(IntToBytes(uint64(num)), bn) > 0 {
+						continue
+					}
+				}
+				r := searchValue{(&dt).Value, (&dt).Keylist}
+				result = append(result, r)
+			}
 		case *data:
-			flag, su, rd, err := t.RangeValueSearchLeaf(dt, max, k, result)
-			result = rd
-			if flag {
+			if Compare(dt.Value, min) < 0 {
 				return su, result, err
+			}
+			for _, kl := range (dt).Keylist {
+				if !notCompareBlockNum {
+					var ss string
+					rlp.DecodeBytes(kl, &ss)
+					sss := strings.Split(ss, ",")
+					num, _ := strconv.Atoi(sss[0])
+					if Compare(IntToBytes(uint64(num)), bn) > 0 {
+						continue
+					}
+				}
+				r := searchValue{dt.Value, dt.Keylist}
+				result = append(result, r)
 			}
 		default:
 			err := errors.New("wrong data type")
@@ -1215,37 +1141,60 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 		}
 		n.Next = &decoden
 		n = &decoden
-
+	case nil:
+		return true, result, err
 	default:
 		err := errors.New("wrong type")
 		return false, nil, err
 	}
+
 	for {
 		if n == nil {
 			break
 		}
-		if Compare(IntToBytes(uint64(len(result))), k) >= 0 {
-			break
-		}
-		flag := false
+		//if Compare(IntToBytes(uint64(len(result))), bn) >= 0 {
+		//	break
+		//}
+		//flag := false
 		for i := 0; i < len(n.Data); i++ {
 			switch dt := (n.Data[i]).(type) {
 			case dataEncode:
-
 				fmt.Println("data is encoded")
 				err := errors.New("data is encoded in RangeValueSearch")
 				return false, nil, err
 			case data:
-				flag, su, rd, err := t.RangeValueSearchLeaf(&dt, max, k, result)
-				result = rd
-				if flag {
+				if Compare((&dt).Value, min) < 0 {
 					return su, result, err
 				}
+				for _, kl := range (&dt).Keylist {
+					if !notCompareBlockNum {
+						var ss string
+						rlp.DecodeBytes(kl, &ss)
+						sss := strings.Split(ss, ",")
+						num, _ := strconv.Atoi(sss[0])
+						if Compare(IntToBytes(uint64(num)), bn) > 0 {
+							continue
+						}
+					}
+					r := searchValue{(&dt).Value, (&dt).Keylist}
+					result = append(result, r)
+				}
 			case *data:
-				flag, su, rd, err := t.RangeValueSearchLeaf(dt, max, k, result)
-				result = rd
-				if flag {
+				if Compare(dt.Value, min) < 0 {
 					return su, result, err
+				}
+				for _, kl := range dt.Keylist {
+					if !notCompareBlockNum {
+						var ss string
+						rlp.DecodeBytes(kl, &ss)
+						sss := strings.Split(ss, ",")
+						num, _ := strconv.Atoi(sss[0])
+						if Compare(IntToBytes(uint64(num)), bn) > 0 {
+							continue
+						}
+					}
+					r := searchValue{dt.Value, dt.Keylist}
+					result = append(result, r)
 				}
 			default:
 				err := errors.New("wrong data type")
@@ -1253,40 +1202,40 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 			}
 		}
 
-		if !flag {
-			if n.Next == nil {
+		//if !flag {
+		if n.Next == nil {
+			return true, result, nil
+		}
+		switch nnt := (n.Next).(type) {
+		case *ByteNode:
+			nntid, _ := nnt.cache()
+			if nntid == nil {
 				return true, result, nil
 			}
-			switch nnt := (n.Next).(type) {
-			case *ByteNode:
-				nntid, _ := nnt.cache()
-				if nntid == nil {
-					return true, result, nil
-				}
-				decoden, err := t.resolveLeaf(nntid)
-				if err != nil {
-					return false, nil, err
-				}
-				n.Next = &decoden
-				n = &decoden
-
-			case *leafNode:
-				n = nnt
-
-			default:
-				err := errors.New("wrong next node type")
+			decoden, err := t.resolveLeaf(nntid)
+			if err != nil {
 				return false, nil, err
 			}
-		} else {
-			break
+			n.Next = &decoden
+			n = &decoden
+
+		case *leafNode:
+			n = nnt
+
+		default:
+			err := errors.New("wrong next node type")
+			return false, nil, err
 		}
+		//} else {
+		//	break
+		//}
 	}
-	if Compare(IntToBytes(uint64(len(result))), k) > 0 {
-		wrapError(err, "top-k value search wrong:get too much data")
-		return false, result, err
-	} else {
-		return true, result, nil
-	}
+	//if Compare(IntToBytes(uint64(len(result))), bn) > 0 {
+	//	wrapError(err, "top-bn value search wrong:get too much data")
+	//	return false, result, err
+	//} else {
+	return true, result, nil
+	//}
 
 }
 
@@ -1294,7 +1243,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, k []byte) (bool, []sea
 func (t *EBTree) RangeDataSearch(k []byte, min []byte, max []byte) (bool, []searchData, error) {
 	var result []searchData
 
-	su, n, pos, err := t.findNode(t.Root, min)
+	su, n, pos, err := t.findNode(t.Root, max)
 	if !su {
 		wrapError(err, "range search value wrong:find node wrong")
 		return false, nil, err

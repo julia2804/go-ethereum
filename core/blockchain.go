@@ -714,7 +714,7 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, e
 	return nil, err
 }
 
-func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, root []byte) ([][]byte, error) {
+func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, bn uint64, root []byte) ([][]byte, error) {
 	tree, err := EBTree.New(root, bc.ebtreeCache)
 	if err != nil {
 		return nil, err
@@ -726,7 +726,7 @@ func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, root []byte) ([][]b
 	binary.BigEndian.PutUint64(buf2, end)
 
 	var buf3 = make([]byte, 8)
-	binary.BigEndian.PutUint64(buf3, uint64(5000))
+	binary.BigEndian.PutUint64(buf3, bn)
 
 	su, result, err := tree.RangeValueSearch(buf1, buf2, buf3)
 	if err != nil {
