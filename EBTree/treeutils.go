@@ -3,6 +3,8 @@ package EBTree
 import (
 	"bytes"
 	"encoding/binary"
+	"io/ioutil"
+	"os"
 	"reflect"
 )
 
@@ -77,4 +79,24 @@ func add(b []byte, i uint64) []byte {
 func minus(b []byte, i uint64) []byte {
 	f := BytesToInt(b)
 	return IntToBytes(f - i)
+}
+
+func getFileSize(filename string) int64{
+	fileInfo, _ := os.Stat(filename)
+	//文件大小
+	filesize:= fileInfo.Size()
+	return filesize
+}
+
+func readDir(dirPath string) int64 {
+	var dirSize int64
+	flist, _ := ioutil.ReadDir(dirPath)
+	for _, f := range flist {
+		if f.IsDir() {
+			dirSize = readDir(dirPath+"/"+f.Name()) + dirSize
+		} else {
+			dirSize= f.Size() + dirSize
+		}
+	}
+	return dirSize
 }
