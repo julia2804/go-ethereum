@@ -1180,9 +1180,43 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 
 var insertTotalTime int64
 var insertNum int64
+var insertoutput string
+var sizeoutput string
 
+const datapath  = "/home/julia/data0"
+const inserttimesavepath = "/home/julia/inserttime.txt"
+const datasizesavepath  = "/home/julia/datasize.txt"
+const pend = 1
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(block *types.Block) {
+	bn := block.NumberU64()
+	if(bn >= 10 * pend && bn < 100 * pend){
+		if(bn % (10 * pend) == 0){
+			dirsize := EBTree.ReadDir(datapath)
+			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
+			EBTree.WriteFile(inserttimesavepath, []byte(insertoutput))
+			EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+
+		}
+	}else if(bn >= 100 * pend && bn < 1000 * pend){
+		if(bn % (100 * pend) == 0){
+			dirsize := EBTree.ReadDir(datapath)
+			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
+			EBTree.WriteFile(inserttimesavepath, []byte(insertoutput))
+			EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+		}
+	}else if(bn >= 1000 * pend && bn < 10000 * pend){
+		if(bn % (1000 * pend) == 0){
+			dirsize := EBTree.ReadDir(datapath)
+			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
+			EBTree.WriteFile(inserttimesavepath, []byte(insertoutput))
+			EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+		}
+	}
+
 	txs := block.Transactions()
 	blockno := int64(block.NumberU64())
 	var t *EBTree.EBTree

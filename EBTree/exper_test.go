@@ -25,8 +25,20 @@ func TestFind(t *testing.T) {
 	//fmt.Println(getFileSize("/home/mimota/blockbench-master.zip"))
 
 	//fmt.Println(readDir("/home/mimota/ethenv"))
-	fmt.Println(readDir("/home/mimota/data"))
-	//fmt.Println(readDir("/home/mimota/project"))
+	fmt.Println(ReadDir("/home/mimota/data"))
+	//fmt.Println(readDir("/home/mimota/project")
+
+}
+
+func TestWrite(t *testing.T) {
+	//fmt.Println(getFileSize("/home/mimota/blockbench-master.zip"))
+
+	//fmt.Println(readDir("/home/mimota/ethenv"))
+	content := "1787:29988"
+	WriteFile("/home/julia/test.txt", []byte(content))
+	//fmt.Println(readDir("/home/mimota/project")
+	content = "aaa\nbbbu\n"
+	WriteFile("/home/julia/test.txt", []byte(content))
 
 
 }

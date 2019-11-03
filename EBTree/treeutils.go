@@ -3,6 +3,7 @@ package EBTree
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -88,15 +89,23 @@ func getFileSize(filename string) int64{
 	return filesize
 }
 
-func readDir(dirPath string) int64 {
+func ReadDir(dirPath string) int64 {
 	var dirSize int64
 	flist, _ := ioutil.ReadDir(dirPath)
 	for _, f := range flist {
 		if f.IsDir() {
-			dirSize = readDir(dirPath+"/"+f.Name()) + dirSize
+			dirSize = ReadDir(dirPath+"/"+f.Name()) + dirSize
 		} else {
 			dirSize= f.Size() + dirSize
 		}
 	}
 	return dirSize
 }
+func WriteFile(name string, content []byte){
+	if ioutil.WriteFile(name, content, 0644) == nil{
+		fmt.Println("WriteFile")
+	}else{
+		fmt.Println("NOT WriteFile")
+	}
+}
+
