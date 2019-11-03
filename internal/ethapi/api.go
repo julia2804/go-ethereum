@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 	"strings"
 	"time"
@@ -495,6 +496,19 @@ func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 func (s *PublicBlockChainAPI) BlockNumber() hexutil.Uint64 {
 	header, _ := s.b.HeaderByNumber(context.Background(), rpc.LatestBlockNumber) // latest header should always be available
 	return hexutil.Uint64(header.Number.Uint64())
+}
+
+func (s *PublicBlockChainAPI) SpecificValueSearch(ctx context.Context, k uint64, bn uint64) (EBTree.SearchValue, error) {
+	data, err := s.b.SpecificValueSearch(ctx, k, bn)
+	return data, err
+}
+
+func (s *PublicBlockChainAPI) SpecificValueSearchTime(ctx context.Context) {
+	s.b.SpecificValueSearchTime(ctx)
+}
+
+func (s *PublicBlockChainAPI) ClearSpecificValueSearchTime(ctx context.Context) {
+	s.b.ClearSpecificValueSearchTime(ctx)
 }
 
 // TopkVSearch returns the topk value of transactions indexed by ebtree.

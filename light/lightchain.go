@@ -470,6 +470,19 @@ func (self *LightChain) CreateEbtree() (*EBTree.EBTree, error) {
 	return nil, nil
 }
 
+func (self *LightChain) SpecificValueSearch() (EBTree.SearchValue, error) {
+	var tmp EBTree.SearchValue
+	return tmp, nil
+}
+
+func (self *LightChain) SpecificValueSearchTime() {
+
+}
+
+func (self *LightChain) ClearSpecificValueSearchTime() {
+
+}
+
 // TopkVSearch search a value .
 func (self *LightChain) TopkVSearch() ([][]byte, error) {
 
@@ -483,17 +496,16 @@ func (self *LightChain) ClearTopkVSearchTime() {
 
 }
 
-
 func (self *LightChain) RangeVSearch() ([][]byte, error) {
 
 	return nil, nil
 }
 
-func (self *LightChain) RangeVSearchTime()  {
+func (self *LightChain) RangeVSearchTime() {
 
 }
 
-func (self *LightChain) ClearRangeVSearchTime()  {
+func (self *LightChain) ClearRangeVSearchTime() {
 
 }
 

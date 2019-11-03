@@ -104,6 +104,42 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	return stateDb, header, err
 }
 
+var specificValueSearchTime int64
+var specificValueSearchNum int64
+
+func (b *EthAPIBackend) SpecificValueSearch(ctx context.Context, v uint64, bn uint64) (EBTree.SearchValue, error) {
+	t1 := time.Now()
+	fmt.Print("Specific Value search :")
+	fmt.Println(v)
+	root, err := b.GetEbtreeRoot(ctx)
+	tree, err := EBTree.New(root, b.eth.blockchain.EbtreeCache())
+
+	var buf1 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf1, v)
+
+	var buf2 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf2, bn)
+
+	data, err := tree.SpecificValueSearch(buf1, buf2)
+	fmt.Println("specific search data", data)
+	t2 := time.Now()
+	t3 := t2.Sub(t1).Microseconds()
+	specificValueSearchTime = specificValueSearchTime + t3
+	specificValueSearchNum++
+	return data, err
+}
+
+func (b *EthAPIBackend) SpecificValueSearchTime(ctx context.Context) {
+	fmt.Println("SpecificValueSearchTime:", specificValueSearchTime, "us")
+	fmt.Println("times：", specificValueSearchNum)
+}
+
+func (b *EthAPIBackend) ClearSpecificValueSearchTime(ctx context.Context) {
+	specificValueSearchTime = 0
+	specificValueSearchNum = 0
+	fmt.Println("cleared SpecificValueSearchTime")
+}
+
 var topkVSearchTotalTime int64
 var topkVSearchNum int64
 

@@ -468,6 +468,21 @@ web3._extend({
 			params: 0
 		}),
 		new web3._extend.Method({
+			name: 'specificValueSearch',
+			call: 'eth_specificValueSearch',
+			params: 2
+		}),
+		new web3._extend.Method({
+			name: 'specificValueSearchTime',
+			call: 'eth_specificValueSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'clearSpecificValueSearchTime',
+			call: 'eth_clearSpecificValueSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
 			name: 'topkVSearch',
 			call: 'eth_topkVSearch',
 			params: 2

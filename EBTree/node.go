@@ -785,17 +785,17 @@ func (t *EBTree) ResolveByteNode(dt *ByteNode) (*leafNode, error) {
 	}
 }
 
-func AddToSearchValue(d DataInterface, result []searchValue, bn []byte, value []byte) ([]searchValue, error) {
-
+func AddToSearchValue(d DataInterface, bn []byte, value []byte) (SearchValue, error, bool) {
+	var result SearchValue
 	switch dt := d.(type) {
 	case dataEncode:
 		err := errors.New("topkvsearch:data is encoded")
-		return result, err
+		return result, err, false
 	case data:
 		if Compare(dt.Value, value) == 0 {
-			r := searchValue{dt.Value, nil}
+			var ds [][]byte
 			for _, kl := range dt.Keylist {
-				var ds [][]byte
+
 				var ss string
 				rlp.DecodeBytes(kl, &ss)
 				sss := strings.Split(ss, ",")
@@ -803,30 +803,32 @@ func AddToSearchValue(d DataInterface, result []searchValue, bn []byte, value []
 				if Compare(IntToBytes(uint64(num)), bn) <= 0 {
 					ds = append(ds, kl)
 				}
-				if len(ds) > 0 {
-					r.data = ds
-				} else {
-					err := errors.New("no data found")
-					return result, err
-				}
+
 			}
-			if r.data != nil {
-				result = append(result, r)
+			if len(ds) > 0 {
+				result.value = dt.Value
+				result.data = ds
+				return result, nil, false
+			} else {
+				err := errors.New("no data found")
+				return result, err, false
 			}
+
 		} else if Compare(dt.Value, value) < 0 {
 			err := errors.New("no data found")
-			return result, err
+			return result, err, false
 		} else {
-			return result, nil
+			return result, nil, true
 		}
 	case *dataEncode:
 		err := errors.New("topkvsearch:data is encoded")
-		return result, err
+		return result, err, false
 	case *data:
 		if Compare(dt.Value, value) == 0 {
-			r := searchValue{dt.Value, nil}
+
+			var ds [][]byte
 			for _, kl := range dt.Keylist {
-				var ds [][]byte
+
 				var ss string
 				rlp.DecodeBytes(kl, &ss)
 				sss := strings.Split(ss, ",")
@@ -834,33 +836,33 @@ func AddToSearchValue(d DataInterface, result []searchValue, bn []byte, value []
 				if Compare(IntToBytes(uint64(num)), bn) <= 0 {
 					ds = append(ds, kl)
 				}
-				if len(ds) > 0 {
-					r.data = ds
-				} else {
-					err := errors.New("no data found")
-					return result, err
-				}
+
 			}
-			if r.data != nil {
-				result = append(result, r)
+			if len(ds) > 0 {
+				result.value = dt.Value
+				result.data = ds
+				return result, nil, false
+			} else {
+				err := errors.New("no data found")
+				return result, err, false
 			}
 		} else if Compare(dt.Value, value) < 0 {
 			err := errors.New("no data found")
-			return result, err
+			return result, err, false
 		} else {
-			return result, nil
+			return result, nil, true
 		}
 	default:
 		err := errors.New("topkdatasearch:data in wrong type")
-		return nil, err
+		return SearchValue{}, err, false
 	}
-	return result, nil
+	return result, nil, true
 
 }
 
 //top-k data search
-func (t *EBTree) TopkDataSearch(k []byte, bn []byte, max bool) (bool, []searchData, error) {
-	var result []searchData
+func (t *EBTree) TopkVSearch(k []byte, bn []byte, max bool) (bool, []SearchValue, error) {
+	var result []SearchValue
 	if max {
 		n, _, err := findFirstNode(t.Root, t)
 		if err != nil {
@@ -886,6 +888,7 @@ func (t *EBTree) TopkDataSearch(k []byte, bn []byte, max bool) (bool, []searchDa
 					err := errors.New("topkvsearch:data is encoded")
 					return false, nil, err
 				case data:
+					var tmpkl [][]byte
 					for _, kl := range dt.Keylist {
 						var ss string
 						rlp.DecodeBytes(kl, &ss)
@@ -893,26 +896,39 @@ func (t *EBTree) TopkDataSearch(k []byte, bn []byte, max bool) (bool, []searchDa
 						num, _ := strconv.Atoi(sss[0])
 						if Compare(IntToBytes(uint64(len(result))), k) < 0 {
 							if notCompareBlockNum || Compare(IntToBytes(uint64(num)), bn) <= 0 {
-								r := searchData{dt.Value, kl}
-								result = append(result, r)
+								tmpkl = append(tmpkl, kl)
 							}
 						} else {
 							flag = true
 							break
 						}
 					}
+					if tmpkl != nil {
+						r := SearchValue{dt.Value, tmpkl}
+						result = append(result, r)
+					}
 				case *dataEncode:
 					err := errors.New("topkvsearch:data is encoded")
 					return false, nil, err
 				case *data:
+					var tmpkl [][]byte
 					for _, kl := range dt.Keylist {
+						var ss string
+						rlp.DecodeBytes(kl, &ss)
+						sss := strings.Split(ss, ",")
+						num, _ := strconv.Atoi(sss[0])
 						if Compare(IntToBytes(uint64(len(result))), k) < 0 {
-							r := searchData{dt.Value, kl}
-							result = append(result, r)
+							if notCompareBlockNum || Compare(IntToBytes(uint64(num)), bn) <= 0 {
+								tmpkl = append(tmpkl, kl)
+							}
 						} else {
 							flag = true
 							break
 						}
+					}
+					if tmpkl != nil {
+						r := SearchValue{dt.Value, tmpkl}
+						result = append(result, r)
 					}
 				default:
 					err := errors.New("topkdatasearch:data in wrong type")
@@ -972,16 +988,16 @@ func (t *EBTree) TopkDataSearch(k []byte, bn []byte, max bool) (bool, []searchDa
 }
 
 //find value in node
-func (t *EBTree) SpecificValueSearchInNode(n EBTreen, value []byte, bn []byte) ([]searchValue, error) {
-	var result []searchValue
+func (t *EBTree) SpecificValueSearchInNode(n EBTreen, value []byte, bn []byte) (SearchValue, error) {
+	var result SearchValue
 	switch nt := (n).(type) {
 	case *leafNode:
 		for i := 0; i < len(nt.Data); i++ {
-			result, err := AddToSearchValue(nt.Data[i], result, bn, value)
+			result, err, flag := AddToSearchValue(nt.Data[i], bn, value)
 			if err != nil {
 				return result, err
 			}
-			if len(result) > 0 {
+			if !flag {
 				return result, nil
 			}
 		}
@@ -1001,11 +1017,9 @@ func (t *EBTree) SpecificValueSearchInNode(n EBTreen, value []byte, bn []byte) (
 					ct.Pointer = decoden
 					nt.Children[i] = ct
 				}
-				if Compare(value, ct.Value) <= 0 {
+				if Compare(value, ct.Value) >= 0 {
 					cpt := ct.Pointer
 					return t.SpecificValueSearchInNode(cpt, value, bn)
-				} else {
-					return result, nil
 				}
 			case *child:
 				switch ctpt := (ct.Pointer).(type) {
@@ -1018,11 +1032,9 @@ func (t *EBTree) SpecificValueSearchInNode(n EBTreen, value []byte, bn []byte) (
 					ct.Pointer = decoden
 					nt.Children[i] = ct
 				}
-				if Compare(value, ct.Value) <= 0 {
+				if Compare(value, ct.Value) >= 0 {
 					cpt := ct.Pointer
 					return t.SpecificValueSearchInNode(cpt, value, bn)
-				} else {
-					return result, nil
 				}
 			default:
 				err := errors.New("wrong children type in SpecificValueSearchInNode")
@@ -1039,9 +1051,9 @@ func (t *EBTree) SpecificValueSearchInNode(n EBTreen, value []byte, bn []byte) (
 }
 
 //search in leafNode data
-func (t *EBTree) RangeValueSearchLeaf(dt *data, max []byte, bn []byte, result []searchValue) (bool, bool, []searchValue, error) {
+func (t *EBTree) RangeValueSearchLeaf(dt *data, max []byte, bn []byte, result []SearchValue) (bool, bool, []SearchValue, error) {
 	if Compare(IntToBytes(uint64(len(result))), bn) < 0 && Compare(dt.Value, max) <= 0 {
-		r := searchValue{dt.Value, dt.Keylist}
+		r := SearchValue{dt.Value, dt.Keylist}
 		result = append(result, r)
 		return false, true, result, nil
 	} else {
@@ -1050,8 +1062,8 @@ func (t *EBTree) RangeValueSearchLeaf(dt *data, max []byte, bn []byte, result []
 }
 
 //specific value search
-func (t *EBTree) SpecificValueSearch(value []byte, bn []byte) ([]searchValue, error) {
-	var result []searchValue
+func (t *EBTree) SpecificValueSearch(value []byte, bn []byte) (SearchValue, error) {
+	var result SearchValue
 	switch rt := (t.Root).(type) {
 	case *ByteNode:
 		rtid, _ := rt.cache()
@@ -1067,9 +1079,9 @@ func (t *EBTree) SpecificValueSearch(value []byte, bn []byte) ([]searchValue, er
 }
 
 //range value search
-func (t *EBTree) RangeValueSearch(min []byte, max []byte, bn []byte) (bool, []searchValue, error) {
+func (t *EBTree) RangeValueSearch(min []byte, max []byte, bn []byte) (bool, []SearchValue, error) {
 
-	var result []searchValue
+	var result []SearchValue
 	notCompareBlockNum := false
 	if Compare(bn, IntToBytes(0)) <= 0 {
 		notCompareBlockNum = true
@@ -1088,7 +1100,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, bn []byte) (bool, []se
 			if Compare((&dt).Value, min) < 0 {
 				return su, result, err
 			}
-
+			var tmpkl [][]byte
 			for _, kl := range (&dt).Keylist {
 				if !notCompareBlockNum {
 					var ss string
@@ -1100,24 +1112,32 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, bn []byte) (bool, []se
 						continue
 					}
 				}
-				r := searchValue{(&dt).Value, (&dt).Keylist}
+				tmpkl = append(tmpkl, kl)
+			}
+			if tmpkl != nil {
+				r := SearchValue{(&dt).Value, tmpkl}
 				result = append(result, r)
 			}
 		case *data:
 			if Compare(dt.Value, min) < 0 {
 				return su, result, err
 			}
-			for _, kl := range (dt).Keylist {
+			var tmpkl [][]byte
+			for _, kl := range dt.Keylist {
 				if !notCompareBlockNum {
 					var ss string
 					rlp.DecodeBytes(kl, &ss)
 					sss := strings.Split(ss, ",")
 					num, _ := strconv.Atoi(sss[0])
+					//fmt.Println("num:", num)
 					if Compare(IntToBytes(uint64(num)), bn) > 0 {
 						continue
 					}
 				}
-				r := searchValue{dt.Value, dt.Keylist}
+				tmpkl = append(tmpkl, kl)
+			}
+			if tmpkl != nil {
+				r := SearchValue{dt.Value, tmpkl}
 				result = append(result, r)
 			}
 		default:
@@ -1369,8 +1389,8 @@ func (tree *EBTree) CombineAndPrintSearchData(result []searchData, pos []byte, k
 	return nil
 }
 
-func (tree *EBTree) CombineAndPrintSearchValue(result []searchValue, pos []byte, k []byte, top bool) error {
-	log.Info("into comine and print searchValue")
+func (tree *EBTree) CombineAndPrintSearchValue(result []SearchValue, pos []byte, k []byte, top bool) error {
+	log.Info("into comine and print SearchValue")
 	if pos == nil {
 		pos = IntToBytes(uint64(0))
 	}
@@ -1452,9 +1472,9 @@ func (tree *EBTree) CombineSearchDataResult(result []searchData, min []byte, k [
 	return true, finalR, nil
 }
 
-func (tree *EBTree) CombineSearchValueResult(result []searchValue, min []byte, k []byte, top bool) (bool, []searchValue, error) {
+func (tree *EBTree) CombineSearchValueResult(result []SearchValue, min []byte, k []byte, top bool) (bool, []SearchValue, error) {
 
-	var finalR []searchValue
+	var finalR []SearchValue
 	var su bool
 	var pos uint64
 	var number uint64
@@ -1495,7 +1515,7 @@ func (tree *EBTree) CombineSearchValueResult(result []searchValue, min []byte, k
 			if len(finalR) >= len(result) {
 				break
 			}
-			sd := searchValue{}
+			sd := SearchValue{}
 			if pos >= max {
 				sd = result[i]
 				finalR = append(finalR, sd)

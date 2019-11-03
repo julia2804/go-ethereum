@@ -69,6 +69,19 @@ func (b *LesApiBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error
 	return ebtree, err
 }
 
+func (b *LesApiBackend) SpecificValueSearch(ctx context.Context, v uint64, bn uint64) (EBTree.SearchValue, error) {
+	data, err := b.eth.blockchain.SpecificValueSearch()
+	return data, err
+}
+
+func (b *LesApiBackend) SpecificValueSearchTime(ctx context.Context) {
+	b.eth.blockchain.SpecificValueSearch()
+}
+
+func (b *LesApiBackend) ClearSpecificValueSearchTime(ctx context.Context) {
+	b.eth.blockchain.ClearSpecificValueSearchTime()
+}
+
 func (b *LesApiBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([][]byte, error) {
 	data, err := b.eth.blockchain.TopkVSearch()
 	return data, err
