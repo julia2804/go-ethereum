@@ -949,6 +949,7 @@ func (t *EBTree) InsertToLeafData(nt *leafNode, i int, d *data, value []byte, da
 	if Compare(d.Value, value) == 0 {
 		//EBTree中已经存储了该value，因此，只要把data加入到对应到datalist中即可
 		d.Keylist = append(d.Keylist, da)
+		nt.Data[i] = d
 		return nil
 	} else {
 
