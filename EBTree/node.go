@@ -117,7 +117,7 @@ type searchData struct {
 	data  []byte
 }
 
-type searchValue struct {
+type SearchValue struct {
 	value []byte
 	data  [][]byte
 }
@@ -1196,7 +1196,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, bn []byte) (bool, []Se
 							continue
 						}
 					}
-					r := searchValue{(&dt).Value, (&dt).Keylist}
+					r := SearchValue{(&dt).Value, (&dt).Keylist}
 					result = append(result, r)
 				}
 			case *data:
@@ -1213,7 +1213,7 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, bn []byte) (bool, []Se
 							continue
 						}
 					}
-					r := searchValue{dt.Value, dt.Keylist}
+					r := SearchValue{dt.Value, dt.Keylist}
 					result = append(result, r)
 				}
 			default:

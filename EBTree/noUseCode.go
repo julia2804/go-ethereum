@@ -1057,8 +1057,8 @@ func SearchLeafNode(value []byte, n *leafNode) ([][]byte, error) {
 }
 
 //top-k value search
-func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error) {
-	var result []searchValue
+func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []SearchValue, error) {
+	var result []SearchValue
 	if max {
 		n, _, err := findFirstNode(t.Root, t)
 		if err != nil {
@@ -1082,16 +1082,16 @@ func (t *EBTree) TopkValueSearch(k []byte, max bool) (bool, []searchValue, error
 							return false, nil, err
 						}
 						n.Data[i] = da
-						r := searchValue{da.Value, da.Keylist}
+						r := SearchValue{da.Value, da.Keylist}
 						result = append(result, r)
 					case data:
-						r := searchValue{dt.Value, dt.Keylist}
+						r := SearchValue{dt.Value, dt.Keylist}
 						result = append(result, r)
 						if len(result) == 86 {
 							fmt.Println("hello")
 						}
 					case *data:
-						r := searchValue{dt.Value, dt.Keylist}
+						r := SearchValue{dt.Value, dt.Keylist}
 						result = append(result, r)
 					default:
 						err := errors.New("data is default")

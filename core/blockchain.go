@@ -701,7 +701,7 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, e
 		return nil, err
 	}
 
-	su, result, err := tree.TopkDataSearch(k, bn, true)
+	su, result, err := tree.TopkVSearch(k, bn, true)
 	if err != nil {
 		fmt.Printf("something wrong in topk  search with error")
 		return nil, err
@@ -710,7 +710,8 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, e
 		fmt.Println("something wrong in topk  search without error")
 	}
 	fmt.Println("we totally find", len(result), "data")
-	//tree.CombineAndPrintSearchData(result, nil, k, true)
+	fmt.Println("result", result)
+	//tree.CombineAndPrintSearchValue(result, nil, k, true)
 	return nil, err
 }
 
