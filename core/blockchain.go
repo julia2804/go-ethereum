@@ -710,7 +710,7 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, e
 		fmt.Println("something wrong in topk  search without error")
 	}
 	fmt.Println("we totally find", len(result), "data")
-	fmt.Println("result", result)
+	//fmt.Println("result", result)
 	//tree.CombineAndPrintSearchValue(result, nil, k, true)
 	return nil, err
 }
@@ -737,7 +737,8 @@ func (bc *BlockChain) RangeVSearch(begin uint64, end uint64, bn uint64, root []b
 	if !su {
 		fmt.Println("something wrong in range search without error")
 	}
-	tree.CombineAndPrintSearchValue(result, nil, buf3, true)
+	fmt.Println("range search num :", len(result))
+	//tree.CombineAndPrintSearchValue(result, nil, buf3, true)
 	return nil, err
 
 }
@@ -1187,11 +1188,11 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 	var t *EBTree.EBTree
 	if len(txs) > 0 {
 		t1 := time.Now()
-		fmt.Println("begin insert EBtree")
+		//fmt.Println("begin insert EBtree")
 		//恢复根节点
 		rid, _ := bc.GetEbtreeRoot()
-		fmt.Print("rid is :")
-		fmt.Println(rid)
+		//fmt.Print("rid is :")
+		//fmt.Println(rid)
 		t, _ = EBTree.New(rid, bc.ebtreeCache)
 
 		//将交易插入树中
@@ -1208,7 +1209,7 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 			bc.SetBlockChainEbtreeDB(t.Db)
 		}
 
-		fmt.Println("end insert EBtree")
+		//fmt.Println("end insert EBtree")
 		t2 := time.Now()
 		t3 := t2.Sub(t1).Microseconds()
 		insertTotalTime = insertTotalTime + t3
@@ -1307,7 +1308,7 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 // completes, then the historic state could be pruned again
 func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []interface{}, []*types.Log, error) {
 	// If the chain is terminating, don't even bother starting u
-	log.Info("into insertChain func")
+	//log.Info("into insertChain func")
 	if atomic.LoadInt32(&bc.procInterrupt) == 1 {
 		return 0, nil, nil, nil
 	}
