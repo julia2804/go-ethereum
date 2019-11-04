@@ -484,7 +484,7 @@ func (self *LightChain) ClearSpecificValueSearchTime() {
 }
 
 // TopkVSearch search a value .
-func (self *LightChain) TopkVSearch() ([][]byte, error) {
+func (self *LightChain) TopkVSearch() ([]EBTree.SearchValue, error) {
 
 	return nil, nil
 }
@@ -496,7 +496,7 @@ func (self *LightChain) ClearTopkVSearchTime() {
 
 }
 
-func (self *LightChain) RangeVSearch() ([][]byte, error) {
+func (self *LightChain) RangeVSearch() ([]EBTree.SearchValue, error) {
 
 	return nil, nil
 }

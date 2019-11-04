@@ -696,7 +696,7 @@ func (bc *BlockChain) CreateEbtree() (*EBTree.EBTree, error) {
 }
 
 // .
-func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, error) {
+func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([]EBTree.SearchValue, error) {
 	tree, err := EBTree.New(root, bc.ebtreeCache)
 	if err != nil {
 		return nil, err
@@ -713,10 +713,10 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, e
 	fmt.Println("we totally find", len(result), "data")
 	//fmt.Println("result", result)
 	//tree.CombineAndPrintSearchValue(result, nil, k, true)
-	return nil, err
+	return result, err
 }
 
-func (bc *BlockChain) RangeVSearch(begin *hexutil.Big, end *hexutil.Big, bn uint64, root []byte) ([][]byte, error) {
+func (bc *BlockChain) RangeVSearch(begin *hexutil.Big, end *hexutil.Big, bn uint64, root []byte) ([]EBTree.SearchValue, error) {
 	tree, err := EBTree.New(root, bc.ebtreeCache)
 	if err != nil {
 		return nil, err
@@ -739,7 +739,7 @@ func (bc *BlockChain) RangeVSearch(begin *hexutil.Big, end *hexutil.Big, bn uint
 	}
 	fmt.Println("range search num :", len(result))
 	//tree.CombineAndPrintSearchValue(result, nil, buf3, true)
-	return nil, err
+	return result, err
 
 }
 

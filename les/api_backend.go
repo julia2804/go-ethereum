@@ -83,7 +83,7 @@ func (b *LesApiBackend) ClearSpecificValueSearchTime(ctx context.Context) {
 	b.eth.blockchain.ClearSpecificValueSearchTime()
 }
 
-func (b *LesApiBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([][]byte, error) {
+func (b *LesApiBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error) {
 	data, err := b.eth.blockchain.TopkVSearch()
 	return data, err
 }

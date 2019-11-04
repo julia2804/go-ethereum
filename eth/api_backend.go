@@ -144,7 +144,7 @@ func (b *EthAPIBackend) ClearSpecificValueSearchTime(ctx context.Context) {
 var topkVSearchTotalTime int64
 var topkVSearchNum int64
 
-func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([][]byte, error) {
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error) {
 	t1 := time.Now()
 	fmt.Print("top k search :")
 	fmt.Println(k)
@@ -156,12 +156,12 @@ func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([
 	var buf2 = make([]byte, 8)
 	binary.BigEndian.PutUint64(buf2, bn)
 
-	data, err := b.eth.blockchain.TopkVSearch(buf1, buf2, root)
+	_, err = b.eth.blockchain.TopkVSearch(buf1, buf2, root)
 	t2 := time.Now()
 	t3 := t2.Sub(t1).Microseconds()
 	topkVSearchTotalTime = topkVSearchTotalTime + t3
 	topkVSearchNum++
-	return data, err
+	return nil, err
 }
 
 func (b *EthAPIBackend) TopkVSearchTime(ctx context.Context) {
@@ -178,7 +178,7 @@ func (b *EthAPIBackend) ClearTopkVSearchTime(ctx context.Context) {
 var rangeVSearchTotalTime int64
 var rangeVSearchNum int64
 
-func (b *EthAPIBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([][]byte, error) {
+func (b *EthAPIBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error) {
 	t1 := time.Now()
 	fmt.Print("starting range search : ")
 	fmt.Print(begin.ToInt().Bytes())
@@ -186,12 +186,12 @@ func (b *EthAPIBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, en
 	fmt.Println(end.ToInt().Bytes())
 
 	root, err := b.GetEbtreeRoot(ctx)
-	data, err := b.eth.blockchain.RangeVSearch(begin, end, bn, root)
+	_, err = b.eth.blockchain.RangeVSearch(begin, end, bn, root)
 	t2 := time.Now()
 	t3 := t2.Sub(t1).Microseconds()
 	rangeVSearchTotalTime = rangeVSearchTotalTime + t3
 	rangeVSearchNum++
-	return data, err
+	return nil, err
 }
 
 func (b *EthAPIBackend) RangeVSearchTime(ctx context.Context) {
