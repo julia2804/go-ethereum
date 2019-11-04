@@ -712,7 +712,7 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, e
 	}
 	fmt.Println("we totally find", len(result), "data")
 	//fmt.Println("result", result)
-	//tree.CombineAndPrintSearchValue(result, nil, k, true)
+	tree.CombineAndPrintSearchValue(result, nil, k, true)
 	return nil, err
 }
 
@@ -729,7 +729,7 @@ func (bc *BlockChain) RangeVSearch(begin *hexutil.Big, end *hexutil.Big, bn uint
 	var buf3 = make([]byte, 8)
 	binary.BigEndian.PutUint64(buf3, bn)
 
-	su, result, err := tree.RangeValueSearch(begin.ToInt().Bytes(),end.ToInt().Bytes(), buf3)
+	su, result, err := tree.RangeValueSearch(begin.ToInt().Bytes(), end.ToInt().Bytes(), buf3)
 	if err != nil {
 		fmt.Printf("something wrong in range search with error")
 		return nil, err
@@ -738,7 +738,7 @@ func (bc *BlockChain) RangeVSearch(begin *hexutil.Big, end *hexutil.Big, bn uint
 		fmt.Println("something wrong in range search without error")
 	}
 	fmt.Println("range search num :", len(result))
-	//tree.CombineAndPrintSearchValue(result, nil, buf3, true)
+	tree.CombineAndPrintSearchValue(result, nil, buf3, true)
 	return nil, err
 
 }
@@ -1183,15 +1183,16 @@ var insertNum int64
 var insertoutput string
 var sizeoutput string
 
-const datapath  = "/home/julia/data0"
+const datapath = "/home/julia/data0"
 const inserttimesavepath = "/home/julia/inserttime.txt"
-const datasizesavepath  = "/home/julia/datasize.txt"
+const datasizesavepath = "/home/julia/datasize.txt"
 const pend = 1
+
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(block *types.Block) {
 	bn := block.NumberU64()
-	if(bn >= 10 * pend && bn < 100 * pend){
-		if(bn % (10 * pend) == 0){
+	if bn >= 10*pend && bn < 100*pend {
+		if bn%(10*pend) == 0 {
 			dirsize := EBTree.ReadDir(datapath)
 			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
 			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
@@ -1199,16 +1200,16 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 			EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
 
 		}
-	}else if(bn >= 100 * pend && bn < 1000 * pend){
-		if(bn % (100 * pend) == 0){
+	} else if bn >= 100*pend && bn < 1000*pend {
+		if bn%(100*pend) == 0 {
 			dirsize := EBTree.ReadDir(datapath)
 			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
 			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
 			EBTree.WriteFile(inserttimesavepath, []byte(insertoutput))
 			EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
 		}
-	}else if(bn >= 1000 * pend && bn < 10000 * pend){
-		if(bn % (1000 * pend) == 0){
+	} else if bn >= 1000*pend && bn < 10000*pend {
+		if bn%(1000*pend) == 0 {
 			dirsize := EBTree.ReadDir(datapath)
 			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
 			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"

@@ -1186,34 +1186,44 @@ func (t *EBTree) RangeValueSearch(min []byte, max []byte, bn []byte) (bool, []Se
 				if Compare((&dt).Value, min) < 0 {
 					return su, result, err
 				}
+				var tmpkl [][]byte
 				for _, kl := range (&dt).Keylist {
 					if !notCompareBlockNum {
 						var ss string
 						rlp.DecodeBytes(kl, &ss)
 						sss := strings.Split(ss, ",")
 						num, _ := strconv.Atoi(sss[0])
+						//fmt.Println("num:", num)
 						if Compare(IntToBytes(uint64(num)), bn) > 0 {
 							continue
 						}
 					}
-					r := SearchValue{(&dt).Value, (&dt).Keylist}
+					tmpkl = append(tmpkl, kl)
+				}
+				if tmpkl != nil {
+					r := SearchValue{(&dt).Value, tmpkl}
 					result = append(result, r)
 				}
 			case *data:
 				if Compare(dt.Value, min) < 0 {
 					return su, result, err
 				}
+				var tmpkl [][]byte
 				for _, kl := range dt.Keylist {
 					if !notCompareBlockNum {
 						var ss string
 						rlp.DecodeBytes(kl, &ss)
 						sss := strings.Split(ss, ",")
 						num, _ := strconv.Atoi(sss[0])
+						//fmt.Println("num:", num)
 						if Compare(IntToBytes(uint64(num)), bn) > 0 {
 							continue
 						}
 					}
-					r := SearchValue{dt.Value, dt.Keylist}
+					tmpkl = append(tmpkl, kl)
+				}
+				if tmpkl != nil {
+					r := SearchValue{dt.Value, tmpkl}
 					result = append(result, r)
 				}
 			default:

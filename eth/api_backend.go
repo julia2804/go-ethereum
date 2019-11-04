@@ -181,9 +181,9 @@ var rangeVSearchNum int64
 func (b *EthAPIBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([][]byte, error) {
 	t1 := time.Now()
 	fmt.Print("starting range search : ")
-	fmt.Print(begin.String())
+	fmt.Print(begin.ToInt().Bytes())
 	fmt.Print("--->")
-	fmt.Println(end.String())
+	fmt.Println(end.ToInt().Bytes())
 
 	root, err := b.GetEbtreeRoot(ctx)
 	data, err := b.eth.blockchain.RangeVSearch(begin, end, bn, root)
