@@ -471,6 +471,7 @@ web3._extend({
 			name: 'specificValueSearch',
 			call: 'eth_specificValueSearch',
 			params: 2
+			inputFormatter: [web3._extend.utils.fromDecimal, null]
 		}),
 		new web3._extend.Method({
 			name: 'specificValueSearchTime',

@@ -70,7 +70,7 @@ func (b *LesApiBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error
 	return ebtree, err
 }
 
-func (b *LesApiBackend) SpecificValueSearch(ctx context.Context, v uint64, bn uint64) (EBTree.SearchValue, error) {
+func (b *LesApiBackend) SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, error) {
 	data, err := b.eth.blockchain.SpecificValueSearch()
 	return data, err
 }

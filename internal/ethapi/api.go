@@ -498,7 +498,7 @@ func (s *PublicBlockChainAPI) BlockNumber() hexutil.Uint64 {
 	return hexutil.Uint64(header.Number.Uint64())
 }
 
-func (s *PublicBlockChainAPI) SpecificValueSearch(ctx context.Context, k uint64, bn uint64) (EBTree.SearchValue, error) {
+func (s *PublicBlockChainAPI) SpecificValueSearch(ctx context.Context, k *hexutil.Big, bn uint64) (EBTree.SearchValue, error) {
 	data, err := s.b.SpecificValueSearch(ctx, k, bn)
 	return data, err
 }

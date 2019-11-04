@@ -108,20 +108,20 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 var specificValueSearchTime int64
 var specificValueSearchNum int64
 
-func (b *EthAPIBackend) SpecificValueSearch(ctx context.Context, v uint64, bn uint64) (EBTree.SearchValue, error) {
+func (b *EthAPIBackend) SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, error) {
 	t1 := time.Now()
 	fmt.Print("Specific Value search :")
-	fmt.Println(v)
+	fmt.Println(v.ToInt().Bytes())
 	root, err := b.GetEbtreeRoot(ctx)
 	tree, err := EBTree.New(root, b.eth.blockchain.EbtreeCache())
 
-	var buf1 = make([]byte, 8)
-	binary.BigEndian.PutUint64(buf1, v)
+	//var buf1 = make([]byte, 8)
+	//binary.BigEndian.PutUint64(buf1, v)
 
 	var buf2 = make([]byte, 8)
 	binary.BigEndian.PutUint64(buf2, bn)
 
-	data, err := tree.SpecificValueSearch(buf1, buf2)
+	data, err := tree.SpecificValueSearch(v.ToInt().Bytes(), buf2)
 	fmt.Println("specific search data", data)
 	t2 := time.Now()
 	t3 := t2.Sub(t1).Microseconds()
