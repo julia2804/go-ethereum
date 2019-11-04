@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"reflect"
 )
@@ -82,10 +83,10 @@ func minus(b []byte, i uint64) []byte {
 	return IntToBytes(f - i)
 }
 
-func getFileSize(filename string) int64{
+func getFileSize(filename string) int64 {
 	fileInfo, _ := os.Stat(filename)
 	//文件大小
-	filesize:= fileInfo.Size()
+	filesize := fileInfo.Size()
 	return filesize
 }
 
@@ -96,16 +97,34 @@ func ReadDir(dirPath string) int64 {
 		if f.IsDir() {
 			dirSize = ReadDir(dirPath+"/"+f.Name()) + dirSize
 		} else {
-			dirSize= f.Size() + dirSize
+			dirSize = f.Size() + dirSize
 		}
 	}
 	return dirSize
 }
-func WriteFile(name string, content []byte){
-	if ioutil.WriteFile(name, content, 0644) == nil{
+func WriteFile(name string, content []byte) {
+	if ioutil.WriteFile(name, content, 0644) == nil {
 		fmt.Println("WriteFile")
-	}else{
+	} else {
 		fmt.Println("NOT WriteFile")
 	}
 }
 
+//这里的n只是大致数量，输出的n才是真正的数量
+func GenTestData(n int) {
+	m1 := make(map[float32]string)
+	var length int
+	for i := 0; i < n; i++ {
+		eth := rand.Float32() * 5
+		if _, ok := m1[eth]; ok {
+			//fmt.Println("is duclip",v)
+		} else {
+			fmt.Print("eth.sendTransaction({from:eth.coinbase,to:"+
+				"\"0x4751c4cd1ef729afc3232b2064565f1d692a9346\",value:web3.toWei(", eth)
+			fmt.Println(",'ether')})")
+			m1[eth] = "1"
+			length++
+		}
+	}
+	fmt.Println(len(m1))
+}

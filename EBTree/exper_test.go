@@ -40,6 +40,7 @@ func TestWrite(t *testing.T) {
 	content = "aaa\nbbbu\n"
 	WriteFile("/home/julia/test.txt", []byte(content))
 
-
 }
-
+func TestGen(t *testing.T) {
+	GenTestData(1000)
+}

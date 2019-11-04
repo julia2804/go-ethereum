@@ -96,7 +96,7 @@ func (b *LesApiBackend) ClearTopkVSearchTime(ctx context.Context) {
 	b.eth.blockchain.ClearTopkVSearchTime()
 }
 
-func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([][]byte, error) {
+func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error) {
 	data, err := b.eth.blockchain.RangeVSearch()
 	return data, err
 }
