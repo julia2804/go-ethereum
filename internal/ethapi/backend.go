@@ -20,6 +20,7 @@ package ethapi
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/EBTree"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -58,7 +59,7 @@ type Backend interface {
 	TopkVSearch(ctx context.Context, k uint64, bn uint64) ([][]byte, error)
 	TopkVSearchTime(ctx context.Context)
 	ClearTopkVSearchTime(ctx context.Context)
-	RangeVSearch(ctx context.Context, begin uint64, end uint64, bn uint64) ([][]byte, error)
+	RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([][]byte, error)
 	RangeVSearchTime(ctx context.Context)
 	ClearRangeVSearchTime(ctx context.Context)
 	InsertTime(ctx context.Context)

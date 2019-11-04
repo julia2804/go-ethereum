@@ -19,6 +19,7 @@ package les
 import (
 	"context"
 	"github.com/ethereum/go-ethereum/EBTree"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -95,7 +96,7 @@ func (b *LesApiBackend) ClearTopkVSearchTime(ctx context.Context) {
 	b.eth.blockchain.ClearTopkVSearchTime()
 }
 
-func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin uint64, end uint64, bn uint64) ([][]byte, error) {
+func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([][]byte, error) {
 	data, err := b.eth.blockchain.RangeVSearch()
 	return data, err
 }

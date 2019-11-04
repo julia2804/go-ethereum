@@ -506,6 +506,7 @@ web3._extend({
 			name: 'rangeVSearch',
 			call: 'eth_rangeVSearch',
 			params: 3
+			inputFormatter: [web3._extend.utils.fromDecimal, web3._extend.utils.fromDecimal, null]
 		}),
 		new web3._extend.Method({
 			name: 'rangeVSearchTime',

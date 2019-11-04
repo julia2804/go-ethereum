@@ -23,6 +23,7 @@ import (
 	"github.com/ethereum/go-ethereum/EBTree"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/bloombits"
@@ -177,12 +178,12 @@ func (b *EthAPIBackend) ClearTopkVSearchTime(ctx context.Context) {
 var rangeVSearchTotalTime int64
 var rangeVSearchNum int64
 
-func (b *EthAPIBackend) RangeVSearch(ctx context.Context, begin uint64, end uint64, bn uint64) ([][]byte, error) {
+func (b *EthAPIBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([][]byte, error) {
 	t1 := time.Now()
 	fmt.Print("starting range search : ")
-	fmt.Print(begin)
+	fmt.Print(begin.String())
 	fmt.Print("--->")
-	fmt.Println(end)
+	fmt.Println(end.String())
 
 	root, err := b.GetEbtreeRoot(ctx)
 	data, err := b.eth.blockchain.RangeVSearch(begin, end, bn, root)
