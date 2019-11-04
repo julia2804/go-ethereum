@@ -122,7 +122,7 @@ func (b *EthAPIBackend) SpecificValueSearch(ctx context.Context, v *hexutil.Big,
 	binary.BigEndian.PutUint64(buf2, bn)
 
 	data, err := tree.SpecificValueSearch(v.ToInt().Bytes(), buf2)
-	fmt.Println("specific search data", data)
+	fmt.Println("specific search data num:", len(data.Data))
 	t2 := time.Now()
 	t3 := t2.Sub(t1).Microseconds()
 	specificValueSearchTime = specificValueSearchTime + t3

@@ -118,8 +118,8 @@ type searchData struct {
 }
 
 type SearchValue struct {
-	value []byte
-	data  [][]byte
+	Value []byte
+	Data  [][]byte
 }
 
 type DataInterface interface {
@@ -806,8 +806,8 @@ func AddToSearchValue(d DataInterface, bn []byte, value []byte) (SearchValue, er
 
 			}
 			if len(ds) > 0 {
-				result.value = dt.Value
-				result.data = ds
+				result.Value = dt.Value
+				result.Data = ds
 				return result, nil, false
 			} else {
 				err := errors.New("no data found")
@@ -839,8 +839,8 @@ func AddToSearchValue(d DataInterface, bn []byte, value []byte) (SearchValue, er
 
 			}
 			if len(ds) > 0 {
-				result.value = dt.Value
-				result.data = ds
+				result.Value = dt.Value
+				result.Data = ds
 				return result, nil, false
 			} else {
 				err := errors.New("no data found")
@@ -1405,8 +1405,8 @@ func (tree *EBTree) CombineAndPrintSearchValue(result []SearchValue, pos []byte,
 		pos = IntToBytes(uint64(0))
 	}
 	for i, r := range result {
-		fmt.Printf("the %dth value is %d,the data is:\n", i, r.value)
-		fmt.Println(r.data)
+		fmt.Printf("the %dth value is %d,the data is:\n", i, r.Value)
+		fmt.Println(r.Data)
 	}
 	return nil
 }
@@ -1494,7 +1494,7 @@ func (tree *EBTree) CombineSearchValueResult(result []SearchValue, min []byte, k
 			err := errors.New("result is nil, no data in range")
 			return false, nil, err
 		} else {
-			su, pos, number, err = tree.CompareSpeacial(IntToBytes(0), result[len(result)-1].value)
+			su, pos, number, err = tree.CompareSpeacial(IntToBytes(0), result[len(result)-1].Value)
 		}
 
 	} else {
@@ -1506,7 +1506,7 @@ func (tree *EBTree) CombineSearchValueResult(result []SearchValue, min []byte, k
 				err := errors.New("result is nil, no data in range")
 				return false, nil, err
 			} else {
-				su, pos, number, err = tree.CompareSpeacial(min, result[len(result)-1].value)
+				su, pos, number, err = tree.CompareSpeacial(min, result[len(result)-1].Value)
 			}
 		}
 
@@ -1532,9 +1532,9 @@ func (tree *EBTree) CombineSearchValueResult(result []SearchValue, min []byte, k
 				i++
 				continue
 			}
-			if Compare(result[i].value, tree.special[pos].value) > 0 {
-				sd.value = tree.special[pos].value
-				sd.data = tree.special[pos].data
+			if Compare(result[i].Value, tree.special[pos].value) > 0 {
+				sd.Value = tree.special[pos].value
+				sd.Data = tree.special[pos].data
 				finalR = append(finalR, sd)
 				pos = pos + 1
 				if pos >= max {

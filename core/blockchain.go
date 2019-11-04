@@ -712,7 +712,7 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([][]byte, e
 	}
 	fmt.Println("we totally find", len(result), "data")
 	//fmt.Println("result", result)
-	tree.CombineAndPrintSearchValue(result, nil, k, true)
+	//tree.CombineAndPrintSearchValue(result, nil, k, true)
 	return nil, err
 }
 
@@ -738,7 +738,7 @@ func (bc *BlockChain) RangeVSearch(begin *hexutil.Big, end *hexutil.Big, bn uint
 		fmt.Println("something wrong in range search without error")
 	}
 	fmt.Println("range search num :", len(result))
-	tree.CombineAndPrintSearchValue(result, nil, buf3, true)
+	//tree.CombineAndPrintSearchValue(result, nil, buf3, true)
 	return nil, err
 
 }
@@ -1186,7 +1186,7 @@ var sizeoutput string
 const datapath = "/home/julia/data0"
 const inserttimesavepath = "/home/julia/inserttime.txt"
 const datasizesavepath = "/home/julia/datasize.txt"
-const pend = 1
+const pend = 1000
 
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(block *types.Block) {
