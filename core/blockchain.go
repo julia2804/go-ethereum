@@ -20,9 +20,11 @@ package core
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"io"
 	"math/big"
 	mrand "math/rand"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -1099,6 +1101,13 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 	return n, err
 }
 
+const datapath = "/home/julia/data0"
+const inserttimesavepath = "/home/julia/inserttime.txt"
+const datasizesavepath = "/home/julia/datasize.txt"
+const pend = 1
+
+var sizeoutput string
+
 // insertChain is the internal implementation of insertChain, which assumes that
 // 1) chains are contiguous, and 2) The chain mutex is held.
 //
@@ -1254,6 +1263,28 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 
 		cache, _ := bc.stateCache.TrieDB().Size()
 		stats.report(chain, it.index, cache)
+		//将交易保存到索引中
+		bn := block.NumberU64()
+		if bn >= 10*pend && bn < 100*pend {
+			if bn%(10*pend) == 0 {
+				dirsize := EBTree.ReadDir(datapath)
+				sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
+				EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+
+			}
+		} else if bn >= 100*pend && bn < 1000*pend {
+			if bn%(100*pend) == 0 {
+				dirsize := EBTree.ReadDir(datapath)
+				sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
+				EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+			}
+		} else if bn >= 1000*pend && bn < 10000*pend {
+			if bn%(1000*pend) == 0 {
+				dirsize := EBTree.ReadDir(datapath)
+				sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
+				EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+			}
+		}
 	}
 	// Any blocks remaining here? The only ones we care about are the future ones
 	if block != nil && err == consensus.ErrFutureBlock {
