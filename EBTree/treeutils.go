@@ -56,7 +56,7 @@ func IndentBytes(f []byte, s []byte) ([]byte, []byte) {
 			lemax = append(lemax, b0)
 		}
 		for j := 0; j < len(s); j++ {
-			lemax = append(lev, s[j])
+			lemax = append(lemax, s[j])
 		}
 		for j := 0; j < len(f); j++ {
 			lev = append(lev, f[j])
