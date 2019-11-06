@@ -44,3 +44,7 @@ func TestWrite(t *testing.T) {
 func TestGen(t *testing.T) {
 	GenTestData(1000)
 }
+
+func TestAppend(t *testing.T) {
+	AppendToFile("/home/mimota/test.txt", "aaa\n")
+}

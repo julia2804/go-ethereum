@@ -1193,28 +1193,19 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 	bn := block.NumberU64()
 	if bn >= 10*pend && bn < 100*pend {
 		if bn%(10*pend) == 0 {
-			dirsize := EBTree.ReadDir(datapath)
-			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
-			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
-			EBTree.WriteFile(inserttimesavepath, []byte(insertoutput))
-			EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+			insertoutput = strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+			EBTree.AppendToFile(inserttimesavepath, insertoutput)
 
 		}
 	} else if bn >= 100*pend && bn < 1000*pend {
 		if bn%(100*pend) == 0 {
-			dirsize := EBTree.ReadDir(datapath)
 			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
-			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
-			EBTree.WriteFile(inserttimesavepath, []byte(insertoutput))
-			EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+			EBTree.AppendToFile(inserttimesavepath, insertoutput)
 		}
 	} else if bn >= 1000*pend && bn < 10000*pend {
 		if bn%(1000*pend) == 0 {
-			dirsize := EBTree.ReadDir(datapath)
 			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
-			sizeoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(dirsize, 10) + "\n"
-			EBTree.WriteFile(inserttimesavepath, []byte(insertoutput))
-			EBTree.WriteFile(datasizesavepath, []byte(sizeoutput))
+			EBTree.AppendToFile(inserttimesavepath, insertoutput)
 		}
 	}
 

@@ -127,7 +127,9 @@ func (b *EthAPIBackend) SpecificValueSearch(ctx context.Context, v *hexutil.Big,
 	t3 := t2.Sub(t1).Microseconds()
 	specificValueSearchTime = specificValueSearchTime + t3
 	specificValueSearchNum++
-	return data, err
+
+	var tmp EBTree.SearchValue
+	return tmp, err
 }
 
 func (b *EthAPIBackend) SpecificValueSearchTime(ctx context.Context) {
