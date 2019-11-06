@@ -21,7 +21,7 @@ do
     printf "${loop}," >> ${time_record_path}
     echo "scale=6;($end_ms - $start_ms)/1000000" | bc >> ${time_record_path}
 
-	printf "${loop}," >> $data_size_record_path
-    du -sh $datadir_path >> $data_size_record_path
+	  printf "${loop}," >> $data_size_record_path
+    du -s $datadir_path >> $data_size_record_path
 
 done

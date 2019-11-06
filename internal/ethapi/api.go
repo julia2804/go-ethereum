@@ -511,6 +511,10 @@ func (s *PublicBlockChainAPI) ClearSpecificValueSearchTime(ctx context.Context) 
 	s.b.ClearSpecificValueSearchTime(ctx)
 }
 
+func (s *PublicBlockChainAPI) ExperStart(ctx context.Context) {
+	s.b.ExperStart(ctx)
+}
+
 // TopkVSearch returns the topk value of transactions indexed by ebtree.
 func (s *PublicBlockChainAPI) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error) {
 	data, err := s.b.TopkVSearch(ctx, k, bn)

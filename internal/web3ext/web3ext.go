@@ -468,9 +468,14 @@ web3._extend({
 			params: 0
 		}),
 		new web3._extend.Method({
+			name: 'experStart',
+			call: 'eth_experStart',
+			params: 0
+		}),
+		new web3._extend.Method({
 			name: 'specificValueSearch',
 			call: 'eth_specificValueSearch',
-			params: 2
+			params: 2,
 			inputFormatter: [web3._extend.utils.fromDecimal, null]
 		}),
 		new web3._extend.Method({
@@ -506,7 +511,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'rangeVSearch',
 			call: 'eth_rangeVSearch',
-			params: 3
+			params: 3,
 			inputFormatter: [web3._extend.utils.fromDecimal, web3._extend.utils.fromDecimal, null]
 		}),
 		new web3._extend.Method({

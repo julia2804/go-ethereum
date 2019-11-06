@@ -37,6 +37,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
+	"strconv"
 	"time"
 )
 
@@ -103,6 +104,40 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	}
 	stateDb, err := b.eth.BlockChain().StateAt(header.Root)
 	return stateDb, header, err
+}
+
+func (b *EthAPIBackend) ExperStart(ctx context.Context) {
+	k := uint64(1)
+	for i := 0; i < 8; i++ {
+		b.ClearTopkVSearchTime(ctx)
+		var content string
+		b.TopkVSearch(ctx, k, uint64(0))
+		content += strconv.FormatUint(k, 10)
+		content += ","
+		content += strconv.FormatInt(topkVSearchTotalTime, 10)
+		content += "\n"
+		EBTree.AppendToFile("/home/mimota/topksearch.txt", content)
+		k = k * 10
+		b.ClearTopkVSearchTime(ctx)
+	}
+
+	//start := "10000000000000000"
+	//Intstart, _ := new(big.Int).SetString(start, 10)
+	//var Bigstart hexutil.Big
+	//Bigstart = hexutil.Big(*Intstart)
+	//
+	//span := "10000000000000000"
+	//for i:= 0; i < 8; i++{
+	//	Intspan, _ := new(big.Int).SetString(span, 10)
+	//	var Bigspan hexutil.Big
+	//	Bigspan = hexutil.Big(*Intspan)
+	//
+	//	Intend := Intstart.Abs(Intspan)
+	//	var Bigstart hexutil.Big
+	//	Bigstart = hexutil.Big(*Intstart)
+	//}
+	//
+	//b.RangeVSearch(ctx, t, t, uint64(0))
 }
 
 var specificValueSearchTime int64

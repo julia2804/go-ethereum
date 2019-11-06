@@ -143,3 +143,7 @@ func AppendToFile(fileName string, content string) {
 	}
 	defer f.Close()
 }
+
+func BigAbs(a string, b string) {
+
+}

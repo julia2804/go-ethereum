@@ -56,6 +56,7 @@ type Backend interface {
 	SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, error)
 	SpecificValueSearchTime(ctx context.Context)
 	ClearSpecificValueSearchTime(ctx context.Context)
+	ExperStart(ctx context.Context)
 	TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error)
 	TopkVSearchTime(ctx context.Context)
 	ClearTopkVSearchTime(ctx context.Context)
