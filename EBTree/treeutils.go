@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"io/ioutil"
+	"math/big"
 	"math/rand"
 	"os"
 	"reflect"
@@ -144,6 +146,13 @@ func AppendToFile(fileName string, content string) {
 	defer f.Close()
 }
 
-func BigAbs(a string, b string) {
+func BigAbs(a string, b string) hexutil.Big {
+	Inta, _ := new(big.Int).SetString(a, 10)
+	Intb, _ := new(big.Int).SetString(b, 10)
+	return hexutil.Big(*Inta.Abs(Intb))
+}
 
+func StringToBig(a string) hexutil.Big {
+	Inta, _ := new(big.Int).SetString(a, 10)
+	return hexutil.Big(*Inta)
 }

@@ -121,23 +121,44 @@ func (b *EthAPIBackend) ExperStart(ctx context.Context) {
 		b.ClearTopkVSearchTime(ctx)
 	}
 
-	//start := "10000000000000000"
-	//Intstart, _ := new(big.Int).SetString(start, 10)
-	//var Bigstart hexutil.Big
-	//Bigstart = hexutil.Big(*Intstart)
-	//
-	//span := "10000000000000000"
-	//for i:= 0; i < 8; i++{
-	//	Intspan, _ := new(big.Int).SetString(span, 10)
-	//	var Bigspan hexutil.Big
-	//	Bigspan = hexutil.Big(*Intspan)
-	//
-	//	Intend := Intstart.Abs(Intspan)
-	//	var Bigstart hexutil.Big
-	//	Bigstart = hexutil.Big(*Intstart)
-	//}
-	//
-	//b.RangeVSearch(ctx, t, t, uint64(0))
+	start := "10000000000000000"
+	Intstart, _ := new(big.Int).SetString(start, 10)
+	var Bigstart hexutil.Big
+	Bigstart = hexutil.Big(*Intstart)
+	span := "10000000000000000"
+	for i := 0; i < 8; i++ {
+		b.ClearRangeVSearchTime(ctx)
+		var content string
+
+		Bigend := EBTree.BigAbs(start, span)
+		b.RangeVSearch(ctx, &Bigstart, &Bigend, uint64(0))
+
+		content += span
+		content += ","
+		content += strconv.FormatInt(rangeVSearchTotalTime, 10)
+		content += "\n"
+		EBTree.AppendToFile("/home/mimota/rangeVsearch.txt", content)
+
+		span += "0"
+	}
+
+	value := "10000000000000000"
+	for i := 0; i < 6; i++ {
+		b.ClearSpecificValueSearchTime(ctx)
+		var content string
+
+		BigV := EBTree.StringToBig(value)
+		b.SpecificValueSearch(ctx, &BigV, uint64(10000000))
+
+		content += value
+		content += ","
+		content += strconv.FormatInt(specificValueSearchTime, 10)
+		content += "\n"
+		EBTree.AppendToFile("/home/mimota/specificVsearch.txt", content)
+
+		value += "0"
+	}
+
 }
 
 var specificValueSearchTime int64

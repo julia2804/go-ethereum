@@ -470,6 +470,9 @@ func (self *LightChain) CreateEbtree() (*EBTree.EBTree, error) {
 	return nil, nil
 }
 
+func (self *LightChain) ExperStart() {
+}
+
 func (self *LightChain) SpecificValueSearch() (EBTree.SearchValue, error) {
 	var tmp EBTree.SearchValue
 	return tmp, nil
