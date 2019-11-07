@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/EBTree"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -106,7 +107,23 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, blockNr rpc.
 	return stateDb, header, err
 }
 
+var topkpath string
+var rangepath string
+var specificpath string
+
 func (b *EthAPIBackend) ExperStart(ctx context.Context) {
+	if len(topkpath) == 0 {
+		topkpath = ethereum.GetValueFromDefaultPath("experiment", "topkpath")
+	}
+
+	if len(rangepath) == 0 {
+		rangepath = ethereum.GetValueFromDefaultPath("experiment", "rangepath")
+	}
+
+	if len(specificpath) == 0 {
+		specificpath = ethereum.GetValueFromDefaultPath("experiment", "specificpath")
+	}
+
 	k := uint64(1)
 	for i := 0; i < 8; i++ {
 		b.ClearTopkVSearchTime(ctx)
@@ -116,9 +133,8 @@ func (b *EthAPIBackend) ExperStart(ctx context.Context) {
 		content += ","
 		content += strconv.FormatInt(topkVSearchTotalTime, 10)
 		content += "\n"
-		EBTree.AppendToFile("/home/mimota/topksearch.txt", content)
+		EBTree.AppendToFile(topkpath, content)
 		k = k * 10
-		b.ClearTopkVSearchTime(ctx)
 	}
 
 	start := "10000000000000000"
@@ -137,7 +153,7 @@ func (b *EthAPIBackend) ExperStart(ctx context.Context) {
 		content += ","
 		content += strconv.FormatInt(rangeVSearchTotalTime, 10)
 		content += "\n"
-		EBTree.AppendToFile("/home/mimota/rangeVsearch.txt", content)
+		EBTree.AppendToFile(rangepath, content)
 
 		span += "0"
 	}
@@ -154,7 +170,7 @@ func (b *EthAPIBackend) ExperStart(ctx context.Context) {
 		content += ","
 		content += strconv.FormatInt(specificValueSearchTime, 10)
 		content += "\n"
-		EBTree.AppendToFile("/home/mimota/specificVsearch.txt", content)
+		EBTree.AppendToFile(specificpath, content)
 
 		value += "0"
 	}

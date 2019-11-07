@@ -18,6 +18,7 @@ package EBTree
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"testing"
 )
 
@@ -47,4 +48,10 @@ func TestGen(t *testing.T) {
 
 func TestAppend(t *testing.T) {
 	AppendToFile("/home/mimota/test.txt", "aaa\n")
+}
+
+func TestGetConfig(t *testing.T) {
+	fmt.Println(ethereum.GetValueFromDefaultPath("insert", "inserttimesavepath"))
+	//fmt.Println(ethereum.GetValue("~/go/src/github.com/ethereum/go-ethereum/config.ini","insert", "inserttimesavepath"))
+
 }

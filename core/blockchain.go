@@ -21,6 +21,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/EBTree"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"io"
@@ -1183,13 +1184,20 @@ var insertNum int64
 var insertoutput string
 var sizeoutput string
 
-const datapath = "/home/julia/data0"
-const inserttimesavepath = "/home/julia/inserttime.txt"
-const datasizesavepath = "/home/julia/datasize.txt"
-const pend = 1000
+var inserttimesavepath string
+var pend uint64
 
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(block *types.Block) {
+	if pend == 0 {
+		intpend, _ := strconv.Atoi(ethereum.GetValueFromDefaultPath("insert", "pend"))
+		pend = uint64(intpend)
+	}
+
+	if len(inserttimesavepath) == 0 {
+		inserttimesavepath = ethereum.GetValueFromDefaultPath("insert", "inserttimesavepath")
+	}
+
 	bn := block.NumberU64()
 	if bn >= 10*pend && bn < 100*pend {
 		if bn%(10*pend) == 0 {
