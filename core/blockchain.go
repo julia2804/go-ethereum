@@ -712,6 +712,14 @@ func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([]EBTree.Se
 		fmt.Println("something wrong in topk  search without error")
 	}
 	fmt.Println("we totally find", len(result), "data")
+	sum := 0
+	for i := 0; i < len(result); i++ {
+		for j := 0; j < len(result[i].Data); j++ {
+			sum++
+		}
+
+	}
+	fmt.Println("the total transactions number:", sum)
 	//fmt.Println("result", result)
 	//tree.CombineAndPrintSearchValue(result, nil, k, true)
 	return result, err
@@ -740,6 +748,15 @@ func (bc *BlockChain) RangeVSearch(begin *hexutil.Big, end *hexutil.Big, bn uint
 	}
 	fmt.Println("range search num :", len(result))
 	//tree.CombineAndPrintSearchValue(result, nil, buf3, true)
+	sum := 0
+	for i := 0; i < len(result); i++ {
+		for j := 0; j < len(result[i].Data); j++ {
+			sum++
+		}
+
+	}
+	fmt.Println("the total transactions number:", sum)
+	//fmt.Println("result", result)
 	return result, err
 
 }

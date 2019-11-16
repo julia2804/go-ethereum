@@ -41,7 +41,7 @@ func GetValue(path string, section string, key string) string {
 
 func GetValueFromDefaultPath(section string, key string) string {
 	path1 := "/home/mimota/go/src/github.com/ethereum/go-ethereum/config.ini"
-	path2 := "/root/go/src/github.com/ethereum/go-ethereum/config.ini"
+	path2 := "/home/julia/config.ini"
 
 	if GetConfig(path1) == nil && GetConfig(path2) == nil {
 		fmt.Println("no cfg in two path")
