@@ -207,6 +207,8 @@ type BlockChain interface {
 
 	// InsertReceiptChain inserts a batch of receipts into the local chain.
 	InsertReceiptChain(types.Blocks, []types.Receipts, uint64) (int, error)
+s
+	InsertEBtree(block *types.Block)
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
@@ -1701,6 +1703,7 @@ func (d *Downloader) commitFastSyncData(results []*fetchResult, stateSync *state
 	receipts := make([]types.Receipts, len(results))
 	for i, result := range results {
 		blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions, result.Uncles)
+		d.blockchain.InsertEBtree(blocks[i])
 		receipts[i] = result.Receipts
 	}
 	if index, err := d.blockchain.InsertReceiptChain(blocks, receipts, d.ancientLimit); err != nil {
