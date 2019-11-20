@@ -18,8 +18,15 @@ package eth
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
+	"fmt"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/EBTree"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
+	"strconv"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -168,6 +175,198 @@ func (b *EthAPIBackend) StateAndHeaderByNumberOrHash(ctx context.Context, blockN
 		return stateDb, header, err
 	}
 	return nil, nil, errors.New("invalid arguments; neither block nor hash specified")
+}
+
+var topkpath string
+var rangepath string
+var specificpath string
+
+func (b *EthAPIBackend) ExperStart(ctx context.Context) {
+	if len(topkpath) == 0 {
+		topkpath = ethereum.GetValueFromDefaultPath("experiment", "topkpath")
+	}
+
+	if len(rangepath) == 0 {
+		rangepath = ethereum.GetValueFromDefaultPath("experiment", "rangepath")
+	}
+
+	if len(specificpath) == 0 {
+		specificpath = ethereum.GetValueFromDefaultPath("experiment", "specificpath")
+	}
+
+	k := uint64(1)
+	for i := 0; i < 8; i++ {
+		b.ClearTopkVSearchTime(ctx)
+		var content string
+		b.TopkVSearch(ctx, k, uint64(0))
+		content += strconv.FormatUint(k, 10)
+		content += ","
+		content += strconv.FormatInt(topkVSearchTotalTime, 10)
+		content += "\n"
+		EBTree.AppendToFile(topkpath, content)
+		k = k * 10
+	}
+
+	start := "10000000000000000"
+	Intstart, _ := new(big.Int).SetString(start, 10)
+	var Bigstart hexutil.Big
+	Bigstart = hexutil.Big(*Intstart)
+	span := "10000000000000000"
+	for i := 0; i < 8; i++ {
+		b.ClearRangeVSearchTime(ctx)
+		var content string
+
+		Bigend := EBTree.BigAbs(start, span)
+		b.RangeVSearch(ctx, &Bigstart, &Bigend, uint64(0))
+
+		content += span
+		content += ","
+		content += strconv.FormatInt(rangeVSearchTotalTime, 10)
+		content += "\n"
+		EBTree.AppendToFile(rangepath, content)
+
+		span += "0"
+	}
+
+	value := "10000000000000000"
+	for i := 0; i < 6; i++ {
+		b.ClearSpecificValueSearchTime(ctx)
+		var content string
+
+		BigV := EBTree.StringToBig(value)
+		b.SpecificValueSearch(ctx, &BigV, uint64(10000000))
+
+		content += value
+		content += ","
+		content += strconv.FormatInt(specificValueSearchTime, 10)
+		content += "\n"
+		EBTree.AppendToFile(specificpath, content)
+
+		value += "0"
+	}
+
+}
+
+var specificValueSearchTime int64
+var specificValueSearchNum int64
+
+func (b *EthAPIBackend) SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, error) {
+	t1 := time.Now()
+	fmt.Print("Specific Value search :")
+	fmt.Println(v.ToInt().Bytes())
+	root, err := b.GetEbtreeRoot(ctx)
+	tree, err := EBTree.New(root, b.eth.blockchain.EbtreeCache())
+
+	//var buf1 = make([]byte, 8)
+	//binary.BigEndian.PutUint64(buf1, v)
+
+	var buf2 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf2, bn)
+
+	data, err := tree.SpecificValueSearch(v.ToInt().Bytes(), buf2)
+	fmt.Println("specific search data num:", len(data.Data))
+	t2 := time.Now()
+	t3 := t2.Sub(t1).Microseconds()
+	specificValueSearchTime = specificValueSearchTime + t3
+	specificValueSearchNum++
+
+	var tmp EBTree.SearchValue
+	return tmp, err
+}
+
+func (b *EthAPIBackend) SpecificValueSearchTime(ctx context.Context) {
+	fmt.Println("SpecificValueSearchTime:", specificValueSearchTime, "us")
+	fmt.Println("times：", specificValueSearchNum)
+}
+
+func (b *EthAPIBackend) ClearSpecificValueSearchTime(ctx context.Context) {
+	specificValueSearchTime = 0
+	specificValueSearchNum = 0
+	fmt.Println("cleared SpecificValueSearchTime")
+}
+
+var topkVSearchTotalTime int64
+var topkVSearchNum int64
+
+func (b *EthAPIBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error) {
+	t1 := time.Now()
+	fmt.Print("top k search :")
+	fmt.Println(k)
+	root, err := b.GetEbtreeRoot(ctx)
+
+	var buf1 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf1, k)
+
+	var buf2 = make([]byte, 8)
+	binary.BigEndian.PutUint64(buf2, bn)
+
+	_, err = b.eth.blockchain.TopkVSearch(buf1, buf2, root)
+	t2 := time.Now()
+	t3 := t2.Sub(t1).Microseconds()
+	topkVSearchTotalTime = topkVSearchTotalTime + t3
+	topkVSearchNum++
+	return nil, err
+}
+
+func (b *EthAPIBackend) TopkVSearchTime(ctx context.Context) {
+	fmt.Println("topkVSearchTotalTime:", topkVSearchTotalTime, "us")
+	fmt.Println("times：", topkVSearchNum)
+}
+
+func (b *EthAPIBackend) ClearTopkVSearchTime(ctx context.Context) {
+	topkVSearchTotalTime = 0
+	topkVSearchNum = 0
+	fmt.Println("cleared topkVSearchTotalTime")
+}
+
+var rangeVSearchTotalTime int64
+var rangeVSearchNum int64
+
+func (b *EthAPIBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error) {
+	t1 := time.Now()
+	fmt.Print("starting range search : ")
+	fmt.Print(begin.ToInt().Bytes())
+	fmt.Print("--->")
+	fmt.Println(end.ToInt().Bytes())
+
+	root, err := b.GetEbtreeRoot(ctx)
+	_, err = b.eth.blockchain.RangeVSearch(begin, end, bn, root)
+	t2 := time.Now()
+	t3 := t2.Sub(t1).Microseconds()
+	rangeVSearchTotalTime = rangeVSearchTotalTime + t3
+	rangeVSearchNum++
+	return nil, err
+}
+
+func (b *EthAPIBackend) RangeVSearchTime(ctx context.Context) {
+	fmt.Println("rangeVSearchTotalTime:", rangeVSearchTotalTime, "us")
+	fmt.Println("times: ", rangeVSearchNum)
+}
+
+func (b *EthAPIBackend) ClearRangeVSearchTime(ctx context.Context) {
+	rangeVSearchTotalTime = 0
+	rangeVSearchNum = 0
+	fmt.Println("cleared rangeVSearchTotalTime")
+}
+
+func (b *EthAPIBackend) InsertTime(ctx context.Context) {
+	b.eth.blockchain.InsertTime()
+}
+
+func (b *EthAPIBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error) {
+	ebtree, err := b.eth.blockchain.CreateEbtree()
+	return ebtree, err
+}
+func (b *EthAPIBackend) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
+	key := []byte("TEbtreeRoot")
+	root, err := b.eth.chainDb.Get(key)
+	fmt.Print("rid is :")
+	fmt.Println(root)
+	//root, err := b.eth.blockchain.GetEbtreeRoot()
+	if err != nil {
+		return nil, err
+	}
+	return root, nil
 }
 
 func (b *EthAPIBackend) GetReceipts(ctx context.Context, hash common.Hash) (types.Receipts, error) {

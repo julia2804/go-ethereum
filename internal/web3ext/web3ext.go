@@ -460,6 +460,73 @@ web3._extend({
 			params: 0
 		}),
 		new web3._extend.Method({
+			name: 'getEbtreeRoot',
+			call: 'eth_getEbtreeRoot',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'createEbtree',
+			call: 'eth_createEbtree',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'experStart',
+			call: 'eth_experStart',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'specificValueSearch',
+			call: 'eth_specificValueSearch',
+			params: 2,
+			inputFormatter: [web3._extend.utils.fromDecimal, null]
+		}),
+		new web3._extend.Method({
+			name: 'specificValueSearchTime',
+			call: 'eth_specificValueSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'clearSpecificValueSearchTime',
+			call: 'eth_clearSpecificValueSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'topkVSearch',
+			call: 'eth_topkVSearch',
+			params: 2
+		}),
+		new web3._extend.Method({
+			name: 'topkVSearchTime',
+			call: 'eth_topkVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'clearTopkVSearchTime',
+			call: 'eth_clearTopkVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'insertTime',
+			call: 'eth_insertTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'rangeVSearch',
+			call: 'eth_rangeVSearch',
+			params: 3,
+			inputFormatter: [web3._extend.utils.fromDecimal, web3._extend.utils.fromDecimal, null]
+		}),
+		new web3._extend.Method({
+			name: 'rangeVSearchTime',
+			call: 'eth_rangeVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
+			name: 'clearRangeVSearchTime',
+			call: 'eth_clearRangeVSearchTime',
+			params: 0
+		}),
+		new web3._extend.Method({
 			name: 'sign',
 			call: 'eth_sign',
 			params: 2,

@@ -207,7 +207,7 @@ type BlockChain interface {
 
 	// InsertReceiptChain inserts a batch of receipts into the local chain.
 	InsertReceiptChain(types.Blocks, []types.Receipts, uint64) (int, error)
-s
+
 	InsertEBtree(block *types.Block)
 }
 

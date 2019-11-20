@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 	"strings"
 	"time"
@@ -525,6 +526,69 @@ func (s *PublicBlockChainAPI) ChainId() *hexutil.Big {
 func (s *PublicBlockChainAPI) BlockNumber() hexutil.Uint64 {
 	header, _ := s.b.HeaderByNumber(context.Background(), rpc.LatestBlockNumber) // latest header should always be available
 	return hexutil.Uint64(header.Number.Uint64())
+}
+
+func (s *PublicBlockChainAPI) SpecificValueSearch(ctx context.Context, k *hexutil.Big, bn uint64) (EBTree.SearchValue, error) {
+	data, err := s.b.SpecificValueSearch(ctx, k, bn)
+	return data, err
+}
+
+func (s *PublicBlockChainAPI) SpecificValueSearchTime(ctx context.Context) {
+	s.b.SpecificValueSearchTime(ctx)
+}
+
+func (s *PublicBlockChainAPI) ClearSpecificValueSearchTime(ctx context.Context) {
+	s.b.ClearSpecificValueSearchTime(ctx)
+}
+
+func (s *PublicBlockChainAPI) ExperStart(ctx context.Context) {
+	s.b.ExperStart(ctx)
+}
+
+// TopkVSearch returns the topk value of transactions indexed by ebtree.
+func (s *PublicBlockChainAPI) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error) {
+	data, err := s.b.TopkVSearch(ctx, k, bn)
+	return data, err
+}
+
+func (s *PublicBlockChainAPI) TopkVSearchTime(ctx context.Context) {
+	s.b.TopkVSearchTime(ctx)
+}
+
+func (s *PublicBlockChainAPI) ClearTopkVSearchTime(ctx context.Context) {
+	s.b.ClearTopkVSearchTime(ctx)
+}
+
+func (s *PublicBlockChainAPI) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error) {
+	data, err := s.b.RangeVSearch(ctx, begin, end, bn)
+	return data, err
+}
+
+func (s *PublicBlockChainAPI) RangeVSearchTime(ctx context.Context) {
+	s.b.RangeVSearchTime(ctx)
+}
+
+func (s *PublicBlockChainAPI) ClearRangeVSearchTime(ctx context.Context) {
+	s.b.ClearRangeVSearchTime(ctx)
+}
+
+func (s *PublicBlockChainAPI) InsertTime(ctx context.Context) {
+	s.b.InsertTime(ctx)
+}
+
+// CreateEbtree init an ebtree.
+func (s *PublicBlockChainAPI) CreateEbtree(ctx context.Context) ([]byte, error) {
+	ebtree, err := s.b.CreateEbtree(ctx)
+	if ebtree == nil || err != nil {
+		return nil, err
+	}
+	return s.b.GetEbtreeRoot(ctx)
+}
+
+// GetEbtreeRoot get an ebtree.
+func (s *PublicBlockChainAPI) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
+
+	return s.b.GetEbtreeRoot(ctx)
 }
 
 // GetBalance returns the amount of wei for the given address in the state of the

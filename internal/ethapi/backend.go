@@ -19,6 +19,8 @@ package ethapi
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/EBTree"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -64,6 +66,20 @@ type Backend interface {
 	SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 	SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) event.Subscription
+
+	CreateEbtree(ctx context.Context) (*EBTree.EBTree, error)
+	SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, error)
+	SpecificValueSearchTime(ctx context.Context)
+	ClearSpecificValueSearchTime(ctx context.Context)
+	ExperStart(ctx context.Context)
+	TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error)
+	TopkVSearchTime(ctx context.Context)
+	ClearTopkVSearchTime(ctx context.Context)
+	RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error)
+	RangeVSearchTime(ctx context.Context)
+	ClearRangeVSearchTime(ctx context.Context)
+	InsertTime(ctx context.Context)
+	GetEbtreeRoot(ctx context.Context) ([]byte, error)
 
 	// Transaction pool API
 	SendTx(ctx context.Context, signedTx *types.Transaction) error

@@ -21,6 +21,7 @@ package light
 import (
 	"context"
 	"errors"
+	"github.com/ethereum/go-ethereum/EBTree"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -459,6 +460,64 @@ func (lc *LightChain) GetHeaderByNumberOdr(ctx context.Context, number uint64) (
 		return header, nil
 	}
 	return GetHeaderByNumber(ctx, lc.odr, number)
+}
+
+// CreateEbtree create a ebtree .
+func (self *LightChain) CreateEbtree() (*EBTree.EBTree, error) {
+
+	return nil, nil
+}
+
+func (self *LightChain) ExperStart() {
+}
+
+func (self *LightChain) SpecificValueSearch() (EBTree.SearchValue, error) {
+	var tmp EBTree.SearchValue
+	return tmp, nil
+}
+
+func (self *LightChain) SpecificValueSearchTime() {
+
+}
+
+func (self *LightChain) ClearSpecificValueSearchTime() {
+
+}
+
+// TopkVSearch search a value .
+func (self *LightChain) TopkVSearch() ([]EBTree.SearchValue, error) {
+
+	return nil, nil
+}
+
+func (self *LightChain) TopkVSearchTime() {
+
+}
+func (self *LightChain) ClearTopkVSearchTime() {
+
+}
+
+func (self *LightChain) RangeVSearch() ([]EBTree.SearchValue, error) {
+
+	return nil, nil
+}
+
+func (self *LightChain) RangeVSearchTime() {
+
+}
+
+func (self *LightChain) ClearRangeVSearchTime() {
+
+}
+
+func (self *LightChain) InsertTime() {
+
+}
+
+// GetEbtreeRoot create a ebtree .
+func (self *LightChain) GetEbtreeRoot() ([]byte, error) {
+
+	return nil, nil
 }
 
 // Config retrieves the header chain's chain configuration.

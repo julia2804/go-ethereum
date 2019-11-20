@@ -19,6 +19,8 @@ package les
 import (
 	"context"
 	"errors"
+	"github.com/ethereum/go-ethereum/EBTree"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -83,6 +85,63 @@ func (b *LesApiBackend) HeaderByNumberOrHash(ctx context.Context, blockNrOrHash 
 		return header, nil
 	}
 	return nil, errors.New("invalid arguments; neither block nor hash specified")
+}
+
+func (b *LesApiBackend) CreateEbtree(ctx context.Context) (*EBTree.EBTree, error) {
+	ebtree, err := b.eth.blockchain.CreateEbtree()
+	return ebtree, err
+}
+
+func (b *LesApiBackend) ExperStart(ctx context.Context) {
+	b.eth.blockchain.ExperStart()
+}
+
+func (b *LesApiBackend) SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, error) {
+	data, err := b.eth.blockchain.SpecificValueSearch()
+	return data, err
+}
+
+func (b *LesApiBackend) SpecificValueSearchTime(ctx context.Context) {
+	b.eth.blockchain.SpecificValueSearch()
+}
+
+func (b *LesApiBackend) ClearSpecificValueSearchTime(ctx context.Context) {
+	b.eth.blockchain.ClearSpecificValueSearchTime()
+}
+
+func (b *LesApiBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error) {
+	data, err := b.eth.blockchain.TopkVSearch()
+	return data, err
+}
+
+func (b *LesApiBackend) TopkVSearchTime(ctx context.Context) {
+	b.eth.blockchain.TopkVSearchTime()
+}
+
+func (b *LesApiBackend) ClearTopkVSearchTime(ctx context.Context) {
+	b.eth.blockchain.ClearTopkVSearchTime()
+}
+
+func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error) {
+	data, err := b.eth.blockchain.RangeVSearch()
+	return data, err
+}
+
+func (b *LesApiBackend) RangeVSearchTime(ctx context.Context) {
+	b.eth.blockchain.RangeVSearchTime()
+}
+
+func (b *LesApiBackend) ClearRangeVSearchTime(ctx context.Context) {
+	b.eth.blockchain.ClearRangeVSearchTime()
+}
+
+func (b *LesApiBackend) InsertTime(ctx context.Context) {
+	b.eth.blockchain.InsertTime()
+}
+
+func (b *LesApiBackend) GetEbtreeRoot(ctx context.Context) ([]byte, error) {
+	root, err := b.eth.blockchain.GetEbtreeRoot()
+	return root, err
 }
 
 func (b *LesApiBackend) HeaderByHash(ctx context.Context, hash common.Hash) (*types.Header, error) {

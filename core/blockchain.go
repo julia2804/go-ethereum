@@ -161,12 +161,12 @@ type BlockChain struct {
 	stateCache    state.Database // State database to reuse between imports (contains state cache)
 	ebtreeRoot    []byte
 	ebtreeCache   *EBTree.Database
-	bodyCache     *lru.Cache     // Cache for the most recent block bodies
-	bodyRLPCache  *lru.Cache     // Cache for the most recent block bodies in RLP encoded format
-	receiptsCache *lru.Cache     // Cache for the most recent receipts per block
-	blockCache    *lru.Cache     // Cache for the most recent entire blocks
-	txLookupCache *lru.Cache     // Cache for the most recent transaction lookup data.
-	futureBlocks  *lru.Cache     // future blocks are blocks added for later processing
+	bodyCache     *lru.Cache // Cache for the most recent block bodies
+	bodyRLPCache  *lru.Cache // Cache for the most recent block bodies in RLP encoded format
+	receiptsCache *lru.Cache // Cache for the most recent receipts per block
+	blockCache    *lru.Cache // Cache for the most recent entire blocks
+	txLookupCache *lru.Cache // Cache for the most recent transaction lookup data.
+	futureBlocks  *lru.Cache // future blocks are blocks added for later processing
 
 	quit    chan struct{} // blockchain quit channel
 	running int32         // running must be called atomically
@@ -210,6 +210,7 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 		db:             db,
 		triegc:         prque.New(nil),
 		stateCache:     state.NewDatabaseWithCache(db, cacheConfig.TrieCleanLimit),
+		ebtreeCache:    EBTree.NewDatabaseWithCache(db, cacheConfig.TrieCleanLimit),
 		quit:           make(chan struct{}),
 		shouldPreserve: shouldPreserve,
 		bodyCache:      bodyCache,
@@ -526,6 +527,20 @@ func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {
 // StateCache returns the caching database underpinning the blockchain instance.
 func (bc *BlockChain) StateCache() state.Database {
 	return bc.stateCache
+}
+
+// StateAt returns a new mutable state based on a particular point in time.
+func (bc *BlockChain) EbtreeAt(root []byte) (*EBTree.EBTree, error) {
+	if bc.ebtreeCache == nil {
+		err := errors.New("bc.ebtreecache is nil in ebtreeat func")
+		return nil, err
+	}
+	return EBTree.New(root, bc.ebtreeCache)
+}
+
+// EbtreeCache returns the caching database underpinning the blockchain instance.
+func (bc *BlockChain) EbtreeCache() *EBTree.Database {
+	return bc.ebtreeCache
 }
 
 // Reset purges the entire blockchain, restoring it to its genesis state.
@@ -1528,6 +1543,8 @@ var sizeoutput string
 var inserttimesavepath string
 var pend uint64
 
+var bn uint64
+
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(block *types.Block) {
 	if pend == 0 {
@@ -1539,7 +1556,8 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 		inserttimesavepath = ethereum.GetValueFromDefaultPath("insert", "inserttimesavepath")
 	}
 
-	bn := block.NumberU64()
+	//bn := block.NumberU64()
+	bn++
 	if bn >= 10*pend && bn < 100*pend {
 		if bn%(10*pend) == 0 {
 			insertoutput = strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
