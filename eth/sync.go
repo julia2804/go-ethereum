@@ -160,6 +160,7 @@ func (pm *ProtocolManager) syncer() {
 	}
 }
 
+//fast
 // synchronise tries to sync up our local block chain with a remote peer.
 func (pm *ProtocolManager) synchronise(peer *peer) {
 	// Short circuit if no peers are available
