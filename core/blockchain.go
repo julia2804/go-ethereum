@@ -1540,44 +1540,68 @@ var insertNum int64
 var insertoutput string
 var sizeoutput string
 
-var inserttimesavepath string
-var pend uint64
-
 var bn uint64
+var inserttimewithblocksavepath string
+var bpend uint64
+
+
+var tn uint64
+var inserttimewithtransavepath string
+var tpend uint64
+var pre uint64
+
 
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(block *types.Block) {
-	if pend == 0 {
-		intpend, _ := strconv.Atoi(ethereum.GetValueFromDefaultPath("insert", "pend"))
-		pend = uint64(intpend)
+	if bpend == 0 {
+		intpend, _ := strconv.Atoi(ethereum.GetValueFromDefaultPath("insert", "bpend"))
+		bpend = uint64(intpend)
 	}
 
-	if len(inserttimesavepath) == 0 {
-		inserttimesavepath = ethereum.GetValueFromDefaultPath("insert", "inserttimesavepath")
+	if len(inserttimewithblocksavepath) == 0 {
+		inserttimewithblocksavepath = ethereum.GetValueFromDefaultPath("insert", "inserttimewithblocksavepath")
 	}
 
 	//bn := block.NumberU64()
 	bn++
-	if bn >= 10*pend && bn < 100*pend {
-		if bn%(10*pend) == 0 {
+	if bn >= 10*bpend && bn < 100*bpend {
+		if bn%(10*bpend) == 0 {
 			insertoutput = strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
-			EBTree.AppendToFile(inserttimesavepath, insertoutput)
+			EBTree.AppendToFile(inserttimewithblocksavepath, insertoutput)
 
 		}
-	} else if bn >= 100*pend && bn < 1000*pend {
-		if bn%(100*pend) == 0 {
-			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
-			EBTree.AppendToFile(inserttimesavepath, insertoutput)
+	} else if bn >= 100*bpend && bn < 1000*bpend {
+		if bn%(100*bpend) == 0 {
+			insertoutput = strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+			EBTree.AppendToFile(inserttimewithblocksavepath, insertoutput)
 		}
-	} else if bn >= 1000*pend && bn < 10000*pend {
-		if bn%(1000*pend) == 0 {
-			insertoutput += strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
-			EBTree.AppendToFile(inserttimesavepath, insertoutput)
+	} else if bn >= 1000*bpend && bn < 10000*bpend {
+		if bn%(1000*bpend) == 0 {
+			insertoutput = strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+			EBTree.AppendToFile(inserttimewithblocksavepath, insertoutput)
 		}
 	}
 
+	if tpend == 0 {
+		intpend, _ := strconv.Atoi(ethereum.GetValueFromDefaultPath("insert", "tpend"))
+		tpend = uint64(intpend)
+	}
+
+	if len(inserttimewithtransavepath) == 0 {
+		inserttimewithtransavepath = ethereum.GetValueFromDefaultPath("insert", "inserttimewithtransavepath")
+	}
+
 	txs := block.Transactions()
+	tn += uint64(txs.Len())
+	cur := tn / tpend
+	if(cur > pre){
+		insertoutput = strconv.FormatUint(tn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+		EBTree.AppendToFile(inserttimewithtransavepath, insertoutput)
+	}
+	pre = cur
+
 	blockno := int64(block.NumberU64())
+
 	var t *EBTree.EBTree
 	if len(txs) > 0 {
 		t1 := time.Now()
