@@ -1537,7 +1537,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 
 var insertTotalTime int64
 var insertNum int64
-var insertoutput string
+var timeoutput string
 var sizeoutput string
 
 var bn uint64
@@ -1549,6 +1549,10 @@ var tn uint64
 var inserttimewithtransavepath string
 var tpend uint64
 var pre uint64
+
+var commitTotaltime int64
+var committimewithtransavepath string
+var committimewithblocksavepath string
 
 
 //将交易保存到索引中
@@ -1571,7 +1575,12 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 			fmt.Println("error in func : InsertEBtree(), " + err.Error())
 		}
 
+		tcommit1 := time.Now()
 		t.DBCommit()
+		tcommit2 := time.Now()
+		tcommit := tcommit2.Sub(tcommit1).Microseconds()
+		commitTotaltime = commitTotaltime + tcommit
+
 
 		if len(r) != 0 {
 			//单纯保存rid
@@ -1592,11 +1601,18 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 		if len(inserttimewithtransavepath) == 0 {
 			inserttimewithtransavepath = ethereum.GetValueFromDefaultPath("insert", "inserttimewithtransavepath")
 		}
+
+		if len(committimewithtransavepath) == 0 {
+			committimewithtransavepath = ethereum.GetValueFromDefaultPath("insert", "committimewithtransavepath")
+		}
+
 		tn += uint64(txs.Len())
 		cur := tn / tpend
 		if(cur > pre){
-			insertoutput = strconv.FormatUint(tn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
-			EBTree.AppendToFile(inserttimewithtransavepath, insertoutput)
+			timeoutput = strconv.FormatUint(tn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+			EBTree.AppendToFile(inserttimewithtransavepath, timeoutput)
+			timeoutput = strconv.FormatUint(tn, 10) + "," + strconv.FormatInt(commitTotaltime, 10) + "\n"
+			EBTree.AppendToFile(committimewithtransavepath, timeoutput)
 		}
 		pre = cur
 	} else {
@@ -1612,11 +1628,16 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 		inserttimewithblocksavepath = ethereum.GetValueFromDefaultPath("insert", "inserttimewithblocksavepath")
 	}
 
+	if len(committimewithblocksavepath) == 0 {
+		committimewithblocksavepath = ethereum.GetValueFromDefaultPath("insert", "committimewithblocksavepath")
+	}
+
 	bn++
 	if bn%(bpend) == 0 {
-		insertoutput = strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
-		EBTree.AppendToFile(inserttimewithblocksavepath, insertoutput)
-
+		timeoutput = strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
+		EBTree.AppendToFile(inserttimewithblocksavepath, timeoutput)
+		timeoutput = strconv.FormatUint(bn, 10) + "," + strconv.FormatInt(commitTotaltime, 10) + "\n"
+		EBTree.AppendToFile(committimewithblocksavepath, timeoutput)
 	}
 }
 
