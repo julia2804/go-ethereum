@@ -254,11 +254,7 @@ func init() {
 }
 
 func main() {
-	//args := []string{"test", "--syncmode", "fast", "--cache", "2048", "--datadir", "/home/mimota/data", "console"}
-	args := []string{"test", "copydb", "--syncmode", "fast","--datadir", "/home/mimota/data", "--cache", "1024", "/home/mimota/ethereum_data_19/geth/chaindata", "/home/mimota/ethereum_data_19/geth/chaindata/ancient"}
-	//if err := app.Run(os.Args); err != nil {
-	if err := app.Run(args); err != nil {
-
+	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
