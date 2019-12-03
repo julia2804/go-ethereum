@@ -18,12 +18,10 @@
 package core
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/EBTree"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"io"
 	"math/big"
 	mrand "math/rand"
@@ -813,71 +811,6 @@ func (bc *BlockChain) CreateEbtree() (*EBTree.EBTree, error) {
 	return ebt, err
 }
 
-// .
-func (bc *BlockChain) TopkVSearch(k []byte, bn []byte, root []byte) ([]EBTree.SearchValue, error) {
-	tree, err := EBTree.New(root, bc.ebtreeCache)
-	if err != nil {
-		return nil, err
-	}
-
-	su, result, err := tree.TopkVSearch(k, bn, true)
-	if err != nil {
-		fmt.Printf("something wrong in topk  search with error")
-		return nil, err
-	}
-	if !su {
-		fmt.Println("something wrong in topk  search without error")
-	}
-	fmt.Println("we totally find", len(result), "data")
-	sum := 0
-	for i := 0; i < len(result); i++ {
-		for j := 0; j < len(result[i].Data); j++ {
-			sum++
-		}
-
-	}
-	fmt.Println("the total transactions number:", sum)
-	//fmt.Println("result", result)
-	//tree.CombineAndPrintSearchValue(result, nil, k, true)
-	return result, err
-}
-
-func (bc *BlockChain) RangeVSearch(begin *hexutil.Big, end *hexutil.Big, bn uint64, root []byte) ([]EBTree.SearchValue, error) {
-	tree, err := EBTree.New(root, bc.ebtreeCache)
-	if err != nil {
-		return nil, err
-	}
-	//var buf1 = make([]byte, 8)
-	//binary.BigEndian.PutUint64(buf1, begin)
-	//var buf2 = make([]byte, 8)
-	//binary.BigEndian.PutUint64(buf2, end)
-
-	var buf3 = make([]byte, 8)
-	binary.BigEndian.PutUint64(buf3, bn)
-
-	su, result, err := tree.RangeValueSearch(begin.ToInt().Bytes(), end.ToInt().Bytes(), buf3)
-	if err != nil {
-		fmt.Printf("something wrong in range search with error")
-		return nil, err
-	}
-	if !su {
-		fmt.Println("something wrong in range search without error")
-	}
-	fmt.Println("range search num :", len(result))
-	//tree.CombineAndPrintSearchValue(result, nil, buf3, true)
-	sum := 0
-	for i := 0; i < len(result); i++ {
-		for j := 0; j < len(result[i].Data); j++ {
-			sum++
-		}
-
-	}
-	fmt.Println("the total transactions number:", sum)
-	//fmt.Println("result", result)
-	return result, err
-
-}
-
 func (bc *BlockChain) InsertTime() {
 	fmt.Println("insert total time ：", insertTotalTime, "us")
 	fmt.Println("times: ", insertNum)
@@ -1565,8 +1498,6 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 		t1 := time.Now()
 		//恢复根节点
 		rid, _ := bc.GetEbtreeRoot()
-		//fmt.Print("rid is :")
-		//fmt.Println(rid)
 		t, _ = EBTree.New(rid, bc.ebtreeCache)
 
 		//将交易插入树中
@@ -1638,6 +1569,13 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 		EBTree.AppendToFile(inserttimewithblocksavepath, timeoutput)
 		timeoutput = strconv.FormatUint(tn, 10) + "," + strconv.FormatInt(commitTotaltime, 10) + "\n"
 		EBTree.AppendToFile(committimewithblocksavepath, timeoutput)
+	}
+
+	if((bn % 100000 == 0 && bn < 1000000) || (bn % 1000000 == 0)){
+		rid, _ := bc.GetEbtreeRoot()
+		if(len(rid) != 0){
+			EBTree.ExperStart(bn, rid, bc.ebtreeCache)
+		}
 	}
 }
 

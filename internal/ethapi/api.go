@@ -528,9 +528,8 @@ func (s *PublicBlockChainAPI) BlockNumber() hexutil.Uint64 {
 	return hexutil.Uint64(header.Number.Uint64())
 }
 
-func (s *PublicBlockChainAPI) SpecificValueSearch(ctx context.Context, k *hexutil.Big, bn uint64) (EBTree.SearchValue, error) {
-	data, err := s.b.SpecificValueSearch(ctx, k, bn)
-	return data, err
+func (s *PublicBlockChainAPI) SpecificValueSearch(ctx context.Context, k *hexutil.Big, bn uint64) (EBTree.SearchValue, int64, error) {
+	return s.b.SpecificValueSearch(ctx, k, bn)
 }
 
 func (s *PublicBlockChainAPI) SpecificValueSearchTime(ctx context.Context) {
@@ -546,9 +545,8 @@ func (s *PublicBlockChainAPI) ExperStart(ctx context.Context) {
 }
 
 // TopkVSearch returns the topk value of transactions indexed by ebtree.
-func (s *PublicBlockChainAPI) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error) {
-	data, err := s.b.TopkVSearch(ctx, k, bn)
-	return data, err
+func (s *PublicBlockChainAPI) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, int64, int64, error) {
+	return s.b.TopkVSearch(ctx, k, bn)
 }
 
 func (s *PublicBlockChainAPI) TopkVSearchTime(ctx context.Context) {
@@ -559,9 +557,8 @@ func (s *PublicBlockChainAPI) ClearTopkVSearchTime(ctx context.Context) {
 	s.b.ClearTopkVSearchTime(ctx)
 }
 
-func (s *PublicBlockChainAPI) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error) {
-	data, err := s.b.RangeVSearch(ctx, begin, end, bn)
-	return data, err
+func (s *PublicBlockChainAPI) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, int64, int64, error) {
+	return s.b.RangeVSearch(ctx, begin, end, bn)
 }
 
 func (s *PublicBlockChainAPI) RangeVSearchTime(ctx context.Context) {

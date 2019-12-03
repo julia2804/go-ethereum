@@ -96,9 +96,9 @@ func (b *LesApiBackend) ExperStart(ctx context.Context) {
 	b.eth.blockchain.ExperStart()
 }
 
-func (b *LesApiBackend) SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, error) {
-	data, err := b.eth.blockchain.SpecificValueSearch()
-	return data, err
+func (b *LesApiBackend) SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, int64, error) {
+	data, sum, err := b.eth.blockchain.SpecificValueSearch()
+	return data, sum ,err
 }
 
 func (b *LesApiBackend) SpecificValueSearchTime(ctx context.Context) {
@@ -109,9 +109,8 @@ func (b *LesApiBackend) ClearSpecificValueSearchTime(ctx context.Context) {
 	b.eth.blockchain.ClearSpecificValueSearchTime()
 }
 
-func (b *LesApiBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error) {
-	data, err := b.eth.blockchain.TopkVSearch()
-	return data, err
+func (b *LesApiBackend) TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, int64, int64, error) {
+	return b.eth.blockchain.TopkVSearch()
 }
 
 func (b *LesApiBackend) TopkVSearchTime(ctx context.Context) {
@@ -122,9 +121,9 @@ func (b *LesApiBackend) ClearTopkVSearchTime(ctx context.Context) {
 	b.eth.blockchain.ClearTopkVSearchTime()
 }
 
-func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error) {
-	data, err := b.eth.blockchain.RangeVSearch()
-	return data, err
+func (b *LesApiBackend) RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, int64, int64, error) {
+	return 	b.eth.blockchain.RangeVSearch()
+
 }
 
 func (b *LesApiBackend) RangeVSearchTime(ctx context.Context) {

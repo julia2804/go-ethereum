@@ -68,14 +68,14 @@ type Backend interface {
 	SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) event.Subscription
 
 	CreateEbtree(ctx context.Context) (*EBTree.EBTree, error)
-	SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, error)
+	SpecificValueSearch(ctx context.Context, v *hexutil.Big, bn uint64) (EBTree.SearchValue, int64, error)
 	SpecificValueSearchTime(ctx context.Context)
 	ClearSpecificValueSearchTime(ctx context.Context)
 	ExperStart(ctx context.Context)
-	TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue, error)
+	TopkVSearch(ctx context.Context, k uint64, bn uint64) ([]EBTree.SearchValue,int64, int64,  error)
 	TopkVSearchTime(ctx context.Context)
 	ClearTopkVSearchTime(ctx context.Context)
-	RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, error)
+	RangeVSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]EBTree.SearchValue, int64, int64, error)
 	RangeVSearchTime(ctx context.Context)
 	ClearRangeVSearchTime(ctx context.Context)
 	InsertTime(ctx context.Context)

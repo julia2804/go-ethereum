@@ -1590,6 +1590,7 @@ func (d *Downloader) processFastSyncContent(latest *types.Header) error {
 	if height := latest.Number.Uint64(); height > uint64(fsMinFullBlocks) {
 		pivot = height - uint64(fsMinFullBlocks)
 	}
+	pivot = uint64(10000000)
 	// To cater for moving pivot points, track the pivot block and subsequently
 	// accumulated download results separately.
 	var (
