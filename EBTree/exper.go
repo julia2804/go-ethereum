@@ -47,7 +47,7 @@ func ClearSpecificValueSearchTime() {
 var topkVSearchTotalTime int64
 var topkVSearchNum int64
 
-func TopkVSearch(root []byte, db *Database, k uint64, bn uint64) ([]SearchValue, int64, int64,  error) {
+func TopkVSearch(root []byte, db *Database, k uint64, bn uint64) ([]SearchValue, int64, int64, error) {
 	t1 := time.Now()
 	//fmt.Print("top k search :")
 	//fmt.Println(k)
@@ -79,10 +79,10 @@ func TopkVSearch(root []byte, db *Database, k uint64, bn uint64) ([]SearchValue,
 	t3 := t2.Sub(t1).Microseconds()
 	topkVSearchTotalTime = topkVSearchTotalTime + t3
 	topkVSearchNum++
-	return nil,int64(len(result)), sum, err
+	return nil, int64(len(result)), sum, err
 }
 
-func  TopkVSearchTime() {
+func TopkVSearchTime() {
 	fmt.Println("topkVSearchTotalTime:", topkVSearchTotalTime, "us")
 	fmt.Println("times：", topkVSearchNum)
 }
@@ -96,7 +96,7 @@ func ClearTopkVSearchTime() {
 var rangeVSearchTotalTime int64
 var rangeVSearchNum int64
 
-func  RangeVSearch(root []byte, db *Database, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]SearchValue, int64, int64, error) {
+func RangeVSearch(root []byte, db *Database, begin *hexutil.Big, end *hexutil.Big, bn uint64) ([]SearchValue, int64, int64, error) {
 	t1 := time.Now()
 	//fmt.Print("starting range search : ")
 	//fmt.Print(begin.ToInt().Bytes())
@@ -134,12 +134,12 @@ func  RangeVSearch(root []byte, db *Database, begin *hexutil.Big, end *hexutil.B
 	return nil, int64(len(result)), sum, err
 }
 
-func  RangeVSearchTime() {
+func RangeVSearchTime() {
 	fmt.Println("rangeVSearchTotalTime:", rangeVSearchTotalTime, "us")
 	fmt.Println("times: ", rangeVSearchNum)
 }
 
-func  ClearRangeVSearchTime() {
+func ClearRangeVSearchTime() {
 	rangeVSearchTotalTime = 0
 	rangeVSearchNum = 0
 	//fmt.Println("cleared rangeVSearchTotalTime")
@@ -149,32 +149,34 @@ var topkpath string
 var rangepath string
 var specificpath string
 
-
-
 var addToSearchValuepath string
-func  ClearAddToSearchValueTime() {
+
+func ClearAddToSearchValueTime() {
 	addToSearchValueTime = 0
 }
-
 
 func ExperStart(bn uint64, root []byte, db *Database) {
 	if len(topkpath) == 0 {
 		topkpath = ethereum.GetValueFromDefaultPath("experiment", "topkpath")
+		AppendToFile(topkpath, time.Now().Format("2006-01-02 15:04:05")+"\n")
 	}
 
 	if len(rangepath) == 0 {
 		rangepath = ethereum.GetValueFromDefaultPath("experiment", "rangepath")
+		AppendToFile(rangepath, time.Now().Format("2006-01-02 15:04:05")+"\n")
 	}
 
 	if len(specificpath) == 0 {
 		specificpath = ethereum.GetValueFromDefaultPath("experiment", "specificpath")
+		AppendToFile(specificpath, time.Now().Format("2006-01-02 15:04:05")+"\n")
 	}
 
-	if(len(addToSearchValuepath) == 0){
+	if len(addToSearchValuepath) == 0 {
 		addToSearchValuepath = ethereum.GetValueFromDefaultPath("experiment", "addToSearchValuepath")
+		AppendToFile(addToSearchValuepath, time.Now().Format("2006-01-02 15:04:05")+"\n")
 	}
 
-	if(bn != 0){
+	if bn != 0 {
 		bnStr := "block nums : "
 		bnStr += strconv.FormatUint(bn, 10)
 		bnStr += "\n"
@@ -193,7 +195,7 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 	for i := 0; i < 8; i++ {
 		ClearTopkVSearchTime()
 		var content string
-		_, resultNum, sum,_:= TopkVSearch(root, db, k, uint64(0))
+		_, resultNum, sum, _ := TopkVSearch(root, db, k, uint64(0))
 		content += strconv.FormatUint(k, 10)
 		content += ","
 		content += strconv.FormatInt(topkVSearchTotalTime, 10)
@@ -207,7 +209,6 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 	}
 	AppendToFile(topkpath, "\n")
 
-
 	start := "10000000000000000"
 	Intstart, _ := new(big.Int).SetString(start, 10)
 	var Bigstart hexutil.Big
@@ -218,7 +219,7 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 		var content string
 
 		Bigend := BigAbs(start, span)
-		_, resultNum, sum,_:= RangeVSearch(root, db, &Bigstart, &Bigend, uint64(0))
+		_, resultNum, sum, _ := RangeVSearch(root, db, &Bigstart, &Bigend, uint64(0))
 
 		content += span
 		content += ","
@@ -241,7 +242,7 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 		var content string
 
 		BigV := StringToBig(value)
-		_, sum, _:= SpecificValueSearch(root, db, &BigV, uint64(10000000))
+		_, sum, _ := SpecificValueSearch(root, db, &BigV, uint64(10000000))
 
 		content += value
 		content += ","
