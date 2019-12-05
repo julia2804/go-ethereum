@@ -24,6 +24,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rlp"
 )
@@ -987,13 +988,23 @@ func (t *EBTree) TopkVSearch(k []byte, bn []byte, max bool) (bool, []SearchValue
 	return false, nil, err
 }
 
+var addToSearchValueTime int64
+
+func GetAddToSearch() int64{
+	return addToSearchValueTime
+}
 //find value in node
 func (t *EBTree) SpecificValueSearchInNode(n EBTreen, value []byte, bn []byte) (SearchValue, error) {
 	var result SearchValue
 	switch nt := (n).(type) {
 	case *leafNode:
 		for i := 0; i < len(nt.Data); i++ {
+			t1 := time.Now()
 			result, err, flag := AddToSearchValue(nt.Data[i], bn, value)
+			t2 := time.Now()
+			t3 := t2.Sub(t1).Microseconds()
+			addToSearchValueTime = addToSearchValueTime + t3
+
 			if err != nil {
 				return result, err
 			}

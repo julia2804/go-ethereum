@@ -149,6 +149,14 @@ var topkpath string
 var rangepath string
 var specificpath string
 
+
+
+var addToSearchValuepath string
+func  ClearAddToSearchValueTime() {
+	addToSearchValueTime = 0
+}
+
+
 func ExperStart(bn uint64, root []byte, db *Database) {
 	if len(topkpath) == 0 {
 		topkpath = ethereum.GetValueFromDefaultPath("experiment", "topkpath")
@@ -162,6 +170,10 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 		specificpath = ethereum.GetValueFromDefaultPath("experiment", "specificpath")
 	}
 
+	if(len(addToSearchValuepath) == 0){
+		addToSearchValuepath = ethereum.GetValueFromDefaultPath("experiment", "addToSearchValuepath")
+	}
+
 	if(bn != 0){
 		bnStr := "block nums : "
 		bnStr += strconv.FormatUint(bn, 10)
@@ -172,6 +184,9 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 		AppendToFile(rangepath, "span, time(us), resultnum, sum\n")
 		AppendToFile(specificpath, bnStr)
 		AppendToFile(specificpath, "value, time(us), sum\n")
+
+		AppendToFile(addToSearchValuepath, bnStr)
+		AppendToFile(addToSearchValuepath, "value, time(us), sum\n")
 	}
 
 	k := uint64(1)
@@ -222,6 +237,7 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 	value := "10000000000000000"
 	for i := 0; i < 6; i++ {
 		ClearSpecificValueSearchTime()
+		ClearAddToSearchValueTime()
 		var content string
 
 		BigV := StringToBig(value)
@@ -234,6 +250,13 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 		content += strconv.FormatInt(sum, 10)
 		content += "\n"
 		AppendToFile(specificpath, content)
+
+		content = ""
+		content += value
+		content += ","
+		content += strconv.FormatInt(GetAddToSearch(), 10)
+		content += "\n"
+		AppendToFile(addToSearchValuepath, content)
 
 		value += "0"
 	}
