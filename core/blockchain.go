@@ -1477,7 +1477,6 @@ var bn uint64
 var inserttimewithblocksavepath string
 var bpend uint64
 
-
 var tn uint64
 var inserttimewithtransavepath string
 var tpend uint64
@@ -1487,6 +1486,7 @@ var commitTotaltime int64
 var committimewithtransavepath string
 var committimewithblocksavepath string
 
+var experpend int
 
 //将交易保存到索引中
 func (bc *BlockChain) InsertEBtree(block *types.Block) {
@@ -1511,7 +1511,6 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 		tcommit2 := time.Now()
 		tcommit := tcommit2.Sub(tcommit1).Microseconds()
 		commitTotaltime = commitTotaltime + tcommit
-
 
 		if len(r) != 0 {
 			//单纯保存rid
@@ -1539,7 +1538,7 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 
 		tn += uint64(txs.Len())
 		cur := tn / tpend
-		if(cur > pre){
+		if cur > pre {
 			timeoutput = strconv.FormatUint(tn, 10) + "," + strconv.FormatInt(insertTotalTime, 10) + "\n"
 			EBTree.AppendToFile(inserttimewithtransavepath, timeoutput)
 			timeoutput = strconv.FormatUint(tn, 10) + "," + strconv.FormatInt(commitTotaltime, 10) + "\n"
@@ -1571,9 +1570,16 @@ func (bc *BlockChain) InsertEBtree(block *types.Block) {
 		EBTree.AppendToFile(committimewithblocksavepath, timeoutput)
 	}
 
-	if((bn % 100000 == 0 && bn < 1000000) || (bn % 1000000 == 0)){
+	if experpend == 0 {
+		experpend, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("experiment", "experpend"))
+		if experpend == 0 {
+			experpend = 250000
+		}
+	}
+
+	if bn%uint64(experpend) == 0 {
 		rid, _ := bc.GetEbtreeRoot()
-		if(len(rid) != 0){
+		if len(rid) != 0 {
 			EBTree.ExperStart(bn, rid, bc.ebtreeCache)
 		}
 	}

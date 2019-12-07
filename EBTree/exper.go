@@ -151,6 +151,8 @@ var specificpath string
 
 var addToSearchValuepath string
 
+var du int
+
 func ClearAddToSearchValueTime() {
 	addToSearchValueTime = 0
 }
@@ -176,35 +178,47 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 		AppendToFile(addToSearchValuepath, time.Now().Format("2006-01-02 15:04:05")+"\n")
 	}
 
-	if bn != 0 {
-		bnStr := "block nums : "
-		bnStr += strconv.FormatUint(bn, 10)
-		bnStr += "\n"
-		AppendToFile(topkpath, bnStr)
-		AppendToFile(topkpath, "k, time(us), resultnum, sum\n")
-		AppendToFile(rangepath, bnStr)
-		AppendToFile(rangepath, "span, time(us), resultnum, sum\n")
-		AppendToFile(specificpath, bnStr)
-		AppendToFile(specificpath, "value, time(us), sum\n")
+	//if bn != 0 {
+	//	bnStr := "block nums : "
+	//	bnStr += strconv.FormatUint(bn, 10)
+	//	bnStr += "\n"
+	//	AppendToFile(topkpath, bnStr)
+	//	AppendToFile(topkpath, "k, time(us), resultnum, sum\n")
+	//	AppendToFile(rangepath, bnStr)
+	//	AppendToFile(rangepath, "span, time(us), resultnum, sum\n")
+	//	AppendToFile(specificpath, bnStr)
+	//	AppendToFile(specificpath, "value, time(us), sum\n")
+	//
+	//	AppendToFile(addToSearchValuepath, bnStr)
+	//	AppendToFile(addToSearchValuepath, "value, time(us), sum\n")
+	//}
 
-		AppendToFile(addToSearchValuepath, bnStr)
-		AppendToFile(addToSearchValuepath, "value, time(us), sum\n")
+	if du == 0 {
+		du, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("experiment", "duplicate"))
+		if du == 0 {
+			du = 5
+		}
 	}
 
 	k := uint64(1)
-	for i := 0; i < 8; i++ {
-		ClearTopkVSearchTime()
+	for i := 0; i < 6; i++ {
 		var content string
-		_, resultNum, sum, _ := TopkVSearch(root, db, k, uint64(0))
+		content += strconv.FormatUint(bn, 10)
+		content += ","
 		content += strconv.FormatUint(k, 10)
 		content += ","
-		content += strconv.FormatInt(topkVSearchTotalTime, 10)
-		content += ","
-		content += strconv.FormatInt(resultNum, 10)
-		content += ","
-		content += strconv.FormatInt(sum, 10)
-		content += "\n"
-		AppendToFile(topkpath, content)
+		for j := 0; j < du; j++ {
+			ClearTopkVSearchTime()
+			_, resultNum, sum, _ := TopkVSearch(root, db, k, uint64(0))
+			if j == 0 {
+				content += strconv.FormatInt(resultNum, 10)
+				content += ","
+				content += strconv.FormatInt(sum, 10)
+			}
+			content += ","
+			content += strconv.FormatInt(topkVSearchTotalTime, 10)
+		}
+		AppendToFile(topkpath, content+"\n")
 		k = k * 10
 	}
 	AppendToFile(topkpath, "\n")
@@ -215,21 +229,25 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 	Bigstart = hexutil.Big(*Intstart)
 	span := "10000000000000000"
 	for i := 0; i < 8; i++ {
-		ClearRangeVSearchTime()
 		var content string
-
-		Bigend := BigAbs(start, span)
-		_, resultNum, sum, _ := RangeVSearch(root, db, &Bigstart, &Bigend, uint64(0))
-
+		content += strconv.FormatUint(bn, 10)
+		content += ","
 		content += span
 		content += ","
-		content += strconv.FormatInt(rangeVSearchTotalTime, 10)
-		content += ","
-		content += strconv.FormatInt(resultNum, 10)
-		content += ","
-		content += strconv.FormatInt(sum, 10)
-		content += "\n"
-		AppendToFile(rangepath, content)
+		for j := 0; j < du; j++ {
+			ClearRangeVSearchTime()
+			Bigend := BigAbs(start, span)
+			_, resultNum, sum, _ := RangeVSearch(root, db, &Bigstart, &Bigend, uint64(0))
+
+			if j == 0 {
+				content += strconv.FormatInt(resultNum, 10)
+				content += ","
+				content += strconv.FormatInt(sum, 10)
+			}
+			content += ","
+			content += strconv.FormatInt(rangeVSearchTotalTime, 10)
+		}
+		AppendToFile(rangepath, content+"\n")
 
 		span += "0"
 	}
@@ -237,27 +255,37 @@ func ExperStart(bn uint64, root []byte, db *Database) {
 
 	value := "10000000000000000"
 	for i := 0; i < 6; i++ {
-		ClearSpecificValueSearchTime()
-		ClearAddToSearchValueTime()
 		var content string
-
-		BigV := StringToBig(value)
-		_, sum, _ := SpecificValueSearch(root, db, &BigV, uint64(10000000))
-
+		content += strconv.FormatUint(bn, 10)
+		content += ","
 		content += value
 		content += ","
-		content += strconv.FormatInt(specificValueSearchTime, 10)
-		content += ","
-		content += strconv.FormatInt(sum, 10)
-		content += "\n"
-		AppendToFile(specificpath, content)
 
-		content = ""
-		content += value
-		content += ","
-		content += strconv.FormatInt(GetAddToSearch(), 10)
-		content += "\n"
-		AppendToFile(addToSearchValuepath, content)
+		var addcontent string
+		addcontent += strconv.FormatUint(bn, 10)
+		addcontent += ","
+		addcontent += value
+		addcontent += ","
+
+		for j := 0; j < du; j++ {
+			ClearSpecificValueSearchTime()
+			ClearAddToSearchValueTime()
+
+			BigV := StringToBig(value)
+			_, sum, _ := SpecificValueSearch(root, db, &BigV, uint64(10000000))
+
+			if j == 0 {
+				content += strconv.FormatInt(sum, 10)
+				addcontent += strconv.FormatInt(sum, 10)
+			}
+			content += ","
+			content += strconv.FormatInt(specificValueSearchTime, 10)
+
+			addcontent += ","
+			addcontent += strconv.FormatInt(GetAddToSearch(), 10)
+		}
+		AppendToFile(specificpath, content+"\n")
+		AppendToFile(addToSearchValuepath, addcontent+"\n")
 
 		value += "0"
 	}
