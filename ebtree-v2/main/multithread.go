@@ -2,16 +2,21 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 )
 
 type Task struct {
 	Id  int
 	Err error
-	f   func(id int) error
+	f   func(id int) ([]Data, error)
 }
 
-func (task *Task) Do() error {
+type Data struct {
+	content []byte
+}
+
+func (task *Task) Do() ([]Data, error) {
 	return task.f(task.Id)
 }
 
@@ -19,13 +24,13 @@ type WorkerPool struct {
 	PoolSize    int
 	tasksSize   int
 	tasksChan   chan Task
-	resultsChan chan Task
-	Results     func() []Task
+	resultsChan chan []Data
+	Results     func() [][]Data
 }
 
 func NewWorkerPool(tasks []Task, size int) *WorkerPool {
 	tasksChan := make(chan Task, len(tasks))
-	resultsChan := make(chan Task, len(tasks))
+	resultsChan := make(chan []Data, len(tasks))
 	for _, task := range tasks {
 		tasksChan <- task
 	}
@@ -43,37 +48,63 @@ func (pool *WorkerPool) Start() {
 
 func (pool *WorkerPool) worker() {
 	for task := range pool.tasksChan {
-		task.Err = task.Do()
-		pool.resultsChan <- task
+		re, _ := task.Do()
+		pool.resultsChan <- re
 	}
 }
 
-func (pool *WorkerPool) results() []Task {
-	tasks := make([]Task, pool.tasksSize)
+func (pool *WorkerPool) results() [][]Data {
+	results := make([][]Data, pool.tasksSize)
 	for i := 0; i < pool.tasksSize; i++ {
-		tasks[i] = <-pool.resultsChan
+		results[i] = <-pool.resultsChan
 	}
-	return tasks
+	return results
+}
+
+func get(i int) Data {
+	time.Sleep(2 * time.Second)
+	var d Data
+	d.content = []byte("hello boy")
+	return d
+}
+
+var interval int
+
+func dosomething(id int) ([]Data, error) {
+	rs := make([]Data, interval)
+	for i := 0; i < interval; i++ {
+		rs[i] = get((id * interval) + i)
+	}
+	return rs, nil
 }
 
 func main() {
+
+	maxProces := runtime.NumCPU()
+	if maxProces > 1 {
+		maxProces -= 1
+	}
+	runtime.GOMAXPROCS(maxProces)
+
+	blocksnum := 10
+	interval = 1
+	tasknum := blocksnum / interval
+
 	t := time.Now()
-	tasks := []Task{
-		{Id: 0, f: func(id int) error {fmt.Println("id", id);return nil}},
+
+	tasks := make([]Task, tasknum)
+	for i := 0; i < tasknum; i++ {
+		tasks[i] = *new(Task)
+		tasks[i].Id = i
+		tasks[i].f = dosomething
 	}
 
-	//tasks := []Task{
-	//	{Id: 0, f: func() error { time.Sleep(2 * time.Second); fmt.Println(0); return nil }},
-	//	{Id: 1, f: func() error { time.Sleep(time.Second); fmt.Println(1); return errors.New("error") }},
-	//	{Id: 2, f: func() error { fmt.Println(2); return errors.New("error") }},
-	//}
-
-	pool := NewWorkerPool(tasks, 2)
+	pool := NewWorkerPool(tasks, maxProces*2)
 	pool.Start()
 
-	tasks = pool.Results()
+	results := pool.Results()
 	fmt.Printf("all tasks finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-	for _, task := range tasks {
-		fmt.Printf("result of task %d is %v\n", task.Id, task.Err)
+	for _, datalist := range results {
+		fmt.Printf("Data of task is %v\n", datalist)
 	}
 }
