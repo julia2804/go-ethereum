@@ -19,6 +19,7 @@ package eth
 import (
 	"context"
 	"errors"
+	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -300,4 +301,10 @@ func (b *EthAPIBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 	for i := 0; i < bloomFilterThreads; i++ {
 		go session.Multiplex(bloomRetrievalBatch, bloomRetrievalWait, b.eth.bloomRequests)
 	}
+}
+
+func (b *EthAPIBackend) ConstructTree(ctx context.Context) error {
+	ebtree_v2.Initial(b.eth.blockchain, 10000, 100000)
+	ebtree_v2.GetAll()
+	return nil
 }

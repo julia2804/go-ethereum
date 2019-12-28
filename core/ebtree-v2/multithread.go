@@ -1,10 +1,15 @@
-package main
+package ebtree_v2
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/core"
 	"runtime"
 	"time"
 )
+
+var bc *core.BlockChain
+var interval int
+var blocksnum int
 
 type Task struct {
 	Id  int
@@ -61,33 +66,39 @@ func (pool *WorkerPool) results() [][]Data {
 	return results
 }
 
-func get(i int) Data {
-	time.Sleep(2 * time.Second)
-	var d Data
-	d.content = []byte("hello boy")
-	return d
+func get(i int, bc *core.BlockChain) []Data {
+	b := bc.GetBlockByNumber(uint64(i))
+	bts := b.Transactions()
+
+	dts := make([]Data, bts.Len())
+	for j := 0; j < len(bts); j++ {
+		dts[j].content = bts[j].Value().Bytes()
+	}
+	return dts
 }
 
-var interval int
-
 func dosomething(id int) ([]Data, error) {
-	rs := make([]Data, interval)
+	var rs []Data
 	for i := 0; i < interval; i++ {
-		rs[i] = get((id * interval) + i)
+		tmp := get((id*interval)+i, bc)
+		rs = append(rs, tmp...)
 	}
 	return rs, nil
 }
 
-func main() {
+func Initial(outerbc *core.BlockChain, outinterval int, outblocksnum int) {
+	bc = outerbc
+	interval = outinterval
+	blocksnum = outblocksnum
+}
 
+func GetAll() [][]Data {
 	maxProces := runtime.NumCPU()
 	if maxProces > 1 {
 		maxProces -= 1
 	}
 	runtime.GOMAXPROCS(maxProces)
 
-	blocksnum := 10
-	interval = 1
 	tasknum := blocksnum / interval
 
 	t := time.Now()
@@ -104,7 +115,8 @@ func main() {
 
 	results := pool.Results()
 	fmt.Printf("all tasks finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-	for _, datalist := range results {
-		fmt.Printf("Data of task is %v\n", datalist)
-	}
+	return results
+	//for _, datalist := range results {
+	//	fmt.Printf("Data of task is %v\n", datalist)
+	//}
 }

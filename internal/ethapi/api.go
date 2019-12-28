@@ -1783,3 +1783,8 @@ func (s *PublicNetAPI) PeerCount() hexutil.Uint {
 func (s *PublicNetAPI) Version() string {
 	return fmt.Sprintf("%d", s.networkVersion)
 }
+
+// GetHeaderByHash returns the requested header by hash.
+func (s *PublicBlockChainAPI) ConstructTree(ctx context.Context) {
+	s.b.ConstructTree(ctx)
+}
