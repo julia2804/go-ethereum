@@ -85,6 +85,7 @@ type Backend interface {
 	ChainConfig() *params.ChainConfig
 	CurrentBlock() *types.Block
 
+	//multithreadcon
 	ConstructTree(ctx context.Context) error
 }
 
