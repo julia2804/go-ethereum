@@ -3,6 +3,7 @@ package ebtree_v2
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
 	"runtime"
 	"time"
 )
@@ -14,14 +15,10 @@ var blocksnum int
 type Task struct {
 	Id  int
 	Err error
-	f   func(id int) ([]Data, error)
+	f   func(id int) (TaskR, error)
 }
 
-type Data struct {
-	content []byte
-}
-
-func (task *Task) Do() ([]Data, error) {
+func (task *Task) Do() (TaskR, error) {
 	return task.f(task.Id)
 }
 
@@ -29,13 +26,13 @@ type WorkerPool struct {
 	PoolSize    int
 	tasksSize   int
 	tasksChan   chan Task
-	resultsChan chan []Data
-	Results     func() [][]Data
+	resultsChan chan TaskR
+	Results     func() []TaskR
 }
 
 func NewWorkerPool(tasks []Task, size int) *WorkerPool {
 	tasksChan := make(chan Task, len(tasks))
-	resultsChan := make(chan []Data, len(tasks))
+	resultsChan := make(chan TaskR, len(tasks))
 	for _, task := range tasks {
 		tasksChan <- task
 	}
@@ -58,32 +55,32 @@ func (pool *WorkerPool) worker() {
 	}
 }
 
-func (pool *WorkerPool) results() [][]Data {
-	results := make([][]Data, pool.tasksSize)
+//todo 不需要for遍历所有的，可以设置阈值，每次拿出多少
+func (pool *WorkerPool) results() []TaskR {
+	results := make([]TaskR, pool.tasksSize)
 	for i := 0; i < pool.tasksSize; i++ {
-		results[i] = <-pool.resultsChan
+		results[i] = <- pool.resultsChan
 	}
 	return results
 }
 
-func get(i int, bc *core.BlockChain) []Data {
-	b := bc.GetBlockByNumber(uint64(i))
-	bts := b.Transactions()
 
-	dts := make([]Data, bts.Len())
-	for j := 0; j < len(bts); j++ {
-		dts[j].content = bts[j].Value().Bytes()
+func dosomething(id int) (TaskR, error) {
+	//single task repsonse
+	var strps TaskR
+	for i := 0; i < interval; i++ {
+		block := bc.GetBlockByNumber(uint64((id*interval)+i))
+		trans := block.Transactions()
+
+		strps.TaskResult = simSortTrans(trans)
 	}
-	return dts
+	return strps, nil
 }
 
-func dosomething(id int) ([]Data, error) {
-	var rs []Data
-	for i := 0; i < interval; i++ {
-		tmp := get((id*interval)+i, bc)
-		rs = append(rs, tmp...)
-	}
-	return rs, nil
+
+//todo 对trans整合，合并重复value 并且排序。当然可以先排序，排序的过程中合并重复元素
+func simSortTrans(trans types.Transactions) []ResultD {
+	return nil
 }
 
 func Initial(outerbc *core.BlockChain, outinterval int, outblocksnum int) {
@@ -92,7 +89,7 @@ func Initial(outerbc *core.BlockChain, outinterval int, outblocksnum int) {
 	blocksnum = outblocksnum
 }
 
-func GetAll() [][]Data {
+func GetAll() []TaskR {
 	maxProces := runtime.NumCPU()
 	if maxProces > 1 {
 		maxProces -= 1
@@ -116,7 +113,4 @@ func GetAll() [][]Data {
 	results := pool.Results()
 	fmt.Printf("all tasks finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
 	return results
-	//for _, datalist := range results {
-	//	fmt.Printf("Data of task is %v\n", datalist)
-	//}
 }
