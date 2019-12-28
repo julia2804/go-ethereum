@@ -72,15 +72,23 @@ func dosomething(id int) (TaskR, error) {
 		block := bc.GetBlockByNumber(uint64((id*interval)+i))
 		trans := block.Transactions()
 
-		strps.TaskResult = simSortTrans(trans)
+		strps.TaskResult = simSortTrans(trans, (id*interval)+i)
 	}
 	return strps, nil
 }
 
 
-//todo 对trans整合，合并重复value 并且排序。当然可以先排序，排序的过程中合并重复元素
-func simSortTrans(trans types.Transactions) []ResultD {
-	return nil
+func simSortTrans(trans types.Transactions, blockno int) []ResultD {
+	var tmprps []ResultD
+	for i:=0; i < trans.Len(); i++{
+		var tmprd ResultD
+		tmprd.value = trans[i].Value().Int64()
+		var tmptd TD
+		tmptd.IdentifierData = convert2IdentifierData(blockno, i)
+		tmprps = append(tmprps, tmprd)
+	}
+	rps := HeapSort(tmprps)
+	return rps
 }
 
 func Initial(outerbc *core.BlockChain, outinterval int, outblocksnum int) {
