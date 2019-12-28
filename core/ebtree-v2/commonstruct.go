@@ -6,7 +6,7 @@ type TD struct {
 }
 type ResultD struct {
 	//value stores the transaction value
-	value int64
+	Value []byte
 	//ResultData stores all IdentifierData of transactions whose value is equal to value
 	ResultData []TD
 }

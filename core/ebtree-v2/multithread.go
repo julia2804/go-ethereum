@@ -1,9 +1,10 @@
 package ebtree_v2
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
+	"os"
 	"runtime"
 	"time"
 )
@@ -68,28 +69,39 @@ func (pool *WorkerPool) results() []TaskR {
 func dosomething(id int) (TaskR, error) {
 	//single task repsonse
 	var strps TaskR
+	var tmprps []ResultD
+
 	for i := 0; i < interval; i++ {
 		block := bc.GetBlockByNumber(uint64((id*interval)+i))
 		trans := block.Transactions()
 
-		strps.TaskResult = simSortTrans(trans, (id*interval)+i)
+		for j:=0; j < trans.Len(); j++{
+			var tmprd ResultD
+			tmprd.Value = trans[j].Value().Bytes()
+			var tmptd TD
+			tmptd.IdentifierData = Convert2IdentifierData(i, j)
+			tmprd.ResultData = append(tmprd.ResultData, tmptd)
+			tmprps = append(tmprps, tmprd)
+		}
 	}
+	strps.TaskResult = HeapSort(tmprps)
 	return strps, nil
 }
 
 
-func simSortTrans(trans types.Transactions, blockno int) []ResultD {
-	var tmprps []ResultD
-	for i:=0; i < trans.Len(); i++{
-		var tmprd ResultD
-		tmprd.value = trans[i].Value().Int64()
-		var tmptd TD
-		tmptd.IdentifierData = convert2IdentifierData(blockno, i)
-		tmprps = append(tmprps, tmprd)
-	}
-	rps := HeapSort(tmprps)
-	return rps
-}
+//func simSortTrans(trans types.Transactions, blockno int) []ResultD {
+//	var tmprps []ResultD
+//	for i:=0; i < trans.Len(); i++{
+//		var tmprd ResultD
+//		tmprd.value = trans[i].Value().Int64()
+//		var tmptd TD
+//		tmptd.IdentifierData = convert2IdentifierData(blockno, i)
+//		tmprps = append(tmprps, tmprd)
+//	}
+//	fmt.Println("tmprps", tmprps)
+//	rps := HeapSort(tmprps)
+//	return rps
+//}
 
 func Initial(outerbc *core.BlockChain, outinterval int, outblocksnum int) {
 	bc = outerbc
@@ -120,5 +132,13 @@ func GetAll() []TaskR {
 
 	results := pool.Results()
 	fmt.Printf("all tasks finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+
+	var f *os.File
+	f, err := os.Create("/home/mimota/sss.txt")
+	b, err := json.Marshal (results)
+	if err != nil {
+		fmt. Println ( "error:" , err )
+	}
+	f.Write(b)
 	return results
 }
