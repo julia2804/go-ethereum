@@ -13,7 +13,7 @@ func TestInsert(t *testing.T) {
 		fmt.Print(err)
 		return
 	}
-	for i := 10; i <= 100000000; i = i * 10 {
+	for i := 10000000000; i >= 10; i = i / 10 {
 		ds := ReturnResultD(i)
 		ebt.InsertDatasToTree(ds)
 	}
@@ -22,12 +22,31 @@ func TestInsert(t *testing.T) {
 	//test topk search
 	ds := ebt.TopkVSearch(100)
 	fmt.Println(len(ds))
+
+	dt, err := ebt.RangeSearch(IntToBytes(200), IntToBytes(10001))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(len(dt))
+
+	var de ResultD
+	de, err = ebt.EquivalentSearch(IntToBytes(10))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if de.Value != nil {
+		fmt.Println("found")
+	} else {
+		fmt.Println("not found")
+	}
 }
 
 func ReturnResultD(t int) []ResultD {
 	var ds []ResultD
 	var d ResultD
-	for j := 1; uint8(j) <= MaxLeafNodeCapability; j++ {
+	for j := int(MaxLeafNodeCapability); uint8(j) >= 1; j-- {
 		d.Value = IntToBytes(uint64(j + t))
 		var td TD
 		td.IdentifierData = IntToBytes(uint64(t))

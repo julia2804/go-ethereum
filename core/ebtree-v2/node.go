@@ -123,7 +123,8 @@ func (ebt *EBTree) CreateInternalNode(first EBTreen, second EBTreen) (InternalNo
 }
 
 func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) error {
-	if int(i) == len(ebt.LastPath.Internals)-1 {
+
+	if int(i) == len(ebt.LastPath.Internals)-1 || (i < 0 && ebt.LastPath.Internals == nil) {
 		//we reach to the root node of ebtree
 		in, err := ebt.CreateInternalNode(first, second)
 		if err != nil {
@@ -145,7 +146,10 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 			if err2 != nil {
 				return err2
 			}
-			ebt.LastPath.Internals[i] = nin
+			if i != -1 {
+				ebt.LastPath.Internals[i] = nin
+			}
+
 			return nil
 		} else {
 			var v []byte
@@ -168,4 +172,73 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 }
 
 // Update functions in InternalNode
+//End*****************************
+
+//Start*****************************
+// find functions in Node
+
+func (ebt *EBTree) FindInNode(value []byte, n EBTreen) (*LeafNode, error) {
+	var le *LeafNode
+	var err error
+	switch nt := n.(type) {
+	case *LeafNode:
+		return nt, nil
+	case *InternalNode:
+		i, err := ebt.SearchInNode(value, nt)
+		if err != nil {
+			return nil, err
+		}
+		return ebt.FindInNode(value, nt.Children[i].NodePtr)
+	default:
+		err := errors.New("wrong node type in FindInNode")
+		return nil, err
+	}
+
+	return le, err
+}
+
+func (ebt *EBTree) SearchInNode(value []byte, n EBTreen) (int64, error) {
+	switch nt := n.(type) {
+	case *LeafNode:
+		lo, hi := 0, len(nt.LeafDatas)-1
+		for lo <= hi {
+			m := (lo + hi) >> 1
+			if byteCompare(value, nt.LeafDatas[m].Value) < 0 {
+				lo = m + 1
+			} else if byteCompare(value, nt.LeafDatas[m].Value) > 0 {
+				hi = m - 1
+			} else {
+				return int64(m), nil
+			}
+		}
+		//not found
+		if hi < 0 {
+			return int64(hi + 1), nil
+		}
+		return int64(hi), nil
+	case *InternalNode:
+		lo, hi := 0, len(nt.Children)-1
+		for lo <= hi {
+			m := (lo + hi) >> 1
+			if byteCompare(value, nt.Children[m].Value) < 0 {
+				lo = m + 1
+			} else if byteCompare(value, nt.Children[m].Value) > 0 {
+				hi = m - 1
+			} else {
+				return int64(m), nil
+			}
+		}
+		if hi < 0 {
+			return int64(hi + 1), nil
+		}
+		//not found
+		return int64(hi), nil
+	default:
+		err := errors.New("wrong node type in SearchInNode")
+		return -1, err
+	}
+
+}
+
+// find functions in Node
 //End*****************************
