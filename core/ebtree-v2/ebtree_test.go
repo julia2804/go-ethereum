@@ -23,7 +23,7 @@ func TestInsert(t *testing.T) {
 	ds := ebt.TopkVSearch(100)
 	fmt.Println(len(ds))
 
-	dt, err := ebt.RangeSearch(IntToBytes(200), IntToBytes(10001))
+	dt, err := ebt.RangeSearch(IntToBytes(100), IntToBytes(10001))
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -31,7 +31,7 @@ func TestInsert(t *testing.T) {
 	fmt.Println(len(dt))
 
 	var de ResultD
-	de, err = ebt.EquivalentSearch(IntToBytes(10))
+	de, err = ebt.EquivalentSearch(IntToBytes(100005))
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -131,7 +131,7 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 			return err
 		}
 		ebt.Root = &in
-		ebt.LastPath.Internals = append(ebt.LastPath.Internals, in)
+		ebt.LastPath.Internals = append(ebt.LastPath.Internals, &in)
 		return nil
 	} else {
 		lin := len(ebt.LastPath.Internals[i+1].Children)
@@ -142,12 +142,12 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 				return err
 			}
 			//the second node is put in new internal node
-			err2 := ebt.AdjustNodeInPath(i+1, &(ebt.LastPath.Internals[i+1]), &nin)
+			err2 := ebt.AdjustNodeInPath(i+1, (ebt.LastPath.Internals[i+1]), &nin)
 			if err2 != nil {
 				return err2
 			}
 			if i != -1 {
-				ebt.LastPath.Internals[i] = nin
+				ebt.LastPath.Internals[i] = &nin
 			}
 
 			return nil
@@ -158,7 +158,7 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 				v = snt.LeafDatas[len(snt.LeafDatas)-1].Value
 			case *InternalNode:
 				v = snt.Children[len(snt.Children)-1].Value
-				ebt.LastPath.Internals[i] = *snt
+				ebt.LastPath.Internals[i] = snt
 			default:
 				err := errors.New("wrong node type in UpdateInternalNodeInPath")
 				return err

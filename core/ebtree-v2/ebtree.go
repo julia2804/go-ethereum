@@ -15,7 +15,7 @@ type EBTree struct {
 }
 type Path struct {
 	Leaf      *LeafNode
-	Internals []InternalNode
+	Internals []*InternalNode
 }
 
 //Start*****************************
@@ -66,7 +66,7 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 		if err != nil {
 			return nil
 		}
-		ebt.LastPath.Internals = append(ebt.LastPath.Internals, in)
+		ebt.LastPath.Internals = append(ebt.LastPath.Internals, &in)
 		ebt.Root = &in
 		ebt.LastPath.Leaf = &le
 		return nil
