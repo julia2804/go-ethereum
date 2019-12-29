@@ -86,7 +86,7 @@ type Backend interface {
 	CurrentBlock() *types.Block
 
 	//multithreadcon
-	ConstructTree(ctx context.Context) error
+	ConstructTree(ctx context.Context, begin int, end int) error
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

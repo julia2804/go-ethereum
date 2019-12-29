@@ -303,8 +303,8 @@ func (b *EthAPIBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 	}
 }
 
-func (b *EthAPIBackend) ConstructTree(ctx context.Context) error {
-	ebtree_v2.Initial(b.eth.blockchain, 10000, 100000)
+func (b *EthAPIBackend) ConstructTree(ctx context.Context, begin int, end int) error {
+	ebtree_v2.Initial(b.eth.blockchain, end)
 	ebtree_v2.GetAll()
 	return nil
 }

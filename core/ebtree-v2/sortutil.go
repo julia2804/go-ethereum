@@ -32,18 +32,65 @@ func HeapSort(c []ResultD)  []ResultD {
 			minHeap(0, end-1, c)
 		}
 	}
-	//heap sort response, 去重复
+	return mergeSamedata(c)
+}
+
+//heap sort response, 去重复
+func mergeSamedata(array []ResultD) []ResultD{
 	var hsrps []ResultD
 	var size int
 	pre := -1
-	for i := 0; i < len(c); i++ {
-		if(pre == -1 || byteCompare(c[i].Value, c[pre].Value) != 0){
-			hsrps = append(hsrps, c[i])
+	for i := 0; i < len(array); i++ {
+		if(pre == -1 || byteCompare(array[i].Value, array[pre].Value) != 0){
+			hsrps = append(hsrps, array[i])
 			pre = i
 			size ++
 		}else{
-			hsrps[size-1].ResultData = append(hsrps[size-1].ResultData, c[i].ResultData...)
+			hsrps[size-1].ResultData = append(hsrps[size-1].ResultData, array[i].ResultData...)
 		}
 	}
 	return hsrps
+}
+
+
+func simplemerge(a, b []ResultD) []ResultD{
+	//判断数组的长度
+	al := len(a)
+	bl := len(b)
+	cl := al + bl
+	c := make([]ResultD, cl)
+	ai := 0
+	bi := 0
+	ci := 0
+
+	for ai < al && bi < bl {
+		if byteCompare(a[ai].Value , b[bi].Value) > 0 {
+			c[ci] = a[ai]
+			ci++
+			ai++
+		} else {
+			c[ci] = b[bi]
+			ci++
+			bi++
+		}
+	}
+	for ai < al {
+		c[ci] = a[ai]
+		ci++
+		ai++
+	}
+	for bi < bl {
+		c[ci] = b[bi]
+		ci++
+		bi++
+	}
+	return c
+}
+
+func mergeSort(matrix []TaskR) []ResultD{
+	var rps []ResultD
+	for i := 0; i < len(matrix); i++{
+		rps = simplemerge(rps,  matrix[i].TaskResult)
+	}
+	return mergeSamedata(rps)
 }

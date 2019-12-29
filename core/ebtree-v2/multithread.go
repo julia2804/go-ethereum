@@ -13,14 +13,26 @@ var bc *core.BlockChain
 var interval int
 var blocksnum int
 
+var(
+	pretasknum   = 100
+	aftertasknum = 10
+
+	prethreadnum = 10
+	afterthreadnum = 10
+
+	//每次从channel中几个数组来排序
+	takenum  = 10
+)
+
 type Task struct {
 	Id  int
 	Err error
-	f   func(id int) (TaskR, error)
+	Prepool *WorkerPool
+	f   func(id int, prepool *WorkerPool) (TaskR, error)
 }
 
 func (task *Task) Do() (TaskR, error) {
-	return task.f(task.Id)
+	return task.f(task.Id, task.Prepool)
 }
 
 type WorkerPool struct {
@@ -28,17 +40,17 @@ type WorkerPool struct {
 	tasksSize   int
 	tasksChan   chan Task
 	resultsChan chan TaskR
-	Results     func() []TaskR
+	Results     func(e int) []TaskR
 }
 
-func NewWorkerPool(tasks []Task, size int) *WorkerPool {
+func NewWorkerPool(tasks []Task, poolsize int) *WorkerPool {
 	tasksChan := make(chan Task, len(tasks))
 	resultsChan := make(chan TaskR, len(tasks))
 	for _, task := range tasks {
 		tasksChan <- task
 	}
 	close(tasksChan)
-	pool := &WorkerPool{PoolSize: size, tasksSize: len(tasks), tasksChan: tasksChan, resultsChan: resultsChan}
+	pool := &WorkerPool{PoolSize: poolsize, tasksSize: len(tasks), tasksChan: tasksChan, resultsChan: resultsChan}
 	pool.Results = pool.results
 	return pool
 }
@@ -56,17 +68,16 @@ func (pool *WorkerPool) worker() {
 	}
 }
 
-//todo 不需要for遍历所有的，可以设置阈值，每次拿出多少
-func (pool *WorkerPool) results() []TaskR {
-	results := make([]TaskR, pool.tasksSize)
-	for i := 0; i < pool.tasksSize; i++ {
+func (pool *WorkerPool) results(e int) []TaskR {
+	results := make([]TaskR, e)
+	for i := 0; i < e; i++ {
 		results[i] = <- pool.resultsChan
 	}
 	return results
 }
 
 
-func dosomething(id int) (TaskR, error) {
+func ToChannel(id int, prepool *WorkerPool) (TaskR, error) {
 	//single task repsonse
 	var strps TaskR
 	var tmprps []ResultD
@@ -88,25 +99,18 @@ func dosomething(id int) (TaskR, error) {
 	return strps, nil
 }
 
+func FromChannel(id int, prepool *WorkerPool) (TaskR, error){
+	var rps TaskR
+	trps := prepool.Results(takenum)
+	//把这些排序
+	rps.TaskResult = mergeSort(trps)
+	return rps, nil
+}
 
-//func simSortTrans(trans types.Transactions, blockno int) []ResultD {
-//	var tmprps []ResultD
-//	for i:=0; i < trans.Len(); i++{
-//		var tmprd ResultD
-//		tmprd.value = trans[i].Value().Int64()
-//		var tmptd TD
-//		tmptd.IdentifierData = convert2IdentifierData(blockno, i)
-//		tmprps = append(tmprps, tmprd)
-//	}
-//	fmt.Println("tmprps", tmprps)
-//	rps := HeapSort(tmprps)
-//	return rps
-//}
-
-func Initial(outerbc *core.BlockChain, outinterval int, outblocksnum int) {
+func Initial(outerbc *core.BlockChain, outblocksnum int) {
 	bc = outerbc
-	interval = outinterval
 	blocksnum = outblocksnum
+	interval = blocksnum / pretasknum
 }
 
 func GetAll() []TaskR {
@@ -116,22 +120,34 @@ func GetAll() []TaskR {
 	}
 	runtime.GOMAXPROCS(maxProces)
 
-	tasknum := blocksnum / interval
-
 	t := time.Now()
 
-	tasks := make([]Task, tasknum)
-	for i := 0; i < tasknum; i++ {
-		tasks[i] = *new(Task)
-		tasks[i].Id = i
-		tasks[i].f = dosomething
+	pretasks := make([]Task, pretasknum)
+	for i := 0; i < pretasknum; i++ {
+		pretasks[i] = *new(Task)
+		pretasks[i].Id = i
+		pretasks[i].f = ToChannel
 	}
 
-	pool := NewWorkerPool(tasks, maxProces*2)
-	pool.Start()
+	prepool := NewWorkerPool(pretasks, prethreadnum)
+	prepool.Start()
 
-	results := pool.Results()
-	fmt.Printf("all tasks finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+
+	takenum = pretasknum / aftertasknum
+	aftertasks := make([]Task, aftertasknum)
+	for i := 0; i < aftertasknum; i++{
+		aftertasks[i] = *new(Task)
+		//aftertasks[i].Id = i
+		aftertasks[i].Prepool = prepool
+		aftertasks[i].f = FromChannel
+	}
+
+	afterpool := NewWorkerPool(aftertasks, afterthreadnum)
+	afterpool.Start()
+
+	results := afterpool.Results(aftertasknum)
+	fmt.Printf("all pretasks finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+
 
 	var f *os.File
 	f, err := os.Create("/home/mimota/sss.txt")

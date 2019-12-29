@@ -531,7 +531,7 @@ web3._extend({
 		new web3._extend.Method({
 			name: 'constructTree',
 			call: 'eth_constructTree',
-			params: 0,
+			params: 2,
 		}),
 	],
 	properties: [

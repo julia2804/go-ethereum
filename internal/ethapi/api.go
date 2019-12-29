@@ -1785,6 +1785,6 @@ func (s *PublicNetAPI) Version() string {
 }
 
 // GetHeaderByHash returns the requested header by hash.
-func (s *PublicBlockChainAPI) ConstructTree(ctx context.Context) {
-	s.b.ConstructTree(ctx)
+func (s *PublicBlockChainAPI) ConstructTree(ctx context.Context, begin int, end int) {
+	s.b.ConstructTree(ctx, begin, end)
 }
