@@ -316,28 +316,21 @@ func (ebt *EBTree) CollapseInternalNode(nt *InternalNode) error {
 
 //Start*****************************
 // commit prepare functions in Node
-func (ebt *EBTree) DecodeInternal(encode []byte) (InternalNode, error) {
+func DecodeInternal(elems []byte) (InternalNode, error) {
 	var in InternalNode
 	var err error
-	elems, _, _ := rlp.SplitList(encode)
-	//the number of fields in internal node
-	c, _ := rlp.CountValues(elems)
-	fmt.Println(c)
 
-	//get the id
 	kbuf, rest, _ := rlp.SplitString(elems)
 	in.Id = kbuf
 	fmt.Println(kbuf)
 	fmt.Println(rest)
 	elems = rest
-
-	//get the children
 	bbuf, rest, _ := rlp.SplitString(elems)
 	fmt.Println(bbuf)
 	fmt.Println(rest)
 	elems, _, _ = rlp.SplitList(elems)
 	//the number of children
-	c, _ = rlp.CountValues(elems)
+	c, _ := rlp.CountValues(elems)
 	fmt.Println(elems)
 	fmt.Println(c)
 	for i := 0; i < c; i++ {
@@ -368,13 +361,10 @@ func (ebt *EBTree) DecodeInternal(encode []byte) (InternalNode, error) {
 	return in, err
 }
 
-func (ebt *EBTree) DecodeLeafNode(encode []byte) (LeafNode, error) {
+//todo:test the decode leaf node
+func DecodeLeafNode(elems []byte) (LeafNode, error) {
 	var le LeafNode
 	var err error
-	elems, _, _ := rlp.SplitList(encode)
-	//the number of fields in internal node
-	c, _ := rlp.CountValues(elems)
-	fmt.Println(c)
 
 	//get the id
 	kbuf, rest, _ := rlp.SplitString(elems)
@@ -395,7 +385,7 @@ func (ebt *EBTree) DecodeLeafNode(encode []byte) (LeafNode, error) {
 	//get the data
 	elems, _, _ = rlp.SplitList(elems)
 	//the number of data
-	c, _ = rlp.CountValues(elems)
+	c, _ := rlp.CountValues(elems)
 	fmt.Println(elems)
 	fmt.Println(c)
 	for i := 0; i < c; i++ {
@@ -440,6 +430,22 @@ func (ebt *EBTree) DecodeLeafNode(encode []byte) (LeafNode, error) {
 	}
 
 	return le, err
+}
+func DecodeNode(encode []byte) (EBTreen, error) {
+	elems, _, _ := rlp.SplitList(encode)
+	//the number of fields in internal node
+	c, _ := rlp.CountValues(elems)
+	fmt.Println(c)
+	if c == 2 {
+		in, err := DecodeInternal2(elems)
+		return &in, err
+	} else if c == 3 {
+		le, err := DecodeLeafNode2(elems)
+		return &le, err
+	} else {
+		err := errors.New("some thing wrong in encode")
+		return nil, err
+	}
 }
 
 // commit prepare functions in Node

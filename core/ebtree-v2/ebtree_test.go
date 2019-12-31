@@ -182,9 +182,9 @@ func TestRlp(t *testing.T) {
 	test.Children = append(test.Children, vr3)
 	result1, _ := rlp.EncodeToBytes(test)
 	fmt.Println(result1)
-	in, err := DecodeInternal(result1)
+	in, err := DecodeNode(result1)
 	fmt.Println(err)
-	fmt.Println(in.Id)
+	in.fstring("hello")
 
 	testle := LeafNode{Id: IntToBytes(5)}
 	var ntid IdNode
@@ -237,130 +237,7 @@ func TestRlp(t *testing.T) {
 
 	result2, _ := rlp.EncodeToBytes(testle)
 	fmt.Println(result2)
-	le, err := DecodeLeafNode(result2)
+	le, err := DecodeNode(result2)
 	fmt.Println(err)
-	fmt.Println(le.Id)
-}
-func DecodeInternal(encode []byte) (InternalNode, error) {
-	var in InternalNode
-	var err error
-	elems, _, _ := rlp.SplitList(encode)
-	//the number of fields in internal node
-	c, _ := rlp.CountValues(elems)
-	fmt.Println(c)
-
-	kbuf, rest, _ := rlp.SplitString(elems)
-	in.Id = kbuf
-	fmt.Println(kbuf)
-	fmt.Println(rest)
-	elems = rest
-	bbuf, rest, _ := rlp.SplitString(elems)
-	fmt.Println(bbuf)
-	fmt.Println(rest)
-	elems, _, _ = rlp.SplitList(elems)
-	//the number of children
-	c, _ = rlp.CountValues(elems)
-	fmt.Println(elems)
-	fmt.Println(c)
-	for i := 0; i < c; i++ {
-		var rest2 []byte
-		elems, rest2, _ = rlp.SplitList(elems)
-
-		//the number of fields in childData
-		//c, _ = rlp.CountValues(elems)
-		//fmt.Println(elems)
-		//fmt.Println(c)
-		var child ChildData
-
-		bd1uf, rest, _ := rlp.SplitString(elems)
-		fmt.Println(bd1uf)
-		child.Value = bd1uf
-		fmt.Println(rest)
-		elems = rest
-		bd2uf, _, _ := rlp.SplitString(elems)
-		fmt.Println(bd2uf)
-		var npid IdNode
-		npid = bd2uf
-		child.NodePtr = &npid
-		in.Children = append(in.Children, child)
-		fmt.Println(rest2)
-		elems = rest2
-	}
-
-	return in, err
-}
-
-//todo:test the decode leaf node
-func DecodeLeafNode(encode []byte) (LeafNode, error) {
-	var le LeafNode
-	var err error
-	elems, _, _ := rlp.SplitList(encode)
-	//the number of fields in internal node
-	c, _ := rlp.CountValues(elems)
-	fmt.Println(c)
-
-	//get the id
-	kbuf, rest, _ := rlp.SplitString(elems)
-	le.Id = kbuf
-	fmt.Println(kbuf)
-	fmt.Println(rest)
-	elems = rest
-
-	//get the nextptr
-	kbuf, rest, _ = rlp.SplitString(elems)
-	var ntid IdNode
-	ntid = kbuf
-	le.NextPtr = &ntid
-	fmt.Println(kbuf)
-	fmt.Println(rest)
-	elems = rest
-
-	//get the data
-	elems, _, _ = rlp.SplitList(elems)
-	//the number of data
-	c, _ = rlp.CountValues(elems)
-	fmt.Println(elems)
-	fmt.Println(c)
-	for i := 0; i < c; i++ {
-		var rest2 []byte
-		elems, rest2, _ = rlp.SplitList(elems)
-
-		//the number of fields in childData
-		//c, _ = rlp.CountValues(elems)
-		//fmt.Println(elems)
-		//fmt.Println(c)
-		var rd ResultD
-
-		//get the value of resultd
-		bd1uf, rest, _ := rlp.SplitString(elems)
-		fmt.Println(bd1uf)
-		rd.Value = bd1uf
-		fmt.Println(rest)
-		elems = rest
-
-		//get the tds of resultd
-		elems, _, _ = rlp.SplitList(elems)
-		//the number of td
-		tdc, _ := rlp.CountValues(elems)
-		fmt.Println(elems)
-		fmt.Println(tdc)
-		for i := 0; i < tdc; i++ {
-			var rest3 []byte
-			elems, rest3, _ = rlp.SplitList(elems)
-
-			var td TD
-			//get the tds of td
-			bd2uf, _, _ := rlp.SplitString(elems)
-			fmt.Println(bd2uf)
-			td.IdentifierData = bd2uf
-			rd.ResultData = append(rd.ResultData, td)
-
-			fmt.Println(rest3)
-			elems = rest3
-		}
-		le.LeafDatas = append(le.LeafDatas, rd)
-		elems = rest2
-	}
-
-	return le, err
+	le.fstring("hello")
 }
