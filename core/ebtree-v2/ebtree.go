@@ -1,5 +1,10 @@
 package ebtree_v2
 
+import (
+	"errors"
+	"fmt"
+)
+
 var (
 	//MaxLeafNodeCapability=uint8(32)
 	//MaxInternalNodeCapability=uint64(256)
@@ -11,7 +16,8 @@ type EBTree struct {
 	Sequence  uint64
 	Root      EBTreen
 	LastPath  Path
-	FirstLeaf *LeafNode
+	FirstLeaf EBTreen
+	Collapses []*EBTreen
 }
 type Path struct {
 	Leaf      *LeafNode
@@ -54,6 +60,8 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 	le := ebt.NewLeafNode()
 	le.LeafDatas = d
 	if ebt.LastPath.Leaf == nil {
+		//there are no node in ebtree
+
 		ebt.LastPath.Leaf = &le
 		ebt.Root = &le
 		ebt.FirstLeaf = &le
@@ -61,11 +69,25 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 	}
 	ebt.LastPath.Leaf.NextPtr = &le
 	if ebt.LastPath.Internals == nil {
+		//there are no internal node in ebtree
+
+		//leaf nodes produce a internal node
 		in, err := ebt.CreateInternalNode(ebt.LastPath.Leaf, &le)
-		ebt.FirstLeaf.NextPtr = &le
+		switch ft := (ebt.FirstLeaf).(type) {
+		case *LeafNode:
+			ft.NextPtr = &le
+			ebt.FirstLeaf = ft
+		default:
+			err := errors.New("wrong node type in ebt.firstleaf")
+			return err
+		}
 		if err != nil {
 			return nil
 		}
+		/*collapse the leaf node
+		ebt.CollapseLeafNode(ebt.LastPath.Leaf)
+		//todo:send the collapse node to chanel to be processed*/
+
 		ebt.LastPath.Internals = append(ebt.LastPath.Internals, &in)
 		ebt.Root = &in
 		ebt.LastPath.Leaf = &le
@@ -83,6 +105,10 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 	}
 	//process internal node
 	//End**********
+
+	/*collapse the leaf node
+	ebt.CollapseLeafNode(ebt.LastPath.Leaf)
+	//todo:send the collapse node to chanel to be processed*/
 	ebt.LastPath.Leaf = &le
 	return nil
 
@@ -100,13 +126,23 @@ func (ebt *EBTree) TopkVSearch(k int64) []ResultD {
 		if le == nil {
 			return ds
 		}
-		for j := 0; j < len(le.LeafDatas); j++ {
-			ds = append(ds, le.LeafDatas[j])
+		var lle int
+		var ft LeafNode
+		switch lt := le.(type) {
+		case *LeafNode:
+			lle = len(lt.LeafDatas)
+			ft = *lt
+		default:
+			fmt.Println("wrong node type in firstleaf")
+			return ds
+		}
+		for j := 0; j < lle; j++ {
+			ds = append(ds, ft.LeafDatas[j])
 			if int64(len(ds)) >= k {
 				return ds
 			}
 		}
-		le = le.NextPtr
+		le = ft.NextPtr
 	}
 	return ds
 }
@@ -117,13 +153,23 @@ func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 	if err != nil {
 		return ds, err
 	}
-	for ; le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, begin) >= 0; le = le.NextPtr {
+	for le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, begin) >= 0 {
 		for j := 0; j < len(le.LeafDatas); j++ {
 			if byteCompare(begin, le.LeafDatas[j].Value) <= 0 && byteCompare(end, le.LeafDatas[j].Value) >= 0 {
 				ds = append(ds, le.LeafDatas[j])
 			} else if byteCompare(begin, le.LeafDatas[j].Value) > 0 {
 				return ds, nil
 			}
+		}
+		if le.NextPtr == nil {
+			return ds, nil
+		}
+		switch nt := (le.NextPtr).(type) {
+		case *LeafNode:
+			le = nt
+		default:
+			err := errors.New("wrong node type of leaf.nextprt in RangeSearch")
+			return ds, err
 		}
 	}
 	return ds, err
@@ -135,7 +181,7 @@ func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {
 	if err != nil {
 		return d, err
 	}
-	for ; le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, value) >= 0; le = le.NextPtr {
+	for le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, value) >= 0 {
 		for j := 0; j < len(le.LeafDatas); j++ {
 			if byteCompare(value, le.LeafDatas[j].Value) == 0 {
 				d = le.LeafDatas[j]
@@ -143,6 +189,16 @@ func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {
 			} else if byteCompare(value, le.LeafDatas[j].Value) > 0 {
 				return d, nil
 			}
+		}
+		if le.NextPtr == nil {
+			return d, nil
+		}
+		switch nt := (le.NextPtr).(type) {
+		case *LeafNode:
+			le = nt
+		default:
+			err := errors.New("wrong node type of leaf.nextprt in EquivalentSearch")
+			return d, err
 		}
 	}
 	return d, err

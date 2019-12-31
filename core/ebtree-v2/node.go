@@ -1,6 +1,10 @@
 package ebtree_v2
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
+)
 
 type EBTreen interface {
 	fstring(string)
@@ -8,8 +12,8 @@ type EBTreen interface {
 type (
 	LeafNode struct {
 		Id        []byte
+		NextPtr   EBTreen
 		LeafDatas []ResultD
-		NextPtr   *LeafNode
 	}
 	InternalNode struct {
 		Id       []byte
@@ -78,9 +82,15 @@ func (ebt *EBTree) CreateInternalNode(first EBTreen, second EBTreen) (InternalNo
 		fv := nt.LeafDatas[fvdl-1].Value
 		chd1 = ebt.NewChildData(fv, nt)
 		if second == nil {
+			//chd1 = ebt.NewChildData(fv, nt)
 			in.Children = append(in.Children, chd1)
 			return in, nil
 		} else {
+			/*first node should be a IdNode
+			var ntid IdNode
+			ntid=nt.Id
+			chd1=ebt.NewChildData(fv,&ntid)*/
+
 			switch snt := (second).(type) {
 			case *LeafNode:
 				svdl := len(snt.LeafDatas)
@@ -99,9 +109,16 @@ func (ebt *EBTree) CreateInternalNode(first EBTreen, second EBTreen) (InternalNo
 		fv := nt.Children[fvdl-1].Value
 		chd1 = ebt.NewChildData(fv, nt)
 		if second == nil {
+			//chd1 = ebt.NewChildData(fv, nt)
 			in.Children = append(in.Children, chd1)
 			return in, nil
 		} else {
+
+			/*first node should be a IdNode
+			var ntid IdNode
+			ntid=nt.Id
+			chd1=ebt.NewChildData(fv,&ntid)*/
+
 			switch snt := (second).(type) {
 			case *InternalNode:
 				svdl := len(snt.Children)
@@ -241,4 +258,189 @@ func (ebt *EBTree) SearchInNode(value []byte, n EBTreen) (int64, error) {
 }
 
 // find functions in Node
+//End*****************************
+
+//Start*****************************
+// commit prepare functions in Node
+func (ebt *EBTree) CollapseLeafNode(nt *LeafNode) error {
+	var ntid []byte
+	switch nnt := (nt.NextPtr).(type) {
+	case *LeafNode:
+		ntid = nnt.Id
+	case *IdNode:
+		return nil
+	default:
+		err := errors.New("wrong node type in leaf node.nextptr")
+		return err
+	}
+	var ntptr IdNode
+	ntptr = ntid
+	nt.NextPtr = &ntptr
+	return nil
+}
+func (ebt *EBTree) CollapseInternalNode(nt *InternalNode) error {
+	nl := len(nt.Children)
+	for i := 0; i < nl-1; i++ {
+		switch (nt.Children[i].NodePtr).(type) {
+		case *IdNode:
+			continue
+		default:
+			err := errors.New("the child of internalnode should be idnode in collaspNode")
+			return err
+		}
+	}
+	var ntid []byte
+	switch ntct := (nt.Children[nl-1].NodePtr).(type) {
+	case *LeafNode:
+		var ntptr IdNode
+		ntid = ntct.Id
+		ntptr = ntid
+		nt.Children[nl-1].NodePtr = &ntptr
+		return nil
+	case *InternalNode:
+		var ntptr IdNode
+		ntid = ntct.Id
+		ntptr = ntid
+		nt.Children[nl-1].NodePtr = &ntptr
+		return nil
+	case *IdNode:
+		return nil
+	default:
+		err := errors.New("the last child of internalnode with wrong node type in collaspNode")
+		return err
+	}
+}
+
+// commit prepare functions in Node
+//End*****************************
+
+//Start*****************************
+// commit prepare functions in Node
+func (ebt *EBTree) DecodeInternal(encode []byte) (InternalNode, error) {
+	var in InternalNode
+	var err error
+	elems, _, _ := rlp.SplitList(encode)
+	//the number of fields in internal node
+	c, _ := rlp.CountValues(elems)
+	fmt.Println(c)
+
+	//get the id
+	kbuf, rest, _ := rlp.SplitString(elems)
+	in.Id = kbuf
+	fmt.Println(kbuf)
+	fmt.Println(rest)
+	elems = rest
+
+	//get the children
+	bbuf, rest, _ := rlp.SplitString(elems)
+	fmt.Println(bbuf)
+	fmt.Println(rest)
+	elems, _, _ = rlp.SplitList(elems)
+	//the number of children
+	c, _ = rlp.CountValues(elems)
+	fmt.Println(elems)
+	fmt.Println(c)
+	for i := 0; i < c; i++ {
+		var rest2 []byte
+		elems, rest2, _ = rlp.SplitList(elems)
+
+		//the number of fields in childData
+		//c, _ = rlp.CountValues(elems)
+		//fmt.Println(elems)
+		//fmt.Println(c)
+		var child ChildData
+
+		bd1uf, rest, _ := rlp.SplitString(elems)
+		fmt.Println(bd1uf)
+		child.Value = bd1uf
+		fmt.Println(rest)
+		elems = rest
+		bd2uf, _, _ := rlp.SplitString(elems)
+		fmt.Println(bd2uf)
+		var npid IdNode
+		npid = bd2uf
+		child.NodePtr = &npid
+		in.Children = append(in.Children, child)
+		fmt.Println(rest2)
+		elems = rest2
+	}
+
+	return in, err
+}
+
+func (ebt *EBTree) DecodeLeafNode(encode []byte) (LeafNode, error) {
+	var le LeafNode
+	var err error
+	elems, _, _ := rlp.SplitList(encode)
+	//the number of fields in internal node
+	c, _ := rlp.CountValues(elems)
+	fmt.Println(c)
+
+	//get the id
+	kbuf, rest, _ := rlp.SplitString(elems)
+	le.Id = kbuf
+	fmt.Println(kbuf)
+	fmt.Println(rest)
+	elems = rest
+
+	//get the nextptr
+	kbuf, rest, _ = rlp.SplitString(elems)
+	var ntid IdNode
+	ntid = kbuf
+	le.NextPtr = &ntid
+	fmt.Println(kbuf)
+	fmt.Println(rest)
+	elems = rest
+
+	//get the data
+	elems, _, _ = rlp.SplitList(elems)
+	//the number of data
+	c, _ = rlp.CountValues(elems)
+	fmt.Println(elems)
+	fmt.Println(c)
+	for i := 0; i < c; i++ {
+		var rest2 []byte
+		elems, rest2, _ = rlp.SplitList(elems)
+
+		//the number of fields in childData
+		//c, _ = rlp.CountValues(elems)
+		//fmt.Println(elems)
+		//fmt.Println(c)
+		var rd ResultD
+
+		//get the value of resultd
+		bd1uf, rest, _ := rlp.SplitString(elems)
+		fmt.Println(bd1uf)
+		rd.Value = bd1uf
+		fmt.Println(rest)
+		elems = rest
+
+		//get the tds of resultd
+		elems, _, _ = rlp.SplitList(elems)
+		//the number of td
+		tdc, _ := rlp.CountValues(elems)
+		fmt.Println(elems)
+		fmt.Println(tdc)
+		for i := 0; i < tdc; i++ {
+			var rest3 []byte
+			elems, rest3, _ = rlp.SplitList(elems)
+
+			var td TD
+			//get the tds of td
+			bd2uf, _, _ := rlp.SplitString(elems)
+			fmt.Println(bd2uf)
+			td.IdentifierData = bd2uf
+			rd.ResultData = append(rd.ResultData, td)
+
+			fmt.Println(rest3)
+			elems = rest3
+		}
+		le.LeafDatas = append(le.LeafDatas, rd)
+		elems = rest2
+	}
+
+	return le, err
+}
+
+// commit prepare functions in Node
 //End*****************************
