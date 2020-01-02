@@ -1,7 +1,6 @@
 package ebtree_v2
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core"
@@ -134,7 +133,8 @@ func Initial(outerbc *core.BlockChain, outblocksnum int) {
 	bc = outerbc
 	blocksnum = outblocksnum
 	interval = blocksnum / pretasknum
-	log.Info("initial over, the final blocknum is :", interval*pretasknum)
+
+	log.Info("initial over, the final blocknum is :", "fn", (interval * pretasknum))
 }
 
 func AssembleTaskAndStart(tasknum int, threadnum int, f func(id int, prepool *WorkerPool) TaskR, prepool *WorkerPool) *WorkerPool {
@@ -163,26 +163,10 @@ func GetTrans() []TaskR {
 
 	fmt.Printf("all tasks finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
 
-	b, err := json.Marshal(trps)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-	AppendToFileWithByte("/home/mimota/sss.txt", b)
+	//b, err := json.Marshal(trps)
+	//if err != nil {
+	//	fmt.Println("error:", err)
+	//}
+	//AppendToFileWithByte("/home/mimota/sss.txt", b)
 	return trps
-}
-
-func InsertToTree(trps []TaskR) (int, error) {
-	results := mergeSortAndMergeSame(trps)
-	tree, err := NewEBTree()
-	err = tree.InsertDatasToTree(results)
-	return len(results), err
-}
-
-func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
-	Initial(outerbc, outblocksnum)
-	trps := GetTrans()
-	t := time.Now()
-	n, err := InsertToTree(trps)
-	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-	return n, err
 }

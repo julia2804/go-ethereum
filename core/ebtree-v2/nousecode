@@ -1,0 +1,1 @@
+build/bin/geth --syncmode fast --maxpeers 0 --datadir /home/mimota/data console

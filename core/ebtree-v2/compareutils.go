@@ -91,10 +91,31 @@ func GenTestData(n int) {
 	fmt.Println(len(m1))
 }
 
-
 func BigAbs(a string, b string) hexutil.Big {
 	Inta, _ := new(big.Int).SetString(a, 10)
 	Intb, _ := new(big.Int).SetString(b, 10)
 	return hexutil.Big(*Inta.Abs(Intb))
 }
 
+func ResultDIsSame(a ResultD, b ResultD) bool {
+	if byteCompare(a.Value, b.Value) == 0 {
+		al := len(a.ResultData)
+		bl := len(b.ResultData)
+		if al == bl {
+			for i := 0; i < al; i++ {
+				if byteCompare(a.ResultData[i].IdentifierData, b.ResultData[i].IdentifierData) != 0 {
+					return false
+				}
+			}
+			return true
+		} else {
+			return false
+		}
+	} else {
+		return false
+	}
+}
+
+func ResultCompare(a ResultD, b ResultD) int {
+	return byteCompare(a.Value, b.Value)
+}
