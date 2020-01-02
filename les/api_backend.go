@@ -275,6 +275,6 @@ func (b *LesApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 	}
 }
 
-func (b *LesApiBackend) ConstructTree(ctx context.Context, begin int, end int) error {
-	return nil
+func (b *LesApiBackend) ConstructTree(ctx context.Context, begin int, end int) (int, error) {
+	return 0, nil
 }
