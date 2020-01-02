@@ -437,10 +437,10 @@ func DecodeNode(encode []byte) (EBTreen, error) {
 	c, _ := rlp.CountValues(elems)
 	fmt.Println(c)
 	if c == 2 {
-		in, err := DecodeInternal2(elems)
+		in, err := DecodeInternal(elems)
 		return &in, err
 	} else if c == 3 {
-		le, err := DecodeLeafNode2(elems)
+		le, err := DecodeLeafNode(elems)
 		return &le, err
 	} else {
 		err := errors.New("some thing wrong in encode")
