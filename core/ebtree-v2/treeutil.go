@@ -7,6 +7,14 @@ import (
 )
 
 func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
+
+	//cpuf, err := os.Create("cpu_profile")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//pprof.StartCPUProfile(cpuf)
+	//defer pprof.StopCPUProfile()
+
 	Initial(outerbc, outblocksnum)
 	trps := GetTrans()
 	t := time.Now()

@@ -15,8 +15,30 @@ func typeof(v interface{}) string {
 
 //compare a and b
 func byteCompare(a, b []byte) int {
-	lev, lemax := IndentBytes(a, b)
-	return bytes.Compare(lev, lemax)
+	//lev, lemax := IndentBytes(a, b)
+	rla := len(a)
+	rlb := len(b)
+	for i := 0; i < len(a); i++ {
+		if a[i] == 0 {
+			rla--
+		} else {
+			break
+		}
+	}
+
+	for i := 0; i < len(b); i++ {
+		if b[i] == 0 {
+			rlb--
+		} else {
+			break
+		}
+	}
+
+	if rla != rlb {
+		return rla - rlb
+	} else {
+		return bytes.Compare(a, b)
+	}
 }
 
 //used to indent the bytes
