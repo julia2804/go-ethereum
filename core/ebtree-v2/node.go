@@ -163,9 +163,8 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 			if err2 != nil {
 				return err2
 			}
-			if i != -1 {
-				ebt.LastPath.Internals[i] = &nin
-			}
+
+			ebt.LastPath.Internals[i+1] = &nin
 
 			return nil
 		} else {
@@ -262,8 +261,48 @@ func (ebt *EBTree) SearchInNode(value []byte, n EBTreen) (int64, error) {
 
 //Start*****************************
 // commit prepare functions in Node
+
+func (ebt *EBTree) CollapsedUnuseInternal(nt *InternalNode, j int) error {
+	var err error
+	for i := len(nt.Children) - 2; i >= 0; i-- {
+		switch nct := (nt.Children[i].NodePtr).(type) {
+		case *LeafNode:
+			err = ebt.CollapseLeafNode(nct)
+
+			if err != nil {
+				return err
+			}
+			var idn IdNode
+			idn = nct.Id
+			nt.Children[i].NodePtr = &idn
+		case *InternalNode:
+			err = ebt.CollapseInternalNode(nct)
+			if err != nil {
+				return err
+			}
+			var idn IdNode
+			idn = nct.Id
+			nt.Children[i].NodePtr = &idn
+		case *IdNode:
+			break
+		default:
+			err = errors.New("wrong node type in CollapsedUnuseInternal")
+			return err
+		}
+	}
+	if byteCompare(nt.Id, ebt.LastPath.Internals[j].Id) == 0 {
+		return err
+	} else {
+		return ebt.CollapseInternalNode(nt)
+	}
+
+}
+
 func (ebt *EBTree) CollapseLeafNode(nt *LeafNode) error {
 	var ntid []byte
+	if nt.NextPtr == nil {
+		return nil
+	}
 	switch nnt := (nt.NextPtr).(type) {
 	case *LeafNode:
 		ntid = nnt.Id
@@ -276,46 +315,79 @@ func (ebt *EBTree) CollapseLeafNode(nt *LeafNode) error {
 	var ntptr IdNode
 	ntptr = ntid
 	nt.NextPtr = &ntptr
+	ebt.Collapses = append(ebt.Collapses, nt)
 	return nil
 }
 func (ebt *EBTree) CollapseInternalNode(nt *InternalNode) error {
 	nl := len(nt.Children)
-	for i := 0; i < nl-1; i++ {
-		switch (nt.Children[i].NodePtr).(type) {
+	var ntid []byte
+	var flag bool
+	flag = false
+	for i := 0; i <= nl-1; i++ {
+		switch ntct := (nt.Children[i].NodePtr).(type) {
 		case *IdNode:
 			continue
+		case *LeafNode:
+			if byteCompare(ntct.Id, ebt.LastPath.Leaf.Id) == 0 {
+				return nil
+			}
+			flag = true
+			err := ebt.CollapseLeafNode(ntct)
+			if err != nil {
+				return err
+			}
+			var ntptr IdNode
+			ntid = ntct.Id
+			ntptr = ntid
+			nt.Children[i].NodePtr = &ntptr
+		case *InternalNode:
+			if ebt.isInPath(ntct.Id) {
+				return nil
+			}
+			flag = true
+			err := ebt.CollapseInternalNode(ntct)
+			if err != nil {
+				return err
+			}
+			var ntptr IdNode
+			ntid = ntct.Id
+			ntptr = ntid
+			nt.Children[i].NodePtr = &ntptr
 		default:
 			err := errors.New("the child of internalnode should be idnode in collaspNode")
 			return err
 		}
 	}
-	var ntid []byte
-	switch ntct := (nt.Children[nl-1].NodePtr).(type) {
-	case *LeafNode:
-		var ntptr IdNode
-		ntid = ntct.Id
-		ntptr = ntid
-		nt.Children[nl-1].NodePtr = &ntptr
-		return nil
-	case *InternalNode:
-		var ntptr IdNode
-		ntid = ntct.Id
-		ntptr = ntid
-		nt.Children[nl-1].NodePtr = &ntptr
-		return nil
-	case *IdNode:
-		return nil
-	default:
-		err := errors.New("the last child of internalnode with wrong node type in collaspNode")
-		return err
+	if flag {
+		ebt.Collapses = append(ebt.Collapses, nt)
 	}
+	return nil
+}
+
+func (ebt *EBTree) isInPath(id []byte) bool {
+	var flag bool
+	flag = false
+	for i := 0; i < len(ebt.LastPath.Internals); i++ {
+		if byteCompare(id, ebt.LastPath.Internals[i].Id) == 0 {
+			flag = true
+			return flag
+		}
+	}
+	return flag
 }
 
 // commit prepare functions in Node
 //End*****************************
 
 //Start*****************************
-// commit prepare functions in Node
+// encode/decode functions in Node
+func EncodeNode(n EBTreen) ([]byte, error) {
+	var encode []byte
+	var err error
+	encode, err = rlp.EncodeToBytes(n)
+	return encode, err
+}
+
 func DecodeInternal(elems []byte) (InternalNode, error) {
 	var in InternalNode
 	var err error
@@ -448,5 +520,5 @@ func DecodeNode(encode []byte) (EBTreen, error) {
 	}
 }
 
-// commit prepare functions in Node
+// encode/decode functions in Node
 //End*****************************

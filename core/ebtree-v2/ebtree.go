@@ -8,16 +8,18 @@ import (
 var (
 	//MaxLeafNodeCapability=uint8(32)
 	//MaxInternalNodeCapability=uint64(256)
-	MaxLeafNodeCapability     = uint8(5)
-	MaxInternalNodeCapability = uint64(5)
+	MaxLeafNodeCapability     = uint8(3)
+	MaxInternalNodeCapability = uint64(3)
+	MaxCollapseCapbility      = uint64(100)
 )
 
 type EBTree struct {
 	Sequence  uint64
+	Db        *Database
 	Root      EBTreen
 	LastPath  Path
 	FirstLeaf EBTreen
-	Collapses []*EBTreen
+	Collapses []EBTreen
 }
 type Path struct {
 	Leaf      *LeafNode
@@ -54,7 +56,7 @@ func (ebt *EBTree) NewSequence() []byte {
 //Start*****************************
 // Insert functions in EBTree
 func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
-
+	//todo:last path is wrong
 	//Start**********
 	//process leaf node
 	le := ebt.NewLeafNode()
@@ -91,6 +93,13 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 		ebt.LastPath.Internals = append(ebt.LastPath.Internals, &in)
 		ebt.Root = &in
 		ebt.LastPath.Leaf = &le
+		err = ebt.CollapseEBTree()
+		if err != nil {
+			return err
+		}
+		if len(ebt.Collapses) > int(MaxCollapseCapbility) {
+			return ebt.CommitNodes()
+		}
 		return nil
 	}
 
@@ -110,6 +119,14 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 	ebt.CollapseLeafNode(ebt.LastPath.Leaf)
 	//todo:send the collapse node to chanel to be processed*/
 	ebt.LastPath.Leaf = &le
+	err = ebt.CollapseEBTree()
+	if err != nil {
+		return err
+	}
+	if len(ebt.Collapses) > int(MaxCollapseCapbility) {
+		return ebt.CommitNodes()
+	}
+
 	return nil
 
 }
@@ -212,4 +229,66 @@ func (ebt *EBTree) FindFirstLeaf(value []byte) (*LeafNode, error) {
 }
 
 // Search functions in EBTree
+//End*****************************
+
+//Start*****************************
+// commit functions in ebtree
+
+//after insert the data into ebtree, we need to
+func (ebt *EBTree) CollapseEBTree() error {
+	var err error
+	if len(ebt.LastPath.Internals) == 0 {
+		return err
+	}
+	l := len(ebt.LastPath.Internals) - 1
+	err = ebt.CollapsedUnuseInternal(ebt.LastPath.Internals[l], l)
+	return err
+}
+
+func (ebt *EBTree) CommitNodes() error {
+	var err error
+	batch := ebt.Db.diskdb.NewBatch()
+	for i := 0; i < len(ebt.Collapses); i++ {
+		encode, err := EncodeNode((ebt.Collapses[i]))
+		if err != nil {
+			return err
+		}
+		switch et := (ebt.Collapses[i]).(type) {
+		case *LeafNode:
+			err = ebt.Db.commit(et.Id, encode, batch)
+			if err != nil {
+				return err
+			}
+		case *InternalNode:
+			err = ebt.Db.commit(et.Id, encode, batch)
+			if err != nil {
+				return err
+			}
+		default:
+			err = errors.New("wrong node type of ebtree")
+			return err
+		}
+
+	}
+	return err
+}
+
+// commit functions in Node
+//End*****************************
+
+//Start*****************************
+// load data from leveldb functions in ebtree
+
+func (ebt *EBTree) loadNode(id []byte) (EBTreen, error) {
+	var n EBTreen
+	var err error
+	enodes, err := ebt.Db.diskdb.Get(id)
+	if err != nil {
+		return nil, err
+	}
+	n, err = DecodeNode(enodes)
+	return n, err
+}
+
+// load data from leveldb functions in Node
 //End*****************************

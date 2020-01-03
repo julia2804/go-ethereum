@@ -180,7 +180,7 @@ func TestRlp(t *testing.T) {
 	test.Children = append(test.Children, vr1)
 	test.Children = append(test.Children, vr2)
 	test.Children = append(test.Children, vr3)
-	result1, _ := rlp.EncodeToBytes(test)
+	result1, _ := EncodeNode(&test)
 	fmt.Println(result1)
 	in, err := DecodeNode(result1)
 	fmt.Println(err)
@@ -235,7 +235,7 @@ func TestRlp(t *testing.T) {
 	testle.LeafDatas = append(testle.LeafDatas, rd2)
 	testle.LeafDatas = append(testle.LeafDatas, rd3)
 
-	result2, _ := rlp.EncodeToBytes(testle)
+	result2, _ := EncodeNode(&testle)
 	fmt.Println(result2)
 	le, err := DecodeNode(result2)
 	fmt.Println(err)
