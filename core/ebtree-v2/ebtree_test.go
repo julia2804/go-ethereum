@@ -18,10 +18,13 @@ func TestInsert(t *testing.T) {
 		ds := ReturnResultD(i)
 		ebt.InsertDatasToTree(ds)
 	}
-	ebt.FirstLeaf.fstring("hello")
+	ebt.FirstLeaf.fstring()
 	fmt.Print("hello")
 	//test topk search
-	ds := ebt.TopkVSearch(100)
+	ds, err := ebt.TopkVSearch(100)
+	if err != nil {
+		return
+	}
 	fmt.Println(len(ds))
 
 	dt, err := ebt.RangeSearch(IntToBytes(1000), IntToBytes(100001))
@@ -157,7 +160,7 @@ func TestRlp(t *testing.T) {
 	vr1=r1
 	vr2=r2*/
 
-	test := InternalNode{Id: IntToBytes(3)}
+	/*test := InternalNode{Id: IntToBytes(3)}
 	var vr1 ChildData
 	var vr2 ChildData
 	var vr3 ChildData
@@ -184,7 +187,7 @@ func TestRlp(t *testing.T) {
 	fmt.Println(result1)
 	in, err := DecodeNode(result1)
 	fmt.Println(err)
-	in.fstring("hello")
+	in.fstring()
 
 	testle := LeafNode{Id: IntToBytes(5)}
 	var ntid IdNode
@@ -239,5 +242,21 @@ func TestRlp(t *testing.T) {
 	fmt.Println(result2)
 	le, err := DecodeNode(result2)
 	fmt.Println(err)
-	le.fstring("hello")
+	le.fstring()*/
+
+	var me Meta
+	me.FirstLeaf = []byte("hello")
+	me.Root = []byte("world")
+	me.Sequence = IntToBytes(12)
+
+	result, err := EncodeMeata(me)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(result)
+
+	me2, err := DecodeMeta(result)
+	fmt.Println(me2.Sequence)
+	fmt.Println(me2.Root)
+	fmt.Println(me2.FirstLeaf)
 }

@@ -3,6 +3,7 @@ package ebtree_v2
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 var (
@@ -25,9 +26,48 @@ type Path struct {
 	Leaf      *LeafNode
 	Internals []*InternalNode
 }
+type Meta struct {
+	Sequence  []byte
+	Root      []byte
+	FirstLeaf []byte
+}
 
 //Start*****************************
 // Initial functions in EBTree
+func NewEBTreeFromDb(db *Database) (*EBTree, error) {
+	var ebt *EBTree
+	var err error
+	var me Meta
+	var metae []byte
+	metae, err = db.GetTreeMetas([]byte("metas"))
+	if err != nil {
+		return nil, err
+	}
+	me, err = DecodeMeta(metae)
+	if err != nil {
+		return nil, err
+	}
+	var rid IdNode
+	rid = me.Root
+	var lid IdNode
+	lid = me.FirstLeaf
+	ebt = &EBTree{
+		Db:        db,
+		Sequence:  BytesToInt(me.Sequence),
+		Root:      rid,
+		FirstLeaf: lid,
+	}
+	if len(me.Root) != 0 {
+
+		rootNode, err := ebt.LoadNode(me.Root)
+		if err != nil {
+			return ebt, err
+		}
+		ebt.Root = rootNode
+	}
+	return ebt, err
+}
+
 func NewEBTree() (*EBTree, error) {
 	pa := Path{
 		Leaf:      nil,
@@ -55,6 +95,12 @@ func (ebt *EBTree) NewSequence() []byte {
 
 //Start*****************************
 // Insert functions in EBTree
+
+func (ebt *EBTree) InsertDataToEBTree(d ResultD) error {
+	var err error
+	return err
+}
+
 func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 	//todo:last path is wrong
 	//Start**********
@@ -136,12 +182,12 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 
 //Start*****************************
 // Search functions in EBTree
-func (ebt *EBTree) TopkVSearch(k int64) []ResultD {
+func (ebt *EBTree) TopkVSearch(k int64) ([]ResultD, error) {
 	var ds []ResultD
 	le := ebt.FirstLeaf
 	for i := 0; int64(len(ds)) < k; i++ {
 		if le == nil {
-			return ds
+			return ds, nil
 		}
 		var lle int
 		var ft LeafNode
@@ -149,19 +195,32 @@ func (ebt *EBTree) TopkVSearch(k int64) []ResultD {
 		case *LeafNode:
 			lle = len(lt.LeafDatas)
 			ft = *lt
+		case *IdNode:
+			nt, err := ebt.LoadNode(lt.fstring())
+			if err != nil {
+				return ds, err
+			}
+			switch ntt := nt.(type) {
+			case *LeafNode:
+				lle = len(ntt.LeafDatas)
+				ft = *ntt
+			default:
+				err := errors.New("wrong node type in firstleaf after load from levledb")
+				return ds, err
+			}
 		default:
-			fmt.Println("wrong node type in firstleaf")
-			return ds
+			err := errors.New("wrong node type in firstleaf")
+			return ds, err
 		}
 		for j := 0; j < lle; j++ {
 			ds = append(ds, ft.LeafDatas[j])
 			if int64(len(ds)) >= k {
-				return ds
+				return ds, nil
 			}
 		}
 		le = ft.NextPtr
 	}
-	return ds
+	return ds, nil
 }
 
 func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
@@ -184,6 +243,18 @@ func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 		switch nt := (le.NextPtr).(type) {
 		case *LeafNode:
 			le = nt
+		case *IdNode:
+			n, err := ebt.LoadNode(nt.fstring())
+			if err != nil {
+				return ds, err
+			}
+			switch lnt := n.(type) {
+			case *LeafNode:
+				le = lnt
+			default:
+				err := errors.New("wrong node type from leveldb in  RangeSearch")
+				return ds, err
+			}
 		default:
 			err := errors.New("wrong node type of leaf.nextprt in RangeSearch")
 			return ds, err
@@ -213,6 +284,18 @@ func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {
 		switch nt := (le.NextPtr).(type) {
 		case *LeafNode:
 			le = nt
+		case *IdNode:
+			n, err := ebt.LoadNode(nt.fstring())
+			if err != nil {
+				return d, err
+			}
+			switch lnt := n.(type) {
+			case *LeafNode:
+				le = lnt
+			default:
+				err := errors.New("wrong node type from leveldb in  RangeSearch")
+				return d, err
+			}
 		default:
 			err := errors.New("wrong node type of leaf.nextprt in EquivalentSearch")
 			return d, err
@@ -279,7 +362,7 @@ func (ebt *EBTree) CommitNodes() error {
 //Start*****************************
 // load data from leveldb functions in ebtree
 
-func (ebt *EBTree) loadNode(id []byte) (EBTreen, error) {
+func (ebt *EBTree) LoadNode(id []byte) (EBTreen, error) {
 	var n EBTreen
 	var err error
 	enodes, err := ebt.Db.diskdb.Get(id)
@@ -292,3 +375,51 @@ func (ebt *EBTree) loadNode(id []byte) (EBTreen, error) {
 
 // load data from leveldb functions in Node
 //End*****************************
+
+//Start*****************************
+// encode/decode functions in Node
+
+func EncodeMeata(me Meta) ([]byte, error) {
+	var encode []byte
+	var err error
+	encode, err = rlp.EncodeToBytes(me)
+	return encode, err
+}
+
+func DecodeMeta(elems []byte) (Meta, error) {
+	var me Meta
+	var err error
+	elems, _, _ = rlp.SplitList(elems)
+	//the number of fields in internal node
+	c, _ := rlp.CountValues(elems)
+	fmt.Println(c)
+
+	kbuf, rest, err := rlp.SplitString(elems)
+	if err != nil {
+		return me, err
+	}
+	me.Sequence = kbuf
+	fmt.Println(kbuf)
+	fmt.Println(rest)
+	elems = rest
+
+	kbuf, rest, err = rlp.SplitString(elems)
+	if err != nil {
+		return me, err
+	}
+	me.Root = kbuf
+	fmt.Println(kbuf)
+	fmt.Println(rest)
+	elems = rest
+
+	kbuf, rest, err = rlp.SplitString(elems)
+	if err != nil {
+		return me, err
+	}
+	me.FirstLeaf = kbuf
+	fmt.Println(kbuf)
+	fmt.Println(rest)
+	elems = rest
+
+	return me, err
+}

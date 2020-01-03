@@ -7,7 +7,7 @@ import (
 )
 
 type EBTreen interface {
-	fstring(string)
+	fstring() []byte
 }
 type (
 	LeafNode struct {
@@ -28,11 +28,14 @@ type ChildData struct {
 
 //Start*****************************
 // Extend the functions in EBTreen
-func (n *InternalNode) fstring(ind string) {
+func (n *InternalNode) fstring() []byte {
+	return n.Id
 }
-func (n *LeafNode) fstring(ind string) {
+func (n *LeafNode) fstring() []byte {
+	return n.Id
 }
-func (n *IdNode) fstring(ind string) {
+func (n IdNode) fstring() []byte {
+	return n
 }
 
 // Extend functions in EBTreen
@@ -205,11 +208,23 @@ func (ebt *EBTree) FindInNode(value []byte, n EBTreen) (*LeafNode, error) {
 			return nil, err
 		}
 		return ebt.FindInNode(value, nt.Children[i].NodePtr)
+	case *IdNode:
+		nc, err := ebt.LoadNode(nt.fstring())
+		if err != nil {
+			return le, err
+		}
+		switch nct := nc.(type) {
+		case *LeafNode:
+			return nct, nil
+		case *InternalNode:
+			return ebt.FindInNode(value, nct)
+		default:
+			err = errors.New("wrong node type from leveldb")
+		}
 	default:
 		err := errors.New("wrong node type in FindInNode")
 		return nil, err
 	}
-
 	return le, err
 }
 

@@ -18,9 +18,28 @@ func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
 	Initial(outerbc, outblocksnum)
 	trps := GetTrans()
 	t := time.Now()
-	n, err := InsertToTree(trps)
+	var db *Database
+	db = NewDatabase(outerbc.GetDB())
+	n, err := InsertToTreeWithDb(trps, db)
+	//n, err := InsertToTree(trps)
 	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
 	return n, err
+}
+
+func InsertToTreeWithDb(trps []TaskR, db *Database) (int, error) {
+	results := mergeSortAndMergeSame(trps)
+	tree, err := NewEBTreeFromDb(db)
+	err = tree.InsertDatasToTree(results)
+
+	topkrps, err := tree.TopkVSearch(100000000)
+	if err != nil {
+		fmt.Println(err)
+		return len(results), err
+	}
+	compareResult(results, topkrps)
+	fmt.Println("topk num : ", len(topkrps))
+
+	return len(results), err
 }
 
 func InsertToTree(trps []TaskR) (int, error) {
@@ -28,7 +47,11 @@ func InsertToTree(trps []TaskR) (int, error) {
 	tree, err := NewEBTree()
 	err = tree.InsertDatasToTree(results)
 
-	topkrps := tree.TopkVSearch(100000000)
+	topkrps, err := tree.TopkVSearch(100000000)
+	if err != nil {
+		fmt.Println(err)
+		return len(results), err
+	}
 	compareResult(results, topkrps)
 	fmt.Println("topk num : ", len(topkrps))
 
