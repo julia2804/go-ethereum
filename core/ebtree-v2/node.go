@@ -77,21 +77,34 @@ func (ebt *EBTree) NewChildData(value []byte, node EBTreen) ChildData {
 //Start*****************************
 // insert functions in Nodes after tree inintialed
 
-/*func (ebt *EBTree) InsertToNode(d ResultD,n EBTreen)(EBTreen,error){
+func (ebt *EBTree) InsertToNode(d ResultD, n EBTreen) (EBTreen, error) {
 	var rn EBTreen
 	var err error
-	switch nt:=n.(type) {
+	switch nt := n.(type) {
 	case *LeafNode:
-
+		sle, err := ebt.InsertToLeaf(d, nt)
+		if err != nil {
+			return rn, err
+		}
+		if sle == nil {
+			rn = nt
+			return rn, err
+		}
 	}
-	return rn,err
-}*/
+	return rn, err
+}
 
-func (ebt *EBTree) InsertToLeaf(d ResultD, le LeafNode) (LeafNode, LeafNode, error) {
-	var rle LeafNode
-	var sle LeafNode
+func (ebt *EBTree) InsertToInternal(le *LeafNode, in *InternalNode) (*InternalNode, error) {
+	var sin *InternalNode
 	var err error
-	return rle, sle, err
+	return sin, err
+}
+
+func (ebt *EBTree) InsertToLeaf(d ResultD, le *LeafNode) (*LeafNode, error) {
+
+	var sle *LeafNode
+	var err error
+	return sle, err
 }
 
 // insert functions in Nodes after tree inintialed

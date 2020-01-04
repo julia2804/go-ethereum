@@ -38,34 +38,39 @@ type Meta struct {
 func NewEBTreeFromDb(db *Database) (*EBTree, error) {
 	var ebt *EBTree
 	var err error
+	ebt = &EBTree{
+		Db:        db,
+		Sequence:  0,
+		Root:      nil,
+		FirstLeaf: nil,
+	}
 	var me Meta
 	var metae []byte
 	metae, err = db.GetTreeMetas([]byte("metas"))
 	if err != nil {
-		return nil, err
-	}
-	me, err = DecodeMeta(metae)
-	if err != nil {
-		return nil, err
-	}
-	var rid IdNode
-	rid = me.Root
-	var lid IdNode
-	lid = me.FirstLeaf
-	ebt = &EBTree{
-		Db:        db,
-		Sequence:  BytesToInt(me.Sequence),
-		Root:      rid,
-		FirstLeaf: lid,
-	}
-	if len(me.Root) != 0 {
-
-		rootNode, err := ebt.LoadNode(me.Root)
+		fmt.Println(err)
+	} else {
+		me, err = DecodeMeta(metae)
 		if err != nil {
-			return ebt, err
+			return nil, err
 		}
-		ebt.Root = rootNode
+		var rid IdNode
+		rid = me.Root
+		var lid IdNode
+		lid = me.FirstLeaf
+		ebt.Root = rid
+		ebt.FirstLeaf = lid
+
+		if len(me.Root) != 0 {
+
+			rootNode, err := ebt.LoadNode(me.Root)
+			if err != nil {
+				return ebt, err
+			}
+			ebt.Root = rootNode
+		}
 	}
+
 	return ebt, err
 }
 
