@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
 	"math/big"
 	"strings"
 	"time"
@@ -1787,4 +1788,8 @@ func (s *PublicNetAPI) Version() string {
 // GetHeaderByHash returns the requested header by hash.
 func (s *PublicBlockChainAPI) ConstructTree(ctx context.Context, begin int, end int) (int, error) {
 	return s.b.ConstructTree(ctx, begin, end)
+}
+
+func (s *PublicBlockChainAPI) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error) {
+	return s.b.TopKSearch(ctx, k)
 }

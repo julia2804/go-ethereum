@@ -19,6 +19,7 @@ package les
 import (
 	"context"
 	"errors"
+	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -277,4 +278,8 @@ func (b *LesApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 
 func (b *LesApiBackend) ConstructTree(ctx context.Context, begin int, end int) (int, error) {
 	return 0, nil
+}
+
+func (b *LesApiBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error) {
+	return nil, nil
 }

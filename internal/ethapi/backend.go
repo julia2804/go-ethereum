@@ -19,6 +19,7 @@ package ethapi
 
 import (
 	"context"
+	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -87,6 +88,8 @@ type Backend interface {
 
 	//multithreadcon
 	ConstructTree(ctx context.Context, begin int, end int) (int, error)
+
+	TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

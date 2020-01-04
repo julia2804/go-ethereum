@@ -19,7 +19,9 @@ package eth
 import (
 	"context"
 	"errors"
+	"fmt"
 	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
+	"github.com/ethereum/go-ethereum/log"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts"
@@ -305,4 +307,20 @@ func (b *EthAPIBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 
 func (b *EthAPIBackend) ConstructTree(ctx context.Context, begin int, end int) (int, error) {
 	return ebtree_v2.ConstructTree(b.eth.blockchain, end)
+}
+
+func (b *EthAPIBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error) {
+	tree, err := ebtree_v2.NewEBTreeFromDb(ebtree_v2.NewDatabase(*b.eth.blockchain.GetDB()))
+	if err == nil {
+		results, err := tree.TopkVSearch(int64(k))
+		if err != nil {
+			log.Error(err.Error())
+		}
+		return results, err
+	}
+	if err != nil {
+		fmt.Println("lll")
+		log.Error(err.Error())
+	}
+	return nil, err
 }

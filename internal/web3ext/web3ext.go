@@ -533,6 +533,11 @@ web3._extend({
 			call: 'eth_constructTree',
 			params: 2,
 		}),
+		new web3._extend.Method({
+			name: 'topKSearch',
+			call: 'eth_topKSearch',
+			params: 1,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

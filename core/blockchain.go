@@ -178,8 +178,8 @@ type BlockChain struct {
 	terminateInsert func(common.Hash, uint64) bool // Testing hook used to terminate ancient receipt chain insertion.
 }
 
-func (bc *BlockChain) GetDB() ethdb.Database {
-	return (bc.db)
+func (bc *BlockChain) GetDB() *ethdb.Database {
+	return &(bc.db)
 }
 
 // NewBlockChain returns a fully initialised block chain using information
