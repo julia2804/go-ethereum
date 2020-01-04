@@ -13,6 +13,7 @@ var (
 	MaxInternalNodeCapability = uint64(3)
 	MaxCollapseCapbility      = uint64(100)
 )
+var Pool *WorkerPool2
 
 type EBTree struct {
 	Sequence  uint64
@@ -99,6 +100,7 @@ func (ebt *EBTree) NewSequence() []byte {
 func (ebt *EBTree) InsertDataToEBTree(d ResultD) error {
 	var err error
 	//le,err:=ebt.FindFirstLeaf(d.Value,true)
+
 	return err
 }
 

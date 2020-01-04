@@ -23,14 +23,16 @@ func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
 	n, err := InsertToTreeWithDb(trps, db)
 	//n, err := InsertToTree(trps)
 	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+
 	return n, err
 }
 
 func InsertToTreeWithDb(trps []TaskR, db *Database) (int, error) {
 	results := mergeSortAndMergeSame(trps)
 	tree, err := NewEBTreeFromDb(db)
+	Pool = CreatPoolAndRun(tree, 10, 10)
 	err = tree.InsertDatasToTree(results)
-
+	close(Pool.CacheChan)
 	topkrps, err := tree.TopkVSearch(100000000)
 	if err != nil {
 		fmt.Println(err)

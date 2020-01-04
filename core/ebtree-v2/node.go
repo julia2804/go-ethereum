@@ -77,6 +77,23 @@ func (ebt *EBTree) NewChildData(value []byte, node EBTreen) ChildData {
 //Start*****************************
 // insert functions in Nodes after tree inintialed
 
+/*func (ebt *EBTree) InsertToNode(d ResultD,n EBTreen)(EBTreen,error){
+	var rn EBTreen
+	var err error
+	switch nt:=n.(type) {
+	case *LeafNode:
+
+	}
+	return rn,err
+}*/
+
+func (ebt *EBTree) InsertToLeaf(d ResultD, le LeafNode) (LeafNode, LeafNode, error) {
+	var rle LeafNode
+	var sle LeafNode
+	var err error
+	return rle, sle, err
+}
+
 // insert functions in Nodes after tree inintialed
 //End*****************************
 
@@ -345,7 +362,8 @@ func (ebt *EBTree) CollapseLeafNode(nt *LeafNode) error {
 	var ntptr IdNode
 	ntptr = ntid
 	nt.NextPtr = &ntptr
-	ebt.Collapses = append(ebt.Collapses, nt)
+	//ebt.Collapses = append(ebt.Collapses, nt)
+	Pool.CacheChan <- nt
 	return nil
 }
 func (ebt *EBTree) CollapseInternalNode(nt *InternalNode) error {
@@ -389,7 +407,8 @@ func (ebt *EBTree) CollapseInternalNode(nt *InternalNode) error {
 		}
 	}
 	if flag {
-		ebt.Collapses = append(ebt.Collapses, nt)
+		//ebt.Collapses = append(ebt.Collapses, nt)
+		Pool.CacheChan <- nt
 	}
 	return nil
 }
