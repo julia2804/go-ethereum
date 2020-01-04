@@ -357,6 +357,31 @@ func (ebt *EBTree) CommitNodes() error {
 	return err
 }
 
+func (ebt *EBTree) CommitNode(treen EBTreen) error {
+	var err error
+	batch := ebt.Db.diskdb.NewBatch()
+	encode, err := EncodeNode(treen)
+	if err != nil {
+		return err
+	}
+	switch et := (treen).(type) {
+	case *LeafNode:
+		err = ebt.Db.commit(et.Id, encode, batch)
+		if err != nil {
+			return err
+		}
+	case *InternalNode:
+		err = ebt.Db.commit(et.Id, encode, batch)
+		if err != nil {
+			return err
+		}
+	default:
+		err = errors.New("wrong node type of ebtree")
+		return err
+	}
+	return err
+}
+
 // commit functions in Node
 //End*****************************
 
