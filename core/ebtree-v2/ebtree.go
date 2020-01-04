@@ -12,6 +12,7 @@ var (
 	MaxLeafNodeCapability     = uint8(3)
 	MaxInternalNodeCapability = uint64(3)
 	MaxCollapseCapbility      = uint64(100)
+	MetaKey                   = []byte("metas")
 )
 var Pool *WorkerPool2
 
@@ -46,7 +47,7 @@ func NewEBTreeFromDb(db *Database) (*EBTree, error) {
 	}
 	var me Meta
 	var metae []byte
-	metae, err = db.GetTreeMetas([]byte("metas"))
+	metae, err = db.GetTreeMetas(MetaKey)
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -334,6 +335,50 @@ func (ebt *EBTree) CollapseEBTree() error {
 	l := len(ebt.LastPath.Internals) - 1
 	err = ebt.CollapsedUnuseInternal(ebt.LastPath.Internals[l], l)
 	return err
+}
+
+func (ebt *EBTree) CommitMeatas() error {
+	var me Meta
+
+	var lid IdNode
+	switch lt := ebt.FirstLeaf.(type) {
+	case *LeafNode:
+		lid = lt.Id
+	case *IdNode:
+		lid = *lt
+	default:
+		err := errors.New("wrong node type of ebt.FirstLeaf")
+		return err
+	}
+
+	var rid IdNode
+	switch rt := ebt.Root.(type) {
+	case *LeafNode:
+		rid = rt.Id
+	case *InternalNode:
+		rid = rt.Id
+	case *IdNode:
+		rid = *rt
+	default:
+		err := errors.New("wrong node type of ebt.FirstLeaf")
+		return err
+	}
+
+	me.FirstLeaf = lid
+	me.Root = rid
+	me.Sequence = IntToBytes(ebt.Sequence)
+
+	en, err := EncodeMeata(me)
+	if err != nil {
+		return err
+	}
+
+	batch := ebt.Db.diskdb.NewBatch()
+	err = ebt.Db.SetTreeMetas(MetaKey, en, batch)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (ebt *EBTree) CommitNodes() error {

@@ -40,7 +40,7 @@ func InsertToTreeWithDb(trps []TaskR, db *Database) (int, error) {
 	}
 	compareResult(results, topkrps)
 	fmt.Println("topk num : ", len(topkrps))
-
+	tree.CommitMeatas()
 	return len(results), err
 }
 
