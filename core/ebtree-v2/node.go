@@ -75,6 +75,12 @@ func (ebt *EBTree) NewChildData(value []byte, node EBTreen) ChildData {
 //End*****************************
 
 //Start*****************************
+// insert functions in Nodes after tree inintialed
+
+// insert functions in Nodes after tree inintialed
+//End*****************************
+
+//Start*****************************
 // Update functions in InternalNode
 func (ebt *EBTree) CreateInternalNode(first EBTreen, second EBTreen) (InternalNode, error) {
 	in := ebt.NewInternalNode()
@@ -196,18 +202,24 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 //Start*****************************
 // find functions in Node
 
-func (ebt *EBTree) FindInNode(value []byte, n EBTreen) (*LeafNode, error) {
+func (ebt *EBTree) FindInNode(value []byte, n EBTreen, flag bool) (*LeafNode, error) {
 	var le *LeafNode
 	var err error
 	switch nt := n.(type) {
 	case *LeafNode:
+		if flag {
+			ebt.LastPath.Leaf = nt
+		}
 		return nt, nil
 	case *InternalNode:
+		if flag {
+			ebt.LastPath.Internals = append(ebt.LastPath.Internals, nt)
+		}
 		i, err := ebt.SearchInNode(value, nt)
 		if err != nil {
 			return nil, err
 		}
-		return ebt.FindInNode(value, nt.Children[i].NodePtr)
+		return ebt.FindInNode(value, nt.Children[i].NodePtr, flag)
 	case *IdNode:
 		nc, err := ebt.LoadNode(nt.fstring())
 		if err != nil {
@@ -215,9 +227,12 @@ func (ebt *EBTree) FindInNode(value []byte, n EBTreen) (*LeafNode, error) {
 		}
 		switch nct := nc.(type) {
 		case *LeafNode:
+			if flag {
+				ebt.LastPath.Leaf = nct
+			}
 			return nct, nil
 		case *InternalNode:
-			return ebt.FindInNode(value, nct)
+			return ebt.FindInNode(value, nct, flag)
 		default:
 			err = errors.New("wrong node type from leveldb")
 		}

@@ -98,6 +98,7 @@ func (ebt *EBTree) NewSequence() []byte {
 
 func (ebt *EBTree) InsertDataToEBTree(d ResultD) error {
 	var err error
+	//le,err:=ebt.FindFirstLeaf(d.Value,true)
 	return err
 }
 
@@ -225,7 +226,7 @@ func (ebt *EBTree) TopkVSearch(k int64) ([]ResultD, error) {
 
 func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 	var ds []ResultD
-	le, err := ebt.FindFirstLeaf(end)
+	le, err := ebt.FindFirstLeaf(end, false)
 	if err != nil {
 		return ds, err
 	}
@@ -265,7 +266,7 @@ func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 
 func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {
 	var d ResultD
-	le, err := ebt.FindFirstLeaf(value)
+	le, err := ebt.FindFirstLeaf(value, false)
 	if err != nil {
 		return d, err
 	}
@@ -304,10 +305,10 @@ func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {
 	return d, err
 }
 
-func (ebt *EBTree) FindFirstLeaf(value []byte) (*LeafNode, error) {
+func (ebt *EBTree) FindFirstLeaf(value []byte, flag bool) (*LeafNode, error) {
 	var le *LeafNode
 	var err error
-	le, err = ebt.FindInNode(value, ebt.Root)
+	le, err = ebt.FindInNode(value, ebt.Root, flag)
 	return le, err
 }
 
