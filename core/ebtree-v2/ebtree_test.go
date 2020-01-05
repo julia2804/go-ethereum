@@ -160,7 +160,7 @@ func TestRlp(t *testing.T) {
 	vr1=r1
 	vr2=r2*/
 
-	/*test := InternalNode{Id: IntToBytes(3)}
+	test := InternalNode{Id: IntToBytes(3)}
 	var vr1 ChildData
 	var vr2 ChildData
 	var vr3 ChildData
@@ -242,9 +242,9 @@ func TestRlp(t *testing.T) {
 	fmt.Println(result2)
 	le, err := DecodeNode(result2)
 	fmt.Println(err)
-	le.fstring()*/
+	le.fstring()
 
-	var me Meta
+	/*var me Meta
 	me.FirstLeaf = []byte("hello")
 	me.Root = []byte("world")
 	me.Sequence = IntToBytes(12)
@@ -258,5 +258,5 @@ func TestRlp(t *testing.T) {
 	me2, err := DecodeMeta(result)
 	fmt.Println(me2.Sequence)
 	fmt.Println(me2.Root)
-	fmt.Println(me2.FirstLeaf)
+	fmt.Println(me2.FirstLeaf)*/
 }

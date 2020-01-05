@@ -37,12 +37,6 @@ func InsertToTreeWithDb(trps []TaskR, db *Database) (int, error) {
 		return len(results), err
 	}
 	Pool.Close()
-	/*topkrps, err := tree.TopkVSearch(100000000)
-	if err != nil {
-		return len(results), err
-	}
-	compareResult(results, topkrps)
-	fmt.Println("topk num : ", len(topkrps))*/
 	err = tree.CommitMeatas()
 	if err != nil {
 		return len(results), err

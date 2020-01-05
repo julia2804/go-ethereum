@@ -113,7 +113,7 @@ func (ebt *EBTree) InsertToInternal(n EBTreen, in *InternalNode, i int) (*Intern
 	}
 	var sin *InternalNode
 	var err error
-	if uint64(len(in.Children)) >= MaxInternalNodeCapability {
+	if (len(in.Children)) >= MaxInternalNodeCapability {
 		//insert the node, and split it
 	} else {
 		//insert the node, and return
@@ -133,7 +133,7 @@ func (ebt *EBTree) InsertToLeaf(d ResultD, le *LeafNode, i int, flag bool) (*Lea
 
 	ile := len(le.LeafDatas)
 
-	if uint8(ile) <= MaxLeafNodeCapability {
+	if (ile) <= MaxLeafNodeCapability {
 		le.LeafDatas = append(le.LeafDatas, d)
 		for j := ile - 1; j >= 0; j-- {
 			if byteCompare(le.LeafDatas[j].Value, d.Value) < 0 {
@@ -150,11 +150,11 @@ func (ebt *EBTree) InsertToLeaf(d ResultD, le *LeafNode, i int, flag bool) (*Lea
 	le.NextPtr = &nle
 
 	//allocate the leaf datas between two leafnodes
-	if uint8(i+1) > mid-1 {
+	if (i + 1) > mid-1 {
 		//concate the leafdatas for new leaf node
-		for j := mid; j <= uint8(ile-1); j++ {
+		for j := mid; j <= (ile - 1); j++ {
 			nle.LeafDatas = append(nle.LeafDatas, le.LeafDatas[j])
-			if j == uint8(i) {
+			if j == (i) {
 				nle.LeafDatas = append(nle.LeafDatas, d)
 			}
 		}
@@ -163,19 +163,19 @@ func (ebt *EBTree) InsertToLeaf(d ResultD, le *LeafNode, i int, flag bool) (*Lea
 		//concate the leafdata for original leaf node
 		le.LeafDatas = le.LeafDatas[:mid]
 		le.LeafDatas = append(le.LeafDatas, d)
-		for j := mid - 1; j > uint8(i); j-- {
+		for j := mid - 1; j > (i); j-- {
 			le.LeafDatas[j+1] = le.LeafDatas[j]
 		}
 	} else {
 		//concate the leafdatas for new leaf node
-		for j := uint8(0); j <= MaxLeafNodeCapability-mid; j++ {
+		for j := (0); j <= MaxLeafNodeCapability-mid; j++ {
 			nle.LeafDatas = append(nle.LeafDatas, le.LeafDatas[mid-1+j])
 		}
 
 		//concate the leafdata for original leaf node
 		le.LeafDatas = le.LeafDatas[:mid-1]
 		le.LeafDatas = append(le.LeafDatas, d)
-		for j := mid - 1; j > uint8(i); j-- {
+		for j := mid - 1; j > (i); j-- {
 			le.LeafDatas[j+1] = le.LeafDatas[j]
 		}
 	}
@@ -267,7 +267,7 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 		return nil
 	} else {
 		lin := len(ebt.LastPath.Internals[i+1].Children)
-		if uint64(lin) >= MaxInternalNodeCapability {
+		if (lin) >= MaxInternalNodeCapability {
 			//a new internal node needed to be created
 			nin, err := ebt.CreateInternalNode(second, nil)
 			if err != nil {
@@ -544,17 +544,17 @@ func DecodeInternal(elems []byte) (InternalNode, error) {
 
 	kbuf, rest, _ := rlp.SplitString(elems)
 	in.Id = kbuf
-	fmt.Println(kbuf)
-	fmt.Println(rest)
+	//fmt.Println(kbuf)
+	//fmt.Println(rest)
 	elems = rest
-	bbuf, rest, _ := rlp.SplitString(elems)
-	fmt.Println(bbuf)
-	fmt.Println(rest)
+	_, rest, _ = rlp.SplitString(elems)
+	//fmt.Println(bbuf)
+	//fmt.Println(rest)
 	elems, _, _ = rlp.SplitList(elems)
 	//the number of children
 	c, _ := rlp.CountValues(elems)
-	fmt.Println(elems)
-	fmt.Println(c)
+	//fmt.Println(elems)
+	//fmt.Println(c)
 	for i := 0; i < c; i++ {
 		var rest2 []byte
 		elems, rest2, _ = rlp.SplitList(elems)
@@ -566,17 +566,17 @@ func DecodeInternal(elems []byte) (InternalNode, error) {
 		var child ChildData
 
 		bd1uf, rest, _ := rlp.SplitString(elems)
-		fmt.Println(bd1uf)
+		//fmt.Println(bd1uf)
 		child.Value = bd1uf
-		fmt.Println(rest)
+		//fmt.Println(rest)
 		elems = rest
 		bd2uf, _, _ := rlp.SplitString(elems)
-		fmt.Println(bd2uf)
+		//fmt.Println(bd2uf)
 		var npid IdNode
 		npid = bd2uf
 		child.NodePtr = &npid
 		in.Children = append(in.Children, child)
-		fmt.Println(rest2)
+		//fmt.Println(rest2)
 		elems = rest2
 	}
 
@@ -591,8 +591,8 @@ func DecodeLeafNode(elems []byte) (LeafNode, error) {
 	//get the id
 	kbuf, rest, _ := rlp.SplitString(elems)
 	le.Id = kbuf
-	fmt.Println(kbuf)
-	fmt.Println(rest)
+	//fmt.Println(kbuf)
+	//fmt.Println(rest)
 	elems = rest
 
 	//get the nextptr
@@ -600,16 +600,16 @@ func DecodeLeafNode(elems []byte) (LeafNode, error) {
 	var ntid IdNode
 	ntid = kbuf
 	le.NextPtr = &ntid
-	fmt.Println(kbuf)
-	fmt.Println(rest)
+	//fmt.Println(kbuf)
+	//fmt.Println(rest)
 	elems = rest
 
 	//get the data
 	elems, _, _ = rlp.SplitList(elems)
 	//the number of data
 	c, _ := rlp.CountValues(elems)
-	fmt.Println(elems)
-	fmt.Println(c)
+	//fmt.Println(elems)
+	//fmt.Println(c)
 	for i := 0; i < c; i++ {
 		var rest2 []byte
 		elems, rest2, _ = rlp.SplitList(elems)
@@ -622,17 +622,17 @@ func DecodeLeafNode(elems []byte) (LeafNode, error) {
 
 		//get the value of resultd
 		bd1uf, rest, _ := rlp.SplitString(elems)
-		fmt.Println(bd1uf)
+		//fmt.Println(bd1uf)
 		rd.Value = bd1uf
-		fmt.Println(rest)
+		//fmt.Println(rest)
 		elems = rest
 
 		//get the tds of resultd
 		elems, _, _ = rlp.SplitList(elems)
 		//the number of td
 		tdc, _ := rlp.CountValues(elems)
-		fmt.Println(elems)
-		fmt.Println(tdc)
+		//fmt.Println(elems)
+		//fmt.Println(tdc)
 		for i := 0; i < tdc; i++ {
 			var rest3 []byte
 			elems, rest3, _ = rlp.SplitList(elems)
@@ -640,11 +640,11 @@ func DecodeLeafNode(elems []byte) (LeafNode, error) {
 			var td TD
 			//get the tds of td
 			bd2uf, _, _ := rlp.SplitString(elems)
-			fmt.Println(bd2uf)
+			//fmt.Println(bd2uf)
 			td.IdentifierData = bd2uf
 			rd.ResultData = append(rd.ResultData, td)
 
-			fmt.Println(rest3)
+			//fmt.Println(rest3)
 			elems = rest3
 		}
 		le.LeafDatas = append(le.LeafDatas, rd)
@@ -657,7 +657,7 @@ func DecodeNode(encode []byte) (EBTreen, error) {
 	elems, _, _ := rlp.SplitList(encode)
 	//the number of fields in internal node
 	c, _ := rlp.CountValues(elems)
-	fmt.Println(c)
+	//fmt.Println(c)
 	if c == 2 {
 		in, err := DecodeInternal(elems)
 		return &in, err

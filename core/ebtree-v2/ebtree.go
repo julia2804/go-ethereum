@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	MaxLeafNodeCapability     = uint8(32)
-	MaxInternalNodeCapability = uint64(256)
+	MaxLeafNodeCapability     = 32
+	MaxInternalNodeCapability = 256
 	//MaxLeafNodeCapability     = uint8(3)
 	//MaxInternalNodeCapability = uint64(3)
 	MaxCollapseCapbility = uint64(100)
@@ -114,17 +114,21 @@ func (ebt *EBTree) InsertDataToEBTree(d ResultD) error {
 
 func (ebt *EBTree) Inserts(d []ResultD) error {
 	var err error
-	for i := uint8(0); i <= uint8(len(d))/MaxLeafNodeCapability; i++ {
-		var ds []ResultD
-		for j := uint8(0); j < MaxLeafNodeCapability; j++ {
-			ds = append(ds, d[i*MaxLeafNodeCapability+j])
-		}
-		err = ebt.InsertDatasToTree(ds)
+	groupsNum := (len(d)) / (MaxLeafNodeCapability)
+	rest := len(d) % MaxLeafNodeCapability
+
+	for i := (0); i < groupsNum; i++ {
+		//var ds []ResultD
+		err = ebt.InsertDatasToTree(d[MaxLeafNodeCapability*i : MaxLeafNodeCapability*(i+1)])
+
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+	if rest != 0 {
+		err = ebt.InsertDatasToTree(d[MaxLeafNodeCapability*groupsNum:])
+	}
+	return err
 }
 
 func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
@@ -548,16 +552,16 @@ func DecodeMeta(elems []byte) (Meta, error) {
 	var err error
 	elems, _, _ = rlp.SplitList(elems)
 	//the number of fields in internal node
-	c, _ := rlp.CountValues(elems)
-	fmt.Println(c)
+	//c, _ := rlp.CountValues(elems)
+	//fmt.Println(c)
 
 	kbuf, rest, err := rlp.SplitString(elems)
 	if err != nil {
 		return me, err
 	}
 	me.Sequence = kbuf
-	fmt.Println(kbuf)
-	fmt.Println(rest)
+	//fmt.Println(kbuf)
+	//fmt.Println(rest)
 	elems = rest
 
 	kbuf, rest, err = rlp.SplitString(elems)
@@ -565,8 +569,8 @@ func DecodeMeta(elems []byte) (Meta, error) {
 		return me, err
 	}
 	me.Root = kbuf
-	fmt.Println(kbuf)
-	fmt.Println(rest)
+	//fmt.Println(kbuf)
+	//fmt.Println(rest)
 	elems = rest
 
 	kbuf, rest, err = rlp.SplitString(elems)
@@ -574,8 +578,8 @@ func DecodeMeta(elems []byte) (Meta, error) {
 		return me, err
 	}
 	me.FirstLeaf = kbuf
-	fmt.Println(kbuf)
-	fmt.Println(rest)
+	//fmt.Println(kbuf)
+	//fmt.Println(rest)
 	elems = rest
 
 	return me, err
