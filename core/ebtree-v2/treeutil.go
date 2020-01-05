@@ -31,15 +31,23 @@ func InsertToTreeWithDb(trps []TaskR, db *Database) (int, error) {
 	results := mergeSortAndMergeSame(trps)
 	tree, err := NewEBTreeFromDb(db)
 	Pool = CreatPoolAndRun(tree, 10, 10)
-	err = tree.InsertDatasToTree(results)
+	err = tree.Inserts(results)
+	err = tree.FinalCollapse()
+	if err != nil {
+		return len(results), err
+	}
 	Pool.Close()
-	topkrps, err := tree.TopkVSearch(100000000)
+	/*topkrps, err := tree.TopkVSearch(100000000)
 	if err != nil {
 		return len(results), err
 	}
 	compareResult(results, topkrps)
-	fmt.Println("topk num : ", len(topkrps))
-	tree.CommitMeatas()
+	fmt.Println("topk num : ", len(topkrps))*/
+	err = tree.CommitMeatas()
+	if err != nil {
+		return len(results), err
+	}
+
 	return len(results), err
 }
 

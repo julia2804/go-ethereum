@@ -7,12 +7,13 @@ import (
 )
 
 var (
-	//MaxLeafNodeCapability=uint8(32)
-	//MaxInternalNodeCapability=uint64(256)
-	MaxLeafNodeCapability     = uint8(3)
-	MaxInternalNodeCapability = uint64(3)
-	MaxCollapseCapbility      = uint64(100)
-	MetaKey                   = []byte("metas")
+	MaxLeafNodeCapability     = uint8(32)
+	MaxInternalNodeCapability = uint64(256)
+	//MaxLeafNodeCapability     = uint8(3)
+	//MaxInternalNodeCapability = uint64(3)
+	MaxCollapseCapbility = uint64(100)
+	MetaKey              = []byte("metas")
+	NilNode              = IntToBytes(0)
 )
 var Pool *WorkerPool2
 
@@ -110,6 +111,21 @@ func (ebt *EBTree) InsertDataToEBTree(d ResultD) error {
 	return err
 }
 
+func (ebt *EBTree) Inserts(d []ResultD) error {
+	var err error
+	for i := uint8(0); i <= uint8(len(d))/MaxLeafNodeCapability; i++ {
+		var ds []ResultD
+		for j := uint8(0); j < MaxLeafNodeCapability; j++ {
+			ds = append(ds, d[i*MaxLeafNodeCapability+j])
+		}
+		err = ebt.InsertDatasToTree(ds)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 	//todo:last path is wrong
 	//Start**********
@@ -204,10 +220,29 @@ func (ebt *EBTree) TopkVSearch(k int64) ([]ResultD, error) {
 		case *LeafNode:
 			lle = len(lt.LeafDatas)
 			ft = *lt
+		case IdNode:
+			nt, err := ebt.LoadNode(lt.fstring())
+			if err != nil {
+				return ds, err
+			}
+			if nt == nil {
+				return ds, nil
+			}
+			switch ntt := nt.(type) {
+			case *LeafNode:
+				lle = len(ntt.LeafDatas)
+				ft = *ntt
+			default:
+				err := errors.New("wrong node type in firstleaf after load from levledb")
+				return ds, err
+			}
 		case *IdNode:
 			nt, err := ebt.LoadNode(lt.fstring())
 			if err != nil {
 				return ds, err
+			}
+			if nt == nil {
+				return ds, nil
 			}
 			switch ntt := nt.(type) {
 			case *LeafNode:
@@ -238,6 +273,9 @@ func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 	if err != nil {
 		return ds, err
 	}
+	if le == nil {
+		return ds, nil
+	}
 	for le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, begin) >= 0 {
 		for j := 0; j < len(le.LeafDatas); j++ {
 			if byteCompare(begin, le.LeafDatas[j].Value) <= 0 && byteCompare(end, le.LeafDatas[j].Value) >= 0 {
@@ -256,6 +294,9 @@ func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 			n, err := ebt.LoadNode(nt.fstring())
 			if err != nil {
 				return ds, err
+			}
+			if n == nil {
+				return ds, nil
 			}
 			switch lnt := n.(type) {
 			case *LeafNode:
@@ -278,6 +319,9 @@ func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {
 	if err != nil {
 		return d, err
 	}
+	if le == nil {
+		return d, nil
+	}
 	for le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, value) >= 0 {
 		for j := 0; j < len(le.LeafDatas); j++ {
 			if byteCompare(value, le.LeafDatas[j].Value) == 0 {
@@ -298,6 +342,9 @@ func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {
 			if err != nil {
 				return d, err
 			}
+			if n == nil {
+				return d, nil
+			}
 			switch lnt := n.(type) {
 			case *LeafNode:
 				le = lnt
@@ -317,6 +364,15 @@ func (ebt *EBTree) FindFirstLeaf(value []byte, flag bool) (*LeafNode, error) {
 	var le *LeafNode
 	var err error
 	le, err = ebt.FindInNode(value, ebt.Root, flag)
+	if err != nil {
+		return nil, err
+	}
+	if le == nil {
+		fmt.Println("nil leaf node")
+		return nil, nil
+	}
+	//i,err,flag:=ebt.SearchInNode(value,le)
+	_, err, _ = ebt.SearchInNode(value, le)
 	return le, err
 }
 
@@ -327,6 +383,16 @@ func (ebt *EBTree) FindFirstLeaf(value []byte, flag bool) (*LeafNode, error) {
 // commit functions in ebtree
 
 //after insert the data into ebtree, we need to
+
+func (ebt *EBTree) FinalCollapse() error {
+	il := len(ebt.LastPath.Internals)
+	if il == 0 {
+		return ebt.CollapseLeafNode(ebt.LastPath.Leaf)
+	}
+	return ebt.CollapseInternalNode((ebt.LastPath.Internals[il-1]), true)
+
+}
+
 func (ebt *EBTree) CollapseEBTree() error {
 	var err error
 	if len(ebt.LastPath.Internals) == 0 {
@@ -406,6 +472,10 @@ func (ebt *EBTree) CommitNodes() error {
 		}
 
 	}
+	if err := batch.Write(); err != nil {
+		return err
+	}
+	batch.Reset()
 	return err
 }
 
@@ -431,6 +501,10 @@ func (ebt *EBTree) CommitNode(treen EBTreen) error {
 		err = errors.New("wrong node type of ebtree")
 		return err
 	}
+	if err := batch.Write(); err != nil {
+		return err
+	}
+	batch.Reset()
 	return err
 }
 
@@ -443,6 +517,10 @@ func (ebt *EBTree) CommitNode(treen EBTreen) error {
 func (ebt *EBTree) LoadNode(id []byte) (EBTreen, error) {
 	var n EBTreen
 	var err error
+	if byteCompare(id, NilNode) == 0 {
+		fmt.Println("the last leaf node")
+		return nil, nil
+	}
 	enodes, err := ebt.Db.diskdb.Get(id)
 	if err != nil {
 		return nil, err
