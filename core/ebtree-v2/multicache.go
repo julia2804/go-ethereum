@@ -22,18 +22,23 @@ func (pool *WorkerPool2) Start() {
 	}
 }
 
-func (pool *WorkerPool2) worker() {
-	for {
-		tmp := <-pool.CacheChan
-		pool.ebt.CommitNode(tmp)
-	}
-}
+//func (pool *WorkerPool2) worker() {
+//	for {
+//		tmp := <-pool.CacheChan
+//		pool.ebt.CommitNode(tmp)
+//	}
+//}
 
 func (pool *WorkerPool2) consumer(ch chan EBTreen) {
 	//可以循环 for i := range ch 来不断从 channel 接收值，直到它被关闭。
+	batch := pool.ebt.Db.diskdb.NewBatch()
 	for node := range ch {
-		pool.ebt.CommitNode(node)
+		pool.ebt.CommitNode(node, batch)
 	}
+	if err := batch.Write(); err != nil {
+		log.Error(err.Error())
+	}
+	batch.Reset()
 }
 
 func (pool *WorkerPool2) Close() {

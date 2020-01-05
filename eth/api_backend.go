@@ -316,7 +316,9 @@ func (b *EthAPIBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.Resu
 		if err != nil {
 			log.Error(err.Error())
 		}
-		return results, err
+		log.Info("topk num", "resultnum", len(results))
+		//todo results, 太多了，看不清
+		return nil, err
 	}
 	if err != nil {
 		fmt.Println("lll")

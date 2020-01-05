@@ -3,6 +3,7 @@ package ebtree_v2
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -479,9 +480,9 @@ func (ebt *EBTree) CommitNodes() error {
 	return err
 }
 
-func (ebt *EBTree) CommitNode(treen EBTreen) error {
+func (ebt *EBTree) CommitNode(treen EBTreen, batch ethdb.Batch) error {
 	var err error
-	batch := ebt.Db.diskdb.NewBatch()
+	//batch := ebt.Db.diskdb.NewBatch()
 	encode, err := EncodeNode(treen)
 	if err != nil {
 		return err
