@@ -77,7 +77,7 @@ func (ebt *EBTree) NewChildData(value []byte, node EBTreen) ChildData {
 //Start*****************************
 // insert functions in Nodes after tree inintialed
 
-func (ebt *EBTree) InsertToFirstLeaf(d ResultD, n *LeafNode, i int, flag bool) error {
+func (ebt *EBTree) InsertToNodes(d ResultD, n *LeafNode, i int, flag bool) error {
 	var err error
 	sle, err := ebt.InsertToLeaf(d, n, i, flag)
 	if err != nil {
@@ -89,34 +89,66 @@ func (ebt *EBTree) InsertToFirstLeaf(d ResultD, n *LeafNode, i int, flag bool) e
 		return err
 	}
 
-	//the leaf node is split, the internal node should be changed
+	//second,  if the leaf node is split, the internal node should be changed
 	ile := len(ebt.LastPath.Internals)
 	ebt.InsertToInternal(sle, ebt.LastPath.Internals[ile-1], ile-1)
 	return nil
 }
 
+//insert leaf or internal nodes into internal nodes
 func (ebt *EBTree) InsertToInternal(n EBTreen, in *InternalNode, i int) (*InternalNode, error) {
 	var v []byte
+	var locats int
 	switch nt := n.(type) {
 	case *LeafNode:
 		lle := len(nt.LeafDatas)
 		v = nt.LeafDatas[lle-1].Value
-		fmt.Println(v)
-		//todo:now
-		//i,err,_:=ebt.SearchInNode(v,in)
+		//locates position the node should be put in n.children
+		locats, err, _ := ebt.SearchInNode(v, in)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("locats", locats)
 	case *InternalNode:
 		lle := len(nt.Children)
 		v = nt.Children[lle-1].Value
+		locats, err, _ := ebt.SearchInNode(v, in)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Println("locats", locats)
 	default:
 		err := errors.New("wrong node type in InsertToInternal")
 		return nil, err
 	}
+	fmt.Println("locats", locats)
 	var sin *InternalNode
 	var err error
+	ch := ebt.NewChildData(v, n)
 	if (len(in.Children)) >= MaxInternalNodeCapability {
 		//insert the node, and split it
+		//when the new internal node is needed
+
+		ebt.InsertToInternal(sin, ebt.LastPath.Internals[i-1], i-1)
 	} else {
 		//insert the node, and return
+
+		lin := len(in.Children)
+		in.Children = append(in.Children, ch)
+		for j := lin - 1; j >= 0; j-- {
+
+			//if the value in leaf is smaller than d.value, those resultd should be moved
+			if byteCompare(in.Children[j].Value, ch.Value) < 0 {
+				in.Children[j+1] = in.Children[j]
+
+			} else {
+				//the local of value is found
+				in.Children[j+1] = ch
+				break
+			}
+		}
+		return nil, nil
+
 	}
 	return sin, err
 }
@@ -131,26 +163,38 @@ func (ebt *EBTree) InsertToLeaf(d ResultD, le *LeafNode, i int, flag bool) (*Lea
 		return nil, err
 	}
 
+	//if the d.value is new to ebtree
 	ile := len(le.LeafDatas)
 
+	//if no new leaf node is needed
 	if (ile) <= MaxLeafNodeCapability {
 		le.LeafDatas = append(le.LeafDatas, d)
 		for j := ile - 1; j >= 0; j-- {
+
+			//if the value in leaf is smaller than d.value, those resultd should be moved
 			if byteCompare(le.LeafDatas[j].Value, d.Value) < 0 {
 				le.LeafDatas[j+1] = le.LeafDatas[j]
+
+			} else {
+				//the local of value is found
+				le.LeafDatas[j+1] = d
+				break
 			}
 		}
 		return nil, err
 	}
 
-	//concate the new leaf nodes
+	//when the new leaf node is needed
+
+	//first: concate the new leaf nodes
 	nle := ebt.NewLeafNode()
 	mid := MaxLeafNodeCapability / 2
 	nle.NextPtr = le.NextPtr
 	le.NextPtr = &nle
 
-	//allocate the leaf datas between two leafnodes
+	//second: allocate the leaf datas between two leafnodes
 	if (i + 1) > mid-1 {
+		//if the d should be put in new leaf node
 		//concate the leafdatas for new leaf node
 		for j := mid; j <= (ile - 1); j++ {
 			nle.LeafDatas = append(nle.LeafDatas, le.LeafDatas[j])
@@ -167,6 +211,7 @@ func (ebt *EBTree) InsertToLeaf(d ResultD, le *LeafNode, i int, flag bool) (*Lea
 			le.LeafDatas[j+1] = le.LeafDatas[j]
 		}
 	} else {
+		//if the d should be put in original leaf node
 		//concate the leafdatas for new leaf node
 		for j := (0); j <= MaxLeafNodeCapability-mid; j++ {
 			nle.LeafDatas = append(nle.LeafDatas, le.LeafDatas[mid-1+j])
@@ -307,7 +352,6 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 
 //Start*****************************
 // find functions in Node
-
 func (ebt *EBTree) FindInNode(value []byte, n EBTreen, flag bool) (*LeafNode, error) {
 	var le *LeafNode
 	var err error

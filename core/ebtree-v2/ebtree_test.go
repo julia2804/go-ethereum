@@ -126,6 +126,83 @@ func TestEncode(t *testing.T) {
 
 }
 
+func TestInsertToNodes(t *testing.T) {
+	le := ConstructTestLeaf()
+	var rd ResultD
+	rd.Value = IntToBytes(10099)
+	var td11 TD
+	var td12 TD
+	var td13 TD
+	td11.IdentifierData = []byte("hoho")
+	td12.IdentifierData = []byte("piupiu")
+	td13.IdentifierData = []byte("rhfur")
+	rd.ResultData = append(rd.ResultData, td11)
+	rd.ResultData = append(rd.ResultData, td12)
+	rd.ResultData = append(rd.ResultData, td13)
+
+	tebt, err := NewEBTree()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	i, err, flag := tebt.SearchInNode(rd.Value, &le)
+	tebt.InsertToLeaf(rd, &le, int(i), flag)
+
+}
+
+func ConstructTestLeaf() LeafNode {
+	testle := LeafNode{Id: IntToBytes(5)}
+	var ntid IdNode
+	ntid = IntToBytes(8)
+	testle.NextPtr = &ntid
+
+	var rd1 ResultD
+	var rd2 ResultD
+	var rd3 ResultD
+
+	var td11 TD
+	var td12 TD
+	var td13 TD
+	td11.IdentifierData = []byte("hello")
+	td12.IdentifierData = []byte("world")
+	td13.IdentifierData = []byte("!")
+
+	var td21 TD
+	var td22 TD
+	var td23 TD
+	td21.IdentifierData = []byte("My")
+	td22.IdentifierData = []byte("Lover")
+	td23.IdentifierData = []byte("biu")
+
+	var td31 TD
+	var td32 TD
+	var td33 TD
+	td31.IdentifierData = []byte("I")
+	td32.IdentifierData = []byte("Love")
+	td33.IdentifierData = []byte("China!")
+
+	rd1.Value = IntToBytes(1000)
+	rd1.ResultData = append(rd1.ResultData, td11)
+	rd1.ResultData = append(rd1.ResultData, td12)
+	rd1.ResultData = append(rd1.ResultData, td13)
+
+	rd2.Value = IntToBytes(2000)
+	rd2.ResultData = append(rd2.ResultData, td21)
+	rd2.ResultData = append(rd2.ResultData, td22)
+	rd2.ResultData = append(rd2.ResultData, td23)
+
+	rd3.Value = IntToBytes(3000)
+	rd3.ResultData = append(rd3.ResultData, td31)
+	rd3.ResultData = append(rd3.ResultData, td32)
+	rd3.ResultData = append(rd3.ResultData, td33)
+
+	testle.LeafDatas = append(testle.LeafDatas, rd1)
+	testle.LeafDatas = append(testle.LeafDatas, rd2)
+	testle.LeafDatas = append(testle.LeafDatas, rd3)
+
+	return testle
+}
+
 //rlp用法
 func TestRlp(t *testing.T) {
 	//1.将一个整数数组序列化
