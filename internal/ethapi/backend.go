@@ -19,6 +19,7 @@ package ethapi
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
 	"math/big"
 
@@ -90,6 +91,10 @@ type Backend interface {
 	ConstructTree(ctx context.Context, begin int, end int) (int, error)
 
 	TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error)
+
+	SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error)
+
+	RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

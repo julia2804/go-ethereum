@@ -19,6 +19,7 @@ package les
 import (
 	"context"
 	"errors"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
 	"math/big"
 
@@ -281,5 +282,14 @@ func (b *LesApiBackend) ConstructTree(ctx context.Context, begin int, end int) (
 }
 
 func (b *LesApiBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error) {
+	return nil, nil
+}
+
+func (b *LesApiBackend) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error) {
+	var tmp ebtree_v2.ResultD
+	return tmp, nil
+}
+
+func (b *LesApiBackend) RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error) {
 	return nil, nil
 }

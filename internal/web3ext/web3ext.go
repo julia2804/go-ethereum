@@ -538,6 +538,18 @@ web3._extend({
 			call: 'eth_topKSearch',
 			params: 1,
 		}),
+		new web3._extend.Method({
+			name: 'rangeSearch',
+			call: 'eth_rangeSearch',
+			params: 2,
+			inputFormatter: [web3._extend.utils.fromDecimal, web3._extend.utils.fromDecimal]
+		}),
+		new web3._extend.Method({
+			name: 'specificSearch',
+			call: 'eth_specificSearch',
+			params: 1,
+			inputFormatter: [web3._extend.utils.fromDecimal]
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

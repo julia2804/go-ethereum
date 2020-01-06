@@ -1793,3 +1793,11 @@ func (s *PublicBlockChainAPI) ConstructTree(ctx context.Context, begin int, end 
 func (s *PublicBlockChainAPI) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error) {
 	return s.b.TopKSearch(ctx, k)
 }
+
+func (s *PublicBlockChainAPI) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error) {
+	return s.b.SpecificSearch(ctx, v)
+}
+
+func (s *PublicBlockChainAPI) RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error) {
+	return s.b.RangeSearch(ctx, begin, end)
+}

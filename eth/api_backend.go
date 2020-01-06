@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
 	"github.com/ethereum/go-ethereum/log"
 	"math/big"
@@ -322,6 +323,40 @@ func (b *EthAPIBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.Resu
 	}
 	if err != nil {
 		fmt.Println("lll")
+		log.Error(err.Error())
+	}
+	return nil, err
+}
+
+func (b *EthAPIBackend) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error) {
+	tree, err := ebtree_v2.NewEBTreeFromDb(ebtree_v2.NewDatabase(*b.eth.blockchain.GetDB()))
+	var result ebtree_v2.ResultD
+	if err == nil {
+		result, err = tree.EquivalentSearch(v.ToInt().Bytes())
+		if err != nil {
+			log.Error(err.Error())
+		}
+		log.Info("specific num in value", "resultnum", len(result.ResultData))
+		return result, err
+	}
+	if err != nil {
+		log.Error(err.Error())
+	}
+	return result, err
+}
+
+func (b *EthAPIBackend) RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error) {
+	tree, err := ebtree_v2.NewEBTreeFromDb(ebtree_v2.NewDatabase(*b.eth.blockchain.GetDB()))
+	if err == nil {
+		results, err := tree.RangeSearch(begin.ToInt().Bytes(), end.ToInt().Bytes())
+		if err != nil {
+			log.Error(err.Error())
+		}
+		log.Info("range num in value", "resultnum", len(results))
+		//todo results, 太多了，看不清
+		return nil, err
+	}
+	if err != nil {
 		log.Error(err.Error())
 	}
 	return nil, err
