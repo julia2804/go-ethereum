@@ -134,7 +134,8 @@ func Initial(outerbc *core.BlockChain, outblocksnum int) {
 	blocksnum = outblocksnum
 	interval = blocksnum / pretasknum
 
-	log.Info("initial over, the final blocknum is :", "fn", (interval * pretasknum))
+	log.Info("initial over, the final blocknum is :", "fn", (interval * pretasknum), "pretasknum", pretasknum, "prethreadnum", prethreadnum,
+		"aftertasknum", aftertasknum, "afterthreadnum", afterthreadnum, "maxProces", maxProces)
 }
 
 func AssembleTaskAndStart(tasknum int, threadnum int, f func(id int, prepool *WorkerPool) TaskR, prepool *WorkerPool) *WorkerPool {

@@ -97,3 +97,11 @@ func compareResult(array1, array2 []ResultD) {
 		}
 	}
 }
+
+func TransNumInResultDArray(array []ResultD) int {
+	var num int
+	for i := 0; i < len(array); i++ {
+		num += len(array[i].ResultData)
+	}
+	return num
+}

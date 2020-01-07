@@ -317,7 +317,8 @@ func (b *EthAPIBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.Resu
 		if err != nil {
 			log.Error(err.Error())
 		}
-		log.Info("topk num", "resultnum", len(results))
+		log.Info("topk num of value", "resultnum", len(results))
+		log.Info("topk num of trans", "resultnum", ebtree_v2.TransNumInResultDArray(results))
 		//todo results, 太多了，看不清
 		return nil, err
 	}
@@ -336,8 +337,9 @@ func (b *EthAPIBackend) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebt
 		if err != nil {
 			log.Error(err.Error())
 		}
-		log.Info("specific num in value", "resultnum", len(result.ResultData))
-		return result, err
+		log.Info("specific num of trans", "resultnum", len(result.ResultData))
+		var tmp ebtree_v2.ResultD
+		return tmp, err
 	}
 	if err != nil {
 		log.Error(err.Error())
@@ -352,7 +354,8 @@ func (b *EthAPIBackend) RangeSearch(ctx context.Context, begin *hexutil.Big, end
 		if err != nil {
 			log.Error(err.Error())
 		}
-		log.Info("range num in value", "resultnum", len(results))
+		log.Info("range num of value", "resultnum", len(results))
+		log.Info("range num of trans", "resultnum", ebtree_v2.TransNumInResultDArray(results))
 		//todo results, 太多了，看不清
 		return nil, err
 	}
