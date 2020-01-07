@@ -28,10 +28,10 @@ type Task struct {
 	Id      int
 	Err     error
 	Prepool *WorkerPool
-	f       func(id int, prepool *WorkerPool) TaskR
+	f       func(id int, prepool *WorkerPool) *TaskR
 }
 
-func (task *Task) Do() TaskR {
+func (task *Task) Do() *TaskR {
 	return task.f(task.Id, task.Prepool)
 }
 
@@ -40,17 +40,17 @@ type WorkerPool struct {
 	tasksSize   int
 	tasksChan   chan Task
 	resultsChan chan TaskR
-	Results     func(e int) []TaskR
+	Results     func(e int) *[]TaskR
 }
 
-func NewWorkerPool(tasks []Task, poolsize int) *WorkerPool {
-	tasksChan := make(chan Task, len(tasks))
-	resultsChan := make(chan TaskR, len(tasks))
-	for _, task := range tasks {
+func NewWorkerPool(tasks *[]Task, poolsize int) *WorkerPool {
+	tasksChan := make(chan Task, len(*tasks))
+	resultsChan := make(chan TaskR, len(*tasks))
+	for _, task := range *tasks {
 		tasksChan <- task
 	}
 	close(tasksChan)
-	pool := &WorkerPool{PoolSize: poolsize, tasksSize: len(tasks), tasksChan: tasksChan, resultsChan: resultsChan}
+	pool := &WorkerPool{PoolSize: poolsize, tasksSize: len(*tasks), tasksChan: tasksChan, resultsChan: resultsChan}
 	pool.Results = pool.results
 	return pool
 }
@@ -64,19 +64,19 @@ func (pool *WorkerPool) Start() {
 func (pool *WorkerPool) worker() {
 	for task := range pool.tasksChan {
 		re := task.Do()
-		pool.resultsChan <- re
+		pool.resultsChan <- *re
 	}
 }
 
-func (pool *WorkerPool) results(e int) []TaskR {
+func (pool *WorkerPool) results(e int) *[]TaskR {
 	results := make([]TaskR, e)
 	for i := 0; i < e; i++ {
 		results[i] = <-pool.resultsChan
 	}
-	return results
+	return &results
 }
 
-func ToChannel(id int, prepool *WorkerPool) TaskR {
+func ToChannel(id int, prepool *WorkerPool) *TaskR {
 	//single task repsonse
 	var strps TaskR
 	var tmprps []ResultD
@@ -95,16 +95,16 @@ func ToChannel(id int, prepool *WorkerPool) TaskR {
 			}
 		}
 	}
-	strps.TaskResult = HeapSortAndMergeSame(tmprps)
-	return strps
+	strps.TaskResult = *HeapSortAndMergeSame(&tmprps)
+	return &strps
 }
 
-func FromChannel(id int, prepool *WorkerPool) TaskR {
+func FromChannel(id int, prepool *WorkerPool) *TaskR {
 	var rps TaskR
 	trps := prepool.Results(takenum)
 	//把这些排序
-	rps.TaskResult = mergeSortAndMergeSame(trps)
-	return rps
+	rps.TaskResult = *mergeSortAndMergeSame(trps)
+	return &rps
 }
 
 func Initial(outerbc *core.BlockChain, outblocksnum int) {
@@ -138,7 +138,7 @@ func Initial(outerbc *core.BlockChain, outblocksnum int) {
 		"aftertasknum", aftertasknum, "afterthreadnum", afterthreadnum, "maxProces", maxProces)
 }
 
-func AssembleTaskAndStart(tasknum int, threadnum int, f func(id int, prepool *WorkerPool) TaskR, prepool *WorkerPool) *WorkerPool {
+func AssembleTaskAndStart(tasknum int, threadnum int, f func(id int, prepool *WorkerPool) *TaskR, prepool *WorkerPool) *WorkerPool {
 	tasks := make([]Task, tasknum)
 	for i := 0; i < tasknum; i++ {
 		tasks[i] = *new(Task)
@@ -147,12 +147,12 @@ func AssembleTaskAndStart(tasknum int, threadnum int, f func(id int, prepool *Wo
 		tasks[i].f = f
 	}
 
-	pool := NewWorkerPool(tasks, threadnum)
+	pool := NewWorkerPool(&tasks, threadnum)
 	pool.Start()
 	return pool
 }
 
-func GetTrans() []TaskR {
+func GetTrans() *[]TaskR {
 	t := time.Now()
 
 	prepool := AssembleTaskAndStart(pretasknum, prethreadnum, ToChannel, nil)
@@ -162,12 +162,7 @@ func GetTrans() []TaskR {
 
 	trps := afterpool.Results(aftertasknum)
 
-	fmt.Printf("all tasks finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+	fmt.Printf("get trans finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
 
-	//b, err := json.Marshal(trps)
-	//if err != nil {
-	//	fmt.Println("error:", err)
-	//}
-	//AppendToFileWithByte("/home/mimota/sss.txt", b)
 	return trps
 }

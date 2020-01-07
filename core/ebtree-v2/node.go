@@ -138,7 +138,7 @@ func (ebt *EBTree) InsertToInternal(n EBTreen, in *InternalNode, i int) (*Intern
 		for j := lin - 1; j >= 0; j-- {
 
 			//if the value in leaf is smaller than d.value, those resultd should be moved
-			if byteCompare(in.Children[j].Value, ch.Value) < 0 {
+			if byteCompare(&in.Children[j].Value, &ch.Value) < 0 {
 				in.Children[j+1] = in.Children[j]
 
 			} else {
@@ -172,7 +172,7 @@ func (ebt *EBTree) InsertToLeaf(d ResultD, le *LeafNode, i int, flag bool) (*Lea
 		for j := ile - 1; j >= 0; j-- {
 
 			//if the value in leaf is smaller than d.value, those resultd should be moved
-			if byteCompare(le.LeafDatas[j].Value, d.Value) < 0 {
+			if byteCompare(&le.LeafDatas[j].Value, &d.Value) < 0 {
 				le.LeafDatas[j+1] = le.LeafDatas[j]
 
 			} else {
@@ -405,9 +405,9 @@ func (ebt *EBTree) SearchInNode(value []byte, n EBTreen) (int64, error, bool) {
 		lo, hi := 0, len(nt.LeafDatas)-1
 		for lo <= hi {
 			m := (lo + hi) >> 1
-			if byteCompare(value, nt.LeafDatas[m].Value) < 0 {
+			if byteCompare(&value, &nt.LeafDatas[m].Value) < 0 {
 				lo = m + 1
-			} else if byteCompare(value, nt.LeafDatas[m].Value) > 0 {
+			} else if byteCompare(&value, &nt.LeafDatas[m].Value) > 0 {
 				hi = m - 1
 			} else {
 				flag = true
@@ -423,9 +423,9 @@ func (ebt *EBTree) SearchInNode(value []byte, n EBTreen) (int64, error, bool) {
 		lo, hi := 0, len(nt.Children)-1
 		for lo <= hi {
 			m := (lo + hi) >> 1
-			if byteCompare(value, nt.Children[m].Value) < 0 {
+			if byteCompare(&value, &nt.Children[m].Value) < 0 {
 				lo = m + 1
-			} else if byteCompare(value, nt.Children[m].Value) > 0 {
+			} else if byteCompare(&value, &nt.Children[m].Value) > 0 {
 				hi = m - 1
 			} else {
 				flag = true
@@ -478,7 +478,7 @@ func (ebt *EBTree) CollapsedUnuseInternal(nt *InternalNode, j int) error {
 			return err
 		}
 	}
-	if byteCompare(nt.Id, ebt.LastPath.Internals[j].Id) == 0 {
+	if byteCompare(&nt.Id, &ebt.LastPath.Internals[j].Id) == 0 {
 		return err
 	} else {
 		return ebt.CollapseInternalNode(nt, false)
@@ -521,7 +521,7 @@ func (ebt *EBTree) CollapseInternalNode(nt *InternalNode, final bool) error {
 		case *IdNode:
 			continue
 		case *LeafNode:
-			if !final && byteCompare(ntct.Id, ebt.LastPath.Leaf.Id) == 0 {
+			if !final && byteCompare(&ntct.Id, &ebt.LastPath.Leaf.Id) == 0 {
 				return nil
 			}
 			flag = true
@@ -562,7 +562,7 @@ func (ebt *EBTree) isInPath(id []byte) bool {
 	var flag bool
 	flag = false
 	for i := 0; i < len(ebt.LastPath.Internals); i++ {
-		if byteCompare(id, ebt.LastPath.Internals[i].Id) == 0 {
+		if byteCompare(&id, &ebt.LastPath.Internals[i].Id) == 0 {
 			flag = true
 			return flag
 		}

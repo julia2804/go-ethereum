@@ -14,20 +14,20 @@ func typeof(v interface{}) string {
 }
 
 //compare a and b
-func byteCompare(a, b []byte) int {
+func byteCompare(a, b *[]byte) int {
 	//lev, lemax := IndentBytes(a, b)
-	rla := len(a)
-	rlb := len(b)
-	for i := 0; i < len(a); i++ {
-		if a[i] == 0 {
+	rla := len(*a)
+	rlb := len(*b)
+	for i := 0; i < len(*a); i++ {
+		if (*a)[i] == 0 {
 			rla--
 		} else {
 			break
 		}
 	}
 
-	for i := 0; i < len(b); i++ {
-		if b[i] == 0 {
+	for i := 0; i < len(*b); i++ {
+		if (*b)[i] == 0 {
 			rlb--
 		} else {
 			break
@@ -37,7 +37,7 @@ func byteCompare(a, b []byte) int {
 	if rla != rlb {
 		return rla - rlb
 	} else {
-		return bytes.Compare(a, b)
+		return bytes.Compare(*a, *b)
 	}
 }
 
@@ -119,13 +119,13 @@ func BigAbs(a string, b string) hexutil.Big {
 	return hexutil.Big(*Inta.Abs(Intb))
 }
 
-func ResultDIsSame(a ResultD, b ResultD) bool {
-	if byteCompare(a.Value, b.Value) == 0 {
+func ResultDIsSame(a *ResultD, b *ResultD) bool {
+	if byteCompare(&(*a).Value, &(*b).Value) == 0 {
 		al := len(a.ResultData)
 		bl := len(b.ResultData)
 		if al == bl {
 			for i := 0; i < al; i++ {
-				if byteCompare(a.ResultData[i].IdentifierData, b.ResultData[i].IdentifierData) != 0 {
+				if byteCompare(&(*a).ResultData[i].IdentifierData, &(*b).ResultData[i].IdentifierData) != 0 {
 					return false
 				}
 			}
@@ -138,6 +138,6 @@ func ResultDIsSame(a ResultD, b ResultD) bool {
 	}
 }
 
-func ResultCompare(a ResultD, b ResultD) int {
-	return byteCompare(a.Value, b.Value)
+func ResultCompare(a *ResultD, b *ResultD) int {
+	return byteCompare(&a.Value, &b.Value)
 }

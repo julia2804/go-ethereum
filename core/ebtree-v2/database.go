@@ -104,7 +104,7 @@ func (db *Database) SetTreeMetas(key []byte, result []byte, batch ethdb.Batch) e
 }
 
 func (db *Database) node(id []byte) (EBTreen, error) {
-	if byteCompare(id, NilNode) == 0 {
+	if byteCompare(&id, &NilNode) == 0 {
 		fmt.Println("the last leaf node")
 		return nil, nil
 	}
