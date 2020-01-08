@@ -30,22 +30,22 @@ func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
 	return n, err
 }
 
-func InsertToTreeWithDb(trps *[]TaskR, db *Database) (int, error) {
-	results := mergeSortAndMergeSame(trps)
+func InsertToTreeWithDb(trps *[]ResultD, db *Database) (int, error) {
+	//results := mergeSortAndMergeSame(trps)
 	tree, err := NewEBTreeFromDb(db)
 	Pool = CreatPoolAndRun(tree, 10, 10)
-	err = tree.Inserts(*results)
+	err = tree.Inserts(*trps)
 	err = tree.FinalCollapse()
 	if err != nil {
-		return len(*results), err
+		return len(*trps), err
 	}
 	Pool.Close()
 	err = tree.CommitMeatas()
 	if err != nil {
-		return len(*results), err
+		return len(*trps), err
 	}
 
-	return len(*results), err
+	return len(*trps), err
 }
 
 func InsertToTree(trps *[]TaskR) (int, error) {

@@ -95,7 +95,7 @@ func ToChannel(id int, prepool *WorkerPool) *TaskR {
 			}
 		}
 	}
-	strps.TaskResult = *HeapSortAndMergeSame(&tmprps)
+	strps.TaskResult = tmprps
 	return &strps
 }
 
@@ -119,7 +119,11 @@ func Initial(outerbc *core.BlockChain, outblocksnum int) {
 	}
 
 	if prethreadnum == 0 {
-		prethreadnum = 1
+		if pretasknum == 1 {
+			prethreadnum = 1
+		} else {
+			prethreadnum = maxProces
+		}
 	}
 
 	if aftertasknum == 0 {
@@ -152,15 +156,34 @@ func AssembleTaskAndStart(tasknum int, threadnum int, f func(id int, prepool *Wo
 	return pool
 }
 
-func GetTrans() *[]TaskR {
+func GetTrans() *[]ResultD {
 	t := time.Now()
 
 	prepool := AssembleTaskAndStart(pretasknum, prethreadnum, ToChannel, nil)
+	results := prepool.Results(pretasknum)
 
-	takenum = pretasknum / aftertasknum
-	afterpool := AssembleTaskAndStart(aftertasknum, afterthreadnum, FromChannel, prepool)
+	var length int
+	for i := 0; i < len(*results); i++ {
+		length += len((*results)[i].TaskResult)
+	}
 
-	trps := afterpool.Results(aftertasknum)
+	t1 := time.Now()
+	data := make([]ResultD, length)
+	var size int
+	for i := 0; i < len(*results); i++ {
+		copy(data[size:], (*results)[i].TaskResult)
+		size += len((*results)[i].TaskResult)
+	}
+	fmt.Printf("copydb finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
+
+	t2 := time.Now()
+	trps := HeapSortAndMergeSame(&data)
+	fmt.Printf("heapsort, timeElapsed: %f s\n", time.Now().Sub(t2).Seconds())
+
+	//takenum = pretasknum / aftertasknum
+	//afterpool := AssembleTaskAndStart(aftertasknum, afterthreadnum, FromChannel, prepool)
+
+	//trps := afterpool.Results(aftertasknum)
 
 	fmt.Printf("get trans finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
 
