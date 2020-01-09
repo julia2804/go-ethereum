@@ -2,27 +2,8 @@ package ebtree_v2
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/log"
-	"runtime"
-	"strconv"
 	"time"
 )
-
-var bc *core.BlockChain
-var interval int
-var blocksnum int
-
-var (
-	pretasknum, _   = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "pretasknum"))
-	aftertasknum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "aftertasknum"))
-
-	prethreadnum, _   = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "prethreadnum"))
-	afterthreadnum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "afterthreadnum"))
-)
-
-var takenum int
 
 type Task struct {
 	Id      int
@@ -107,41 +88,6 @@ func FromChannel(id int, prepool *WorkerPool) *TaskR {
 	return &rps
 }
 
-func Initial(outerbc *core.BlockChain, outblocksnum int) {
-	maxProces := runtime.NumCPU()
-	if maxProces > 1 {
-		maxProces -= 1
-	}
-	runtime.GOMAXPROCS(maxProces)
-
-	if pretasknum == 0 {
-		pretasknum = 1
-	}
-
-	if prethreadnum == 0 {
-		if pretasknum == 1 {
-			prethreadnum = 1
-		} else {
-			prethreadnum = maxProces
-		}
-	}
-
-	if aftertasknum == 0 {
-		aftertasknum = 1
-	}
-
-	if afterthreadnum == 0 {
-		afterthreadnum = 1
-	}
-
-	bc = outerbc
-	blocksnum = outblocksnum
-	interval = blocksnum / pretasknum
-
-	log.Info("initial over, the final blocknum is :", "fn", (interval * pretasknum), "pretasknum", pretasknum, "prethreadnum", prethreadnum,
-		"aftertasknum", aftertasknum, "afterthreadnum", afterthreadnum, "maxProces", maxProces)
-}
-
 func AssembleTaskAndStart(tasknum int, threadnum int, f func(id int, prepool *WorkerPool) *TaskR, prepool *WorkerPool) *WorkerPool {
 	tasks := make([]Task, tasknum)
 	for i := 0; i < tasknum; i++ {
@@ -174,7 +120,7 @@ func GetTrans() *[]ResultD {
 		copy(data[size:], (*results)[i].TaskResult)
 		size += len((*results)[i].TaskResult)
 	}
-	fmt.Printf("copydb finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
+	fmt.Printf("merge tasks finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
 
 	t2 := time.Now()
 	trps := HeapSortAndMergeSame(&data)

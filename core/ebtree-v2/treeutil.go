@@ -20,6 +20,7 @@ func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
 
 	Initial(outerbc, outblocksnum)
 	trps := GetTrans()
+
 	t := time.Now()
 	var db *Database
 	db = NewDatabase(*outerbc.GetDB())
@@ -33,7 +34,7 @@ func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
 func InsertToTreeWithDb(trps *[]ResultD, db *Database) (int, error) {
 	//results := mergeSortAndMergeSame(trps)
 	tree, err := NewEBTreeFromDb(db)
-	Pool = CreatPoolAndRun(tree, 10, 10)
+	Pool = CreatPoolAndRun(tree, insertthreadnum, insertbuffer)
 	err = tree.Inserts(*trps)
 	err = tree.FinalCollapse()
 	if err != nil {
