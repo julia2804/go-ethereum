@@ -19,7 +19,7 @@ func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
 	defer pprof.StopCPUProfile()
 
 	Initial(outerbc, outblocksnum)
-	trps := GetTrans()
+	trps := GetTransAndSort()
 
 	t := time.Now()
 	var db *Database
@@ -108,4 +108,44 @@ func TransNumInResultDArray(array *[]ResultD) int {
 		num += len((*array)[i].ResultData)
 	}
 	return num
+}
+
+func GetTransAndSort() *[]ResultD {
+	fmt.Println("get, merge, sort start")
+	t := time.Now()
+
+	fmt.Println("getblocks from db start")
+	t3 := time.Now()
+	prepool := AssembleTaskAndStart(pretasknum, prethreadnum, ToChannel, nil)
+	results := prepool.Results(pretasknum)
+	fmt.Printf("getblocks finished, timeElapsed: %f s\n", time.Now().Sub(t3).Seconds())
+
+	var length int
+	for i := 0; i < len(*results); i++ {
+		length += len((*results)[i].TaskResult)
+	}
+
+	fmt.Println("merge tasks start")
+	t1 := time.Now()
+	data := make([]ResultD, length)
+	var size int
+	for i := 0; i < len(*results); i++ {
+		copy(data[size:], (*results)[i].TaskResult)
+		size += len((*results)[i].TaskResult)
+	}
+	fmt.Printf("merge tasks finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
+
+	fmt.Println("heapsort start")
+	t2 := time.Now()
+	trps := HeapSortAndMergeSame(&data)
+	fmt.Printf("heapsort finished, timeElapsed: %f s\n", time.Now().Sub(t2).Seconds())
+
+	//takenum = pretasknum / aftertasknum
+	//afterpool := AssembleTaskAndStart(aftertasknum, afterthreadnum, FromChannel, prepool)
+
+	//trps := afterpool.Results(aftertasknum)
+
+	fmt.Printf("get, merge, sort finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+
+	return trps
 }

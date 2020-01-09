@@ -1,10 +1,5 @@
 package ebtree_v2
 
-import (
-	"fmt"
-	"time"
-)
-
 type Task struct {
 	Id      int
 	Err     error
@@ -100,38 +95,4 @@ func AssembleTaskAndStart(tasknum int, threadnum int, f func(id int, prepool *Wo
 	pool := NewWorkerPool(&tasks, threadnum)
 	pool.Start()
 	return pool
-}
-
-func GetTrans() *[]ResultD {
-	t := time.Now()
-
-	prepool := AssembleTaskAndStart(pretasknum, prethreadnum, ToChannel, nil)
-	results := prepool.Results(pretasknum)
-
-	var length int
-	for i := 0; i < len(*results); i++ {
-		length += len((*results)[i].TaskResult)
-	}
-
-	t1 := time.Now()
-	data := make([]ResultD, length)
-	var size int
-	for i := 0; i < len(*results); i++ {
-		copy(data[size:], (*results)[i].TaskResult)
-		size += len((*results)[i].TaskResult)
-	}
-	fmt.Printf("merge tasks finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
-
-	t2 := time.Now()
-	trps := HeapSortAndMergeSame(&data)
-	fmt.Printf("heapsort, timeElapsed: %f s\n", time.Now().Sub(t2).Seconds())
-
-	//takenum = pretasknum / aftertasknum
-	//afterpool := AssembleTaskAndStart(aftertasknum, afterthreadnum, FromChannel, prepool)
-
-	//trps := afterpool.Results(aftertasknum)
-
-	fmt.Printf("get trans finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-
-	return trps
 }
