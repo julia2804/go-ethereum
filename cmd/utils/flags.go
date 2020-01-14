@@ -385,17 +385,17 @@ var (
 	CacheDatabaseFlag = cli.IntFlag{
 		Name:  "cache.database",
 		Usage: "Percentage of cache memory allowance to use for database io",
-		Value: 50,
+		Value: 70,
 	}
 	CacheTrieFlag = cli.IntFlag{
 		Name:  "cache.trie",
 		Usage: "Percentage of cache memory allowance to use for trie caching (default = 25% full mode, 50% archive mode)",
-		Value: 25,
+		Value: 15,
 	}
 	CacheGCFlag = cli.IntFlag{
 		Name:  "cache.gc",
 		Usage: "Percentage of cache memory allowance to use for trie pruning (default = 25% full mode, 0% archive mode)",
-		Value: 25,
+		Value: 15,
 	}
 	CacheNoPrefetchFlag = cli.BoolFlag{
 		Name:  "cache.noprefetch",
