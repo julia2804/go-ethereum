@@ -150,6 +150,14 @@ func TestInsertToNodes(t *testing.T) {
 
 }
 
+func TestPer(t *testing.T) {
+	var i int
+	var e int
+	i = 3
+	e = 7
+	fmt.Println(float32(i) / float32(e) * 100)
+}
+
 func ConstructTestLeaf() LeafNode {
 	testle := LeafNode{Id: IntToBytes(5)}
 	var ntid IdNode

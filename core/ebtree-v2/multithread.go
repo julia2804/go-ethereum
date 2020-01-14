@@ -1,5 +1,7 @@
 package ebtree_v2
 
+import "fmt"
+
 type Task struct {
 	Id      int
 	Err     error
@@ -45,9 +47,16 @@ func (pool *WorkerPool) worker() {
 }
 
 func (pool *WorkerPool) results(e int) *[]TaskR {
+	var f float32
+	f = 10
 	results := make([]TaskR, e)
 	for i := 0; i < e; i++ {
 		results[i] = <-pool.resultsChan
+		per := float32(i) / float32(e) * 100
+		if per >= f {
+			fmt.Println("finish task ", per, "%")
+			f = f + 10
+		}
 	}
 	return &results
 }
