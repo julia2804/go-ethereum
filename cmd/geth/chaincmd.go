@@ -19,6 +19,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	ebtree_v2 "github.com/ethereum/go-ethereum/core/ebtree-v2"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -187,6 +188,22 @@ Use "ethereum dump 0" to dump the genesis block.`,
 			utils.SyncModeFlag,
 		},
 		Category: "BLOCKCHAIN COMMANDS",
+	}
+	constructCommand = cli.Command{
+		Action: utils.MigrateFlags(construct),
+		Name:   "construct",
+		Usage:  "construct ebtree",
+		//ArgsUsage: "<sourceChaindataDir>",
+		Flags: []cli.Flag{
+			utils.DataDirFlag,
+			utils.CacheFlag,
+			utils.SyncModeFlag,
+			utils.FakePoWFlag,
+			utils.TestnetFlag,
+			utils.EndFlag,
+		},
+		Category:    "BLOCKCHAIN COMMANDS",
+		Description: `construct tree`,
 	}
 )
 
@@ -556,4 +573,16 @@ func inspect(ctx *cli.Context) error {
 func hashish(x string) bool {
 	_, err := strconv.Atoi(x)
 	return err != nil
+}
+
+func construct(ctx *cli.Context) error {
+	stack := makeFullNode(ctx)
+	defer stack.Close()
+	chain, db := utils.MakeChain(ctx, stack)
+	defer db.Close()
+
+	end, _ := strconv.Atoi(ctx.Args()[0])
+	ebtree_v2.ConstructTree(chain, end)
+
+	return nil
 }

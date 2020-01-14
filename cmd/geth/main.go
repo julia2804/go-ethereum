@@ -225,6 +225,7 @@ func init() {
 		dumpConfigCommand,
 		// See retesteth.go
 		retestethCommand,
+		constructCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 

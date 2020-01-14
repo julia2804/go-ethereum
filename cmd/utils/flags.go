@@ -755,6 +755,10 @@ var (
 		Usage: "External EVM configuration (default = built-in interpreter)",
 		Value: "",
 	}
+	EndFlag = cli.IntFlag{
+		Name:  "construct.end",
+		Usage: "the end of construct tree",
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
