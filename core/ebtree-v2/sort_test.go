@@ -2,16 +2,17 @@ package ebtree_v2
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
-func TestHeapSort(t *testing.T){
+func TestHeapSort(t *testing.T) {
 	//arr := []int{3,4,3,4,1,6}
 	//HeapSort(arr)
 	//fmt.Println()
 }
-func TestMergerSort(t *testing.T){
-	merge([]int{2,5,7,9}, 4, []int{1,3,6,9}, 4)
+func TestMergerSort(t *testing.T) {
+	merge([]int{2, 5, 7, 9}, 4, []int{1, 3, 6, 9}, 4)
 
 }
 
@@ -46,7 +47,7 @@ func merge(nums1 []int, m int, nums2 []int, n int) {
 	fmt.Println(nums1)
 }
 
-func TestSortArry(t *testing.T){
+func TestSortArry(t *testing.T) {
 	fmt.Println("Hello World!")
 
 	var a = []int{9, 7, 5, 3, 1, 0}
@@ -107,3 +108,8 @@ func sortArr(a, b []int) []int {
 	return c
 }
 
+func TestMergeFromFile(t *testing.T) {
+	fileName1 := "/home/mimota/savetest" + strconv.Itoa(1) + "_" + strconv.Itoa(200000) + ".txt"
+	fileName2 := "/home/mimota/savetest" + strconv.Itoa(200001) + "_" + strconv.Itoa(400000) + ".txt"
+	mergeFromFile(fileName1, fileName2)
+}

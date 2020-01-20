@@ -1,8 +1,10 @@
 package ebtree_v2
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"os"
 )
 
 func minHeap(root int, end int, c *[]ResultD) {
@@ -146,7 +148,7 @@ func simplemergeV2(a *[]ResultD, sizea int, b *[]ResultD, sizeb int, c *[]Result
 	return ci + 1
 }
 
-func mergeSortAndMergeSame(matrix *[]TaskR) *[]ResultD {
+func mergeSortAndMergeSame(matrix *[]*TaskR) *[]ResultD {
 	if len(*matrix) <= 0 {
 		panic(errors.New("not enough entity in taskR in mergesort"))
 	}
@@ -168,4 +170,117 @@ func mergeSortAndMergeSame(matrix *[]TaskR) *[]ResultD {
 		c_point = tmp
 	}
 	return mergeSamedata(b_point)
+}
+
+/*
+func mergeFromFile(fileName1 string, fileName2 string){
+	var array1length = 10
+	var array2length = 10
+	var array3length = 10
+
+	initial(fileName1, fileName2)
+	array1 := make([]ResultD, array1length)
+	var index1 int = array1length
+	array2 := make([]ResultD, array2length)
+	var index2 int = array2length
+
+	cache := make([]ResultD, array3length)
+	var index3 int
+	for{
+		if(index1 >= array1length){
+			array1 = ReadFile(file1, reader1, array1length)
+			index1 = 0
+		}
+		if(index2 >= array2length){
+			array2 = ReadFile(file2, reader2, array2length)
+			index2 = 0
+		}
+		if(index3 >= array3length){
+			WriteResultDArray("/home/mimota/ttt.txt", &cache)
+			index3 = 0
+		}
+
+		flag := false
+		if(index3 - 1 >= 0){
+			if(byteCompare(&array1[index1].Value, &cache[index3 - 1].Value) == 0){
+				cache[index3-1].ResultData = append(cache[index3-1].ResultData, array1[index1].ResultData...)
+				index1 ++
+				flag = true
+			}
+			if(byteCompare(&array2[index2].Value, &cache[index3 - 1].Value) == 0){
+				cache[index3-1].ResultData = append(cache[index3-1].ResultData, array2[index2].ResultData...)
+				index2 ++
+				flag = true
+			}
+		}
+
+		if(index3 - 1 < 0 || flag == false){
+			r := byteCompare(&array1[index1].Value, &array2[index2].Value)
+			if (r < 0) {
+				cache[index3] = array1[index1]
+				index3++
+				index1++
+			} else if (r > 0) {
+				cache[index3] = array2[index2]
+				index3++
+				index2++
+			} else {
+				array2[index2].ResultData = append(array2[index2].ResultData, array1[index1].ResultData...)
+				cache[index3] = array2[index2]
+				index1 ++
+				index2 ++
+				index3 ++
+			}
+		}
+	}
+}
+*/
+
+func mergeFromFileAndMen(array1 *[]Entity, fileName2 string, fileName3 string) {
+	file2, _ := os.Open(fileName2)
+	file3, _ := os.Open(fileName3)
+	reader := bufio.NewReader(file2)
+	var array1L int = len(*array1)
+	var array2L int = 10000
+	var index1 int = 0
+	var index2 int = array2L
+
+	var cache []byte
+
+	array2 := make([]Entity, array2L)
+	for {
+		if index2 >= array2L {
+			num := ReadFile(reader, array2L, &array2)
+			if num == 0 {
+				AppendEntityArrayToFileByFile(array1, index1, file2)
+				break
+			} else {
+				index2 = array2L - num
+			}
+		}
+		if index1 >= array1L {
+			AppendEntityArrayToFileByFile(&array2, index2, file2)
+			break
+		}
+		r := byteCompare(&(*array1)[index1].Value, &array2[index2].Value)
+		if r > 0 {
+			WriteEntityToFileWithCache((*array1)[index1], file3, 1024, cache)
+			index1++
+		} else if r < 0 {
+			WriteEntityToFileWithCache((array2)[index2], file3, 1024, cache)
+			index2++
+		} else {
+			tds1, _ := DecodeTds((*array1)[index1].Data)
+			tds2, _ := DecodeTds((array2)[index2].Data)
+			bys, _ := EncodeTds(append(tds1, tds2...))
+			(*array1)[index1].Data = bys
+			WriteEntityToFileWithCache((*array1)[index1], file3, 1024, cache)
+			index1++
+			index2++
+		}
+	}
+
+	if len(cache) != 0 {
+		AppendToFileWithByteByFile(file3, cache)
+	}
 }

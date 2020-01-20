@@ -14,3 +14,7 @@ type TaskR struct {
 	//TaskResult stores all results returned by one task
 	TaskResult []ResultD
 }
+type Entity struct {
+	Value []byte
+	Data  []byte
+}

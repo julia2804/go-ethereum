@@ -17,13 +17,13 @@ type WorkerPool struct {
 	PoolSize    int
 	tasksSize   int
 	tasksChan   chan Task
-	resultsChan chan TaskR
-	Results     func(e int) *[]TaskR
+	resultsChan chan *TaskR
+	Results     func(e int) *[]*TaskR
 }
 
 func NewWorkerPool(tasks *[]Task, poolsize int) *WorkerPool {
 	tasksChan := make(chan Task, len(*tasks))
-	resultsChan := make(chan TaskR, len(*tasks))
+	resultsChan := make(chan *TaskR, len(*tasks))
 	for _, task := range *tasks {
 		tasksChan <- task
 	}
@@ -42,14 +42,14 @@ func (pool *WorkerPool) Start() {
 func (pool *WorkerPool) worker() {
 	for task := range pool.tasksChan {
 		re := task.Do()
-		pool.resultsChan <- *re
+		pool.resultsChan <- re
 	}
 }
 
-func (pool *WorkerPool) results(e int) *[]TaskR {
+func (pool *WorkerPool) results(e int) *[]*TaskR {
 	var f float32
-	f = 10
-	results := make([]TaskR, e)
+	f = 5
+	results := make([]*TaskR, e)
 	for i := 0; i < e; i++ {
 		results[i] = <-pool.resultsChan
 		per := float32(i) / float32(e) * 100

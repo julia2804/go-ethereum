@@ -3,12 +3,14 @@ package ebtree_v2
 import (
 	"encoding/binary"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/rlp"
 	"math/big"
+	"strconv"
 )
 
 //todo fill TD struct
 func Convert2IdentifierData(blockno int, txIndex int) []byte {
-	return []byte(string(blockno) + "," + string(txIndex))
+	return []byte(strconv.Itoa(blockno) + "," + strconv.Itoa(txIndex))
 }
 
 func StringToBig(a string) hexutil.Big {
@@ -68,4 +70,34 @@ func BytesToInt(data []byte) (num uint64) {
 
 func BytesToIntOrigin(data []byte) (num uint64) {
 	return binary.BigEndian.Uint64(data)
+}
+func EncodeTds(tds []TD) ([]byte, error) {
+	var encode []byte
+	var err error
+	encode, err = rlp.EncodeToBytes(tds)
+	return encode, err
+}
+
+func DecodeTds(elems []byte) ([]TD, error) {
+	var tds []TD
+
+	elems, _, _ = rlp.SplitList(elems)
+	c, _ := rlp.CountValues(elems)
+	for i := 0; i < c; i++ {
+		var rest2 []byte
+		var td TD
+		elems, rest2, _ = rlp.SplitList(elems)
+		bdluf, _, _ := rlp.SplitString(elems)
+		td.IdentifierData = bdluf
+		elems = rest2
+		tds = append(tds, td)
+	}
+	return tds, nil
+}
+
+func StringToEntity(v string, d string) Entity {
+	var entity Entity
+	entity.Value = []byte(v)
+	entity.Data = []byte(d)
+	return entity
 }
