@@ -581,8 +581,11 @@ func construct(ctx *cli.Context) error {
 	chain, db := utils.MakeChain(ctx, stack)
 	defer db.Close()
 
-	end, _ := strconv.Atoi(ctx.Args()[0])
-	ebtree_v2.ConstructTree(chain, end)
+	begin, _ := strconv.Atoi(ctx.Args()[0])
+	end, _ := strconv.Atoi(ctx.Args()[1])
+	ebtree_v2.ConstructTree(chain, begin, end)
+
+	time.Sleep(20 * time.Second)
 
 	return nil
 }

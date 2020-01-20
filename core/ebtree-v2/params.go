@@ -10,7 +10,8 @@ import (
 
 var bc *core.BlockChain
 var interval int
-var blocksnum int
+var begin int
+var end int
 
 var takenum int
 
@@ -23,9 +24,11 @@ var (
 	insertthreadnum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "insertthreadnum"))
 
 	insertbuffer, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "insertbuffer"))
+
+	treesize, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "treesize"))
 )
 
-func Initial(outerbc *core.BlockChain, outblocksnum int) {
+func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 	maxProces := runtime.NumCPU()
 	if maxProces > 1 {
 		maxProces -= 1
@@ -60,10 +63,13 @@ func Initial(outerbc *core.BlockChain, outblocksnum int) {
 		insertbuffer = 10
 	}
 
-	bc = outerbc
-	blocksnum = outblocksnum
-	interval = blocksnum / pretasknum
+	if outerbc != nil {
+		bc = outerbc
+	}
 
-	log.Info("initial over, the final blocknum is :", "fn", (interval * pretasknum), "pretasknum", pretasknum, "prethreadnum", prethreadnum,
-		"aftertasknum", aftertasknum, "afterthreadnum", afterthreadnum, "maxProces", maxProces)
+	begin = outbegin
+	end = outend
+	interval = (end - begin + 1) / pretasknum
+
+	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*pretasknum + begin - 1), "tasknum", pretasknum, "threadnum", prethreadnum, "maxProces", maxProces)
 }

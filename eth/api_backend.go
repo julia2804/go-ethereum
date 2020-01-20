@@ -307,7 +307,7 @@ func (b *EthAPIBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 }
 
 func (b *EthAPIBackend) ConstructTree(ctx context.Context, begin int, end int) (int, error) {
-	return ebtree_v2.ConstructTree(b.eth.blockchain, end)
+	return ebtree_v2.ConstructTree(b.eth.blockchain, begin, end)
 }
 
 func (b *EthAPIBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error) {

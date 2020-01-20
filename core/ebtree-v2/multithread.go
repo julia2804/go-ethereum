@@ -55,7 +55,7 @@ func (pool *WorkerPool) results(e int) *[]TaskR {
 		per := float32(i) / float32(e) * 100
 		if per >= f {
 			fmt.Println("finish task ", per, "%")
-			f = f + 10
+			f = f + 5
 		}
 	}
 	return &results
@@ -67,7 +67,7 @@ func ToChannel(id int, prepool *WorkerPool) *TaskR {
 	var tmprps []ResultD
 
 	for i := 1; i <= interval; i++ {
-		block := bc.GetBlockByNumber(uint64((id * interval) + i))
+		block := bc.GetBlockByNumber(uint64((id*interval + begin) + i))
 		if block != nil {
 			trans := block.Transactions()
 			for j := 0; j < trans.Len(); j++ {
