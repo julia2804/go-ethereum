@@ -6,10 +6,11 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
+	"strconv"
 	"time"
 )
 
-func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
+func ConstructTree(outerbc *core.BlockChain, begin int, end int) (int, error) {
 
 	cpuf, err := os.Create("cpu_profile")
 	if err != nil {
@@ -18,17 +19,36 @@ func ConstructTree(outerbc *core.BlockChain, outblocksnum int) (int, error) {
 	pprof.StartCPUProfile(cpuf)
 	defer pprof.StopCPUProfile()
 
-	Initial(outerbc, outblocksnum)
-	trps := GetTransAndSort()
+	if treesize == 0 {
+		treesize = 4000000
+	}
+	fmt.Println("treesize", treesize)
+	nums := end - begin + 1
+	if nums > treesize {
+		var err error
+		n1, err := constructTreeHelper(outerbc, begin, begin+treesize-1)
+		n2, err := constructTreeHelper(nil, begin+treesize, end)
+		return n1 + n2, err
+	} else {
+		return constructTreeHelper(outerbc, begin, end)
+	}
+}
 
+func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, error) {
+	Initial(outerbc, begin, end)
+	trps := GetTransAndSort()
+	var fileName string
+	fileName = "/home/mimota/savetest" + strconv.Itoa(begin) + "_" + strconv.Itoa(end) + ".txt"
+	t1 := time.Now()
+	WriteResultDArray(fileName, trps)
+	fmt.Printf("write finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
 	t := time.Now()
-	var db *Database
-	db = NewDatabase(*outerbc.GetDB())
-	n, err := InsertToTreeWithDb(trps, db)
+	//var db *Database
+	//db = NewDatabase(*bc.GetDB())
+	//n, err := InsertToTreeWithDb(trps, db)
 	//n, err := InsertToTree(trps)
 	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-
-	return n, err
+	return 0, nil
 }
 
 func InsertToTreeWithDb(trps *[]ResultD, db *Database) (int, error) {
@@ -49,7 +69,7 @@ func InsertToTreeWithDb(trps *[]ResultD, db *Database) (int, error) {
 	return len(*trps), err
 }
 
-func InsertToTree(trps *[]TaskR) (int, error) {
+func InsertToTree(trps *[]*TaskR) (int, error) {
 	results := mergeSortAndMergeSame(trps)
 	tree, err := NewEBTree()
 	err = tree.InsertDatasToTree(*results)
