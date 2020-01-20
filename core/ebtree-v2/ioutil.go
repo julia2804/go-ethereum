@@ -3,6 +3,7 @@ package ebtree_v2
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 )
@@ -148,6 +149,22 @@ func AppendEntityArrayToFileByFile(array *[]Entity, index int, file *os.File) {
 	}
 }
 
+func AppendFileToFileByFile(src *os.File, reader *bufio.Reader, dst *os.File) {
+	buf := make([]byte, 256)
+	for {
+		n, err := reader.Read(buf)
+		if err == io.EOF {
+			fmt.Println("read the file finished")
+			break
+		}
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(2)
+		}
+		AppendToFileWithByteByFile(dst, buf[:n])
+	}
+}
+
 func WriteEntityToFileWithCache(entity Entity, file *os.File, cacheSize int, cache []byte) {
 	if len(entity.Data) != 0 {
 		cache = append(cache, entity.Data...)
@@ -158,7 +175,7 @@ func WriteEntityToFileWithCache(entity Entity, file *os.File, cacheSize int, cac
 		cache = append(cache, entity.Value...)
 		cache = append(cache, byte('\n'))
 	}
-	if len(cache) > cacheSize {
+	if len(cache) >= cacheSize {
 		AppendToFileWithByteByFile(file, cache)
 		cache = nil
 	}

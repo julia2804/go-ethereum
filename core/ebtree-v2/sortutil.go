@@ -172,69 +172,67 @@ func mergeSortAndMergeSame(matrix *[]*TaskR) *[]ResultD {
 	return mergeSamedata(b_point)
 }
 
-/*
-func mergeFromFile(fileName1 string, fileName2 string){
+func mergeFromFiles(fileName1 string, fileName2 string, fileName3 string) {
 	var array1length = 10
 	var array2length = 10
-	var array3length = 10
+	file1, _ := os.Open(fileName1)
+	file2, _ := os.Open(fileName2)
+	file3, _ := os.Open(fileName3)
 
-	initial(fileName1, fileName2)
-	array1 := make([]ResultD, array1length)
+	reader1 := bufio.NewReader(file1)
+	reader2 := bufio.NewReader(file2)
+
+	array1 := make([]Entity, array1length)
 	var index1 int = array1length
-	array2 := make([]ResultD, array2length)
+	array2 := make([]Entity, array2length)
 	var index2 int = array2length
 
-	cache := make([]ResultD, array3length)
-	var index3 int
-	for{
-		if(index1 >= array1length){
-			array1 = ReadFile(file1, reader1, array1length)
-			index1 = 0
-		}
-		if(index2 >= array2length){
-			array2 = ReadFile(file2, reader2, array2length)
-			index2 = 0
-		}
-		if(index3 >= array3length){
-			WriteResultDArray("/home/mimota/ttt.txt", &cache)
-			index3 = 0
-		}
+	var cache []byte
 
-		flag := false
-		if(index3 - 1 >= 0){
-			if(byteCompare(&array1[index1].Value, &cache[index3 - 1].Value) == 0){
-				cache[index3-1].ResultData = append(cache[index3-1].ResultData, array1[index1].ResultData...)
-				index1 ++
-				flag = true
-			}
-			if(byteCompare(&array2[index2].Value, &cache[index3 - 1].Value) == 0){
-				cache[index3-1].ResultData = append(cache[index3-1].ResultData, array2[index2].ResultData...)
-				index2 ++
-				flag = true
-			}
-		}
-
-		if(index3 - 1 < 0 || flag == false){
-			r := byteCompare(&array1[index1].Value, &array2[index2].Value)
-			if (r < 0) {
-				cache[index3] = array1[index1]
-				index3++
-				index1++
-			} else if (r > 0) {
-				cache[index3] = array2[index2]
-				index3++
-				index2++
+	for {
+		if index1 >= array1length {
+			num := ReadFile(reader1, array1length, &array1)
+			if num == 0 {
+				AppendEntityArrayToFileByFile(&array2, index2, file3)
+				AppendFileToFileByFile(file2, reader1, file3)
+				break
 			} else {
-				array2[index2].ResultData = append(array2[index2].ResultData, array1[index1].ResultData...)
-				cache[index3] = array2[index2]
-				index1 ++
-				index2 ++
-				index3 ++
+				index2 = array2length - num
 			}
+		}
+		if index2 >= array2length {
+			num := ReadFile(reader2, array2length, &array2)
+			if num == 0 {
+				AppendEntityArrayToFileByFile(&array1, index1, file3)
+				AppendFileToFileByFile(file1, reader2, file3)
+				break
+			} else {
+				index1 = array1length - num
+			}
+		}
+
+		r := byteCompare(&array1[index1].Value, &array2[index2].Value)
+		if r > 0 {
+			WriteEntityToFileWithCache((array1)[index1], file3, 1024, cache)
+			index1++
+		} else if r < 0 {
+			WriteEntityToFileWithCache((array2)[index2], file3, 1024, cache)
+			index2++
+		} else {
+			tds1, _ := DecodeTds((array1)[index1].Data)
+			tds2, _ := DecodeTds((array2)[index2].Data)
+			bys, _ := EncodeTds(append(tds1, tds2...))
+			(array1)[index1].Data = bys
+			WriteEntityToFileWithCache((array1)[index1], file3, 1024, cache)
+			index1++
+			index2++
 		}
 	}
+
+	if len(cache) != 0 {
+		AppendToFileWithByteByFile(file3, cache)
+	}
 }
-*/
 
 func mergeFromFileAndMen(array1 *[]Entity, fileName2 string, fileName3 string) {
 	file2, _ := os.Open(fileName2)
