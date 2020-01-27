@@ -281,11 +281,11 @@ func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 	if le == nil {
 		return ds, nil
 	}
-	for le != nil && len(le.LeafDatas) > 0 && byteCompare(&le.LeafDatas[0].Value, &begin) >= 0 {
+	for le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, begin) >= 0 {
 		for j := 0; j < len(le.LeafDatas); j++ {
-			if byteCompare(&begin, &le.LeafDatas[j].Value) <= 0 && byteCompare(&end, &le.LeafDatas[j].Value) >= 0 {
+			if byteCompare(begin, le.LeafDatas[j].Value) <= 0 && byteCompare(end, le.LeafDatas[j].Value) >= 0 {
 				ds = append(ds, le.LeafDatas[j])
-			} else if byteCompare(&begin, &le.LeafDatas[j].Value) > 0 {
+			} else if byteCompare(begin, le.LeafDatas[j].Value) > 0 {
 				return ds, nil
 			}
 		}
@@ -327,12 +327,12 @@ func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {
 	if le == nil {
 		return d, nil
 	}
-	for le != nil && len(le.LeafDatas) > 0 && byteCompare(&le.LeafDatas[0].Value, &value) >= 0 {
+	for le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, value) >= 0 {
 		for j := 0; j < len(le.LeafDatas); j++ {
-			if byteCompare(&value, &le.LeafDatas[j].Value) == 0 {
+			if byteCompare(value, le.LeafDatas[j].Value) == 0 {
 				d = le.LeafDatas[j]
 				return d, nil
-			} else if byteCompare(&value, &le.LeafDatas[j].Value) > 0 {
+			} else if byteCompare(value, le.LeafDatas[j].Value) > 0 {
 				return d, nil
 			}
 		}
@@ -522,7 +522,7 @@ func (ebt *EBTree) CommitNode(treen EBTreen, batch ethdb.Batch) error {
 func (ebt *EBTree) LoadNode(id []byte) (EBTreen, error) {
 	var n EBTreen
 	var err error
-	if byteCompare(&id, &NilNode) == 0 {
+	if byteCompare(id, NilNode) == 0 {
 		fmt.Println("the last leaf node")
 		return nil, nil
 	}

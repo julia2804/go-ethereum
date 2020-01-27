@@ -102,9 +102,9 @@ func WriteResultD(fileName string, re ResultD) {
 	AppendToFileWithString(fileName, "\n")
 }
 
-func WriteResultDArray(fileName string, res *[]ResultD) {
-	for i := 0; i < len(*res); i++ {
-		WriteResultD(fileName, (*res)[i])
+func WriteResultDArray(fileName string, res []ResultD) {
+	for i := 0; i < len(res); i++ {
+		WriteResultD(fileName, (res)[i])
 	}
 }
 
@@ -140,11 +140,11 @@ func AppendEntityArrayToFile(array *[]Entity, index int, fileName string) {
 	}
 }
 
-func AppendEntityArrayToFileByFile(array *[]Entity, index int, file *os.File) {
-	for i := index; i < len(*array); i++ {
-		AppendToFileWithByteByFile(file, (*array)[i].Value)
+func AppendEntityArrayToFileByFile(array []Entity, index int, file *os.File) {
+	for i := index; i < len(array); i++ {
+		AppendToFileWithByteByFile(file, (array)[i].Value)
 		AppendToFileWithStringByFile(file, "\n")
-		AppendToFileWithByteByFile(file, (*array)[i].Data)
+		AppendToFileWithByteByFile(file, (array)[i].Data)
 		AppendToFileWithStringByFile(file, "\n")
 	}
 }

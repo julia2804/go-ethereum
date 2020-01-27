@@ -73,3 +73,8 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 
 	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*pretasknum + begin - 1), "tasknum", pretasknum, "threadnum", prethreadnum, "maxProces", maxProces)
 }
+
+func CloseParams() {
+	bc.Stop()
+	bc = nil
+}
