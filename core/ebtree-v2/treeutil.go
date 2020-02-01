@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
+	"strconv"
 	"time"
 )
 
@@ -36,11 +37,11 @@ func ConstructTree(outerbc *core.BlockChain, begin int, end int) (int, error) {
 func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, error) {
 	Initial(outerbc, begin, end)
 	defer CloseParams()
-	GetTransAndSort()
-	//var fileName string
-	//fileName = "/home/mimota/savetest" + strconv.Itoa(begin) + "_" + strconv.Itoa(end) + ".txt"
+	trps := GetTransAndSort()
+	var fileName string
+	fileName = "/home/mimota/savetest" + strconv.Itoa(begin) + "_" + strconv.Itoa(end)
 	t1 := time.Now()
-	//WriteResultDArray(fileName, trps)
+	WriteResultDArray(fileName, trps)
 	fmt.Printf("write finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
 	t := time.Now()
 	//var db *Database

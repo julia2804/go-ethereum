@@ -109,7 +109,8 @@ func sortArr(a, b []int) []int {
 }
 
 func TestMergeFromFile(t *testing.T) {
-	fileName1 := "/home/mimota/savetest" + strconv.Itoa(1) + "_" + strconv.Itoa(200000) + ".txt"
-	fileName2 := "/home/mimota/savetest" + strconv.Itoa(200001) + "_" + strconv.Itoa(400000) + ".txt"
-	mergeFromFiles(fileName1, fileName2, "test")
+	fileName1 := "/home/mimota/savetest" + strconv.Itoa(1) + "_" + strconv.Itoa(500000)
+	fileName2 := "/home/mimota/savetest" + strconv.Itoa(500001) + "_" + strconv.Itoa(1000000)
+	mergeFromFiles(fileName1, fileName2, "/home/mimota/file3")
+	//mergeFromFiles("/home/mimota/file1.txt", "/home/mimota/file2.txt", "/home/mimota/file3.txt")
 }

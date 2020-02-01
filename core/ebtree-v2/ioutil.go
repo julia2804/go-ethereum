@@ -3,6 +3,7 @@ package ebtree_v2
 import (
 	"bufio"
 	"fmt"
+	"github.com/ethereum/go-ethereum/log"
 	"io"
 	"io/ioutil"
 	"os"
@@ -90,21 +91,23 @@ func AppendToFileWithByteByFile(file *os.File, content []byte) {
 	file.WriteAt(content, n)
 }
 
-func WriteResultD(fileName string, re ResultD) {
-	AppendToFileWithByte(fileName, re.Value)
-	AppendToFileWithString(fileName, ";")
-	for i := 0; i < len(re.ResultData); i++ {
-		AppendToFileWithByte(fileName, re.ResultData[i].IdentifierData)
-		if i < len(re.ResultData)-1 {
-			AppendToFileWithString(fileName, " ")
-		}
-	}
-	AppendToFileWithString(fileName, "\n")
+func WriteResultD(file *os.File, re ResultD, cache *EBCache) {
+	var entity Entity
+	entity.Value = re.Value
+	entity.Data, _ = EncodeTds(re.ResultData)
+	//fmt.Println("value", entity.Value)
+	//fmt.Println("data", entity.Data)
+	WriteEntityToFileWithCache(entity, file, cache)
 }
 
 func WriteResultDArray(fileName string, res []ResultD) {
+	f, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
+	var cache EBCache
+	cache.size = 1024 * 1024 * 16
+	defer CloseCache(f, &cache)
+	//cache.data = make([]byte, cache.size)
 	for i := 0; i < len(res); i++ {
-		WriteResultD(fileName, (res)[i])
+		WriteResultD(f, (res)[i], &cache)
 	}
 }
 
@@ -119,12 +122,32 @@ func ReadFile(reader *bufio.Reader, num int, array *[]Entity) int {
 	var length = len(*array)
 	var i int
 	for i = 0; i < num; i++ {
-		line1, _ := reader.ReadString(byte('\n'))
-		line2, _ := reader.ReadString(byte('\n'))
-		if line1 == "" || line1 == "" {
+		sizeArray := make([]byte, 4)
+		io.ReadFull(reader, sizeArray)
+		size := BytesToInt2(sizeArray)
+		if size == 0 {
 			break
 		}
-		(*array)[i] = StringToEntity(line1, line2)
+		value := make([]byte, size)
+		num, err := io.ReadFull(reader, value)
+		if num != size || err != nil {
+			log.Error("readfile error 1")
+			break
+		}
+
+		sizeArray = make([]byte, 4)
+		io.ReadFull(reader, sizeArray)
+		size = BytesToInt2(sizeArray)
+		if size == 0 {
+			break
+		}
+		data := make([]byte, size)
+		num, err = io.ReadFull(reader, data)
+		if num != size || err != nil {
+			log.Error("readfile error 2")
+			break
+		}
+		(*array)[i] = Entity{Value: value, Data: data}
 	}
 	if i != num {
 		copy((*array)[length-i:], (*array)[:i])
@@ -142,10 +165,10 @@ func AppendEntityArrayToFile(array *[]Entity, index int, fileName string) {
 
 func AppendEntityArrayToFileByFile(array []Entity, index int, file *os.File) {
 	for i := index; i < len(array); i++ {
+		AppendToFileWithByteByFile(file, IntToBytes2(len((array)[i].Value)))
 		AppendToFileWithByteByFile(file, (array)[i].Value)
-		AppendToFileWithStringByFile(file, "\n")
+		AppendToFileWithByteByFile(file, IntToBytes2(len((array)[i].Data)))
 		AppendToFileWithByteByFile(file, (array)[i].Data)
-		AppendToFileWithStringByFile(file, "\n")
 	}
 }
 
@@ -165,18 +188,57 @@ func AppendFileToFileByFile(src *os.File, reader *bufio.Reader, dst *os.File) {
 	}
 }
 
-func WriteEntityToFileWithCache(entity Entity, file *os.File, cacheSize int, cache []byte) {
-	if len(entity.Data) != 0 {
-		cache = append(cache, entity.Data...)
-		cache = append(cache, byte('\n'))
+func WriteEntityToFileWithCache(entity Entity, file *os.File, cache *EBCache) {
+	if len(entity.Value) != 0 && len(entity.Data) != 0 {
+		cache.data = append(cache.data, IntToBytes2(len(entity.Value))...)
+		cache.data = append(cache.data, entity.Value...)
+
+		cache.data = append(cache.data, IntToBytes2(len(entity.Data))...)
+		cache.data = append(cache.data, entity.Data...)
 	}
 
-	if len(entity.Value) != 0 {
-		cache = append(cache, entity.Value...)
-		cache = append(cache, byte('\n'))
+	if len(cache.data) >= cache.size {
+		AppendToFileWithByteByFile(file, cache.data)
+		cache.data = nil
 	}
-	if len(cache) >= cacheSize {
-		AppendToFileWithByteByFile(file, cache)
-		cache = nil
+}
+
+func CountNum(fileName string) {
+	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
+	reader := bufio.NewReader(f)
+	var i int
+	for {
+		sizeArray := make([]byte, 4)
+		io.ReadFull(reader, sizeArray)
+		size := BytesToInt2(sizeArray)
+		if size == 0 {
+			break
+		}
+		value := make([]byte, size)
+		num, err := io.ReadFull(reader, value)
+		if num != size || err != nil {
+			log.Error("readfile error 1")
+			break
+		}
+
+		sizeArray = make([]byte, 4)
+		io.ReadFull(reader, sizeArray)
+		size = BytesToInt2(sizeArray)
+		if size == 0 {
+			break
+		}
+		data := make([]byte, size)
+		num, err = io.ReadFull(reader, data)
+		if num != size || err != nil {
+			log.Error("readfile error 1")
+			break
+		}
+
+		i++
+	}
+
+	fmt.Println("nums", i)
 }

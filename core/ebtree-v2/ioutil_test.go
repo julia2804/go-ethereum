@@ -3,6 +3,7 @@ package ebtree_v2
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"testing"
 )
@@ -27,4 +28,58 @@ func TestRead(t *testing.T) {
 	line2, _ := r2.ReadString(byte('\n'))
 	fmt.Println(line2)
 
+}
+
+func TestRead2(t *testing.T) {
+	f, err := os.Open("/home/mimota/file1.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	rd := bufio.NewReader(f)
+	for {
+		line, err := rd.ReadString('\n') //以'\n'为结束符读入一行
+
+		if err != nil || io.EOF == err {
+			break
+		}
+		fmt.Println(line)
+	}
+}
+
+func TestRead3(t *testing.T) {
+	f, err := os.Open("/home/mimota/file3.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	rd := bufio.NewReader(f)
+	var num int
+	var knum int
+	for {
+		line, err := rd.ReadString('\n') //以'\n'为结束符读入一行
+
+		if err != nil || io.EOF == err {
+			break
+		}
+		if len(line) != 0 {
+			//fmt.Println(line)
+			if len(line) == 1 {
+				//fmt.Println("line", line)
+				knum++
+
+			}
+			num++
+		}
+		//fmt.Println(line)
+	}
+	fmt.Println("knum", knum)
+	fmt.Println("num", num)
+}
+func TestCount(t *testing.T) {
+	//CountNum("/home/mimota/savetest1_500000")
+	//CountNum("/home/mimota/savetest500001_1000000")
+	CountNum("/home/mimota/file3")
 }

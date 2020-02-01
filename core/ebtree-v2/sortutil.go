@@ -173,9 +173,12 @@ func mergeSortAndMergeSame(matrix []TaskR) []ResultD {
 func mergeFromFiles(fileName1 string, fileName2 string, fileName3 string) {
 	var array1length = 10
 	var array2length = 10
-	file1, _ := os.Open(fileName1)
-	file2, _ := os.Open(fileName2)
-	file3, _ := os.Open(fileName3)
+	file1, _ := os.OpenFile(fileName1, os.O_RDWR|os.O_CREATE, 0644)
+	file2, _ := os.OpenFile(fileName2, os.O_RDWR|os.O_CREATE, 0644)
+	file3, _ := os.OpenFile(fileName3, os.O_RDWR|os.O_CREATE, 0644)
+	defer file1.Close()
+	defer file2.Close()
+	defer file3.Close()
 
 	reader1 := bufio.NewReader(file1)
 	reader2 := bufio.NewReader(file2)
@@ -185,50 +188,49 @@ func mergeFromFiles(fileName1 string, fileName2 string, fileName3 string) {
 	array2 := make([]Entity, array2length)
 	var index2 int = array2length
 
-	var cache []byte
+	var cache EBCache
+	cache.size = 1024 * 16
+	defer CloseCache(file3, &cache)
+	//cache.data = make([]byte, cache.size)
 
 	for {
 		if index1 >= array1length {
 			num := ReadFile(reader1, array1length, &array1)
 			if num == 0 {
 				AppendEntityArrayToFileByFile(array2, index2, file3)
-				AppendFileToFileByFile(file2, reader1, file3)
+				AppendFileToFileByFile(file2, reader2, file3)
 				break
 			} else {
-				index2 = array2length - num
+				index1 = array1length - num
 			}
 		}
 		if index2 >= array2length {
 			num := ReadFile(reader2, array2length, &array2)
 			if num == 0 {
 				AppendEntityArrayToFileByFile(array1, index1, file3)
-				AppendFileToFileByFile(file1, reader2, file3)
+				AppendFileToFileByFile(file1, reader1, file3)
 				break
 			} else {
-				index1 = array1length - num
+				index2 = array2length - num
 			}
 		}
 
 		r := byteCompare(array1[index1].Value, array2[index2].Value)
 		if r > 0 {
-			WriteEntityToFileWithCache((array1)[index1], file3, 1024, cache)
+			WriteEntityToFileWithCache((array1)[index1], file3, &cache)
 			index1++
 		} else if r < 0 {
-			WriteEntityToFileWithCache((array2)[index2], file3, 1024, cache)
+			WriteEntityToFileWithCache((array2)[index2], file3, &cache)
 			index2++
 		} else {
 			tds1, _ := DecodeTds((array1)[index1].Data)
 			tds2, _ := DecodeTds((array2)[index2].Data)
 			bys, _ := EncodeTds(append(tds1, tds2...))
 			(array1)[index1].Data = bys
-			WriteEntityToFileWithCache((array1)[index1], file3, 1024, cache)
+			WriteEntityToFileWithCache((array1)[index1], file3, &cache)
 			index1++
 			index2++
 		}
-	}
-
-	if len(cache) != 0 {
-		AppendToFileWithByteByFile(file3, cache)
 	}
 }
 
@@ -241,7 +243,9 @@ func mergeFromFileAndMen(array1 []Entity, fileName2 string, fileName3 string) {
 	var index1 int = 0
 	var index2 int = array2L
 
-	var cache []byte
+	var cache EBCache
+	cache.size = 1024 * 16
+	cache.data = make([]byte, cache.size)
 
 	array2 := make([]Entity, array2L)
 	for {
@@ -260,23 +264,23 @@ func mergeFromFileAndMen(array1 []Entity, fileName2 string, fileName3 string) {
 		}
 		r := byteCompare((array1)[index1].Value, array2[index2].Value)
 		if r > 0 {
-			WriteEntityToFileWithCache((array1)[index1], file3, 1024, cache)
+			WriteEntityToFileWithCache((array1)[index1], file3, &cache)
 			index1++
 		} else if r < 0 {
-			WriteEntityToFileWithCache((array2)[index2], file3, 1024, cache)
+			WriteEntityToFileWithCache((array2)[index2], file3, &cache)
 			index2++
 		} else {
 			tds1, _ := DecodeTds((array1)[index1].Data)
 			tds2, _ := DecodeTds((array2)[index2].Data)
 			bys, _ := EncodeTds(append(tds1, tds2...))
 			(array1)[index1].Data = bys
-			WriteEntityToFileWithCache((array1)[index1], file3, 1024, cache)
+			WriteEntityToFileWithCache((array1)[index1], file3, &cache)
 			index1++
 			index2++
 		}
 	}
 
-	if len(cache) != 0 {
-		AppendToFileWithByteByFile(file3, cache)
+	if len(cache.data) != 0 {
+		AppendToFileWithByteByFile(file3, cache.data)
 	}
 }

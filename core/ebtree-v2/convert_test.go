@@ -70,3 +70,10 @@ func TestNilByteArray(t *testing.T) {
 	fmt.Printf("finished, timeElapsed: %f s\n", time.Now().Sub(tt).Seconds())
 
 }
+func TestIntToBytes2(t *testing.T) {
+	a1 := IntToBytes2(78762)
+	a2 := IntToBytes(78762)
+	fmt.Println(a1)
+	fmt.Println(a2)
+	fmt.Println(BytesToInt2(a1))
+}

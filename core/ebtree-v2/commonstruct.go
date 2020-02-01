@@ -1,5 +1,7 @@
 package ebtree_v2
 
+import "os"
+
 type TD struct {
 	//IdentifierData=blockNo,txIndex
 	IdentifierData []byte
@@ -17,4 +19,14 @@ type TaskR struct {
 type Entity struct {
 	Value []byte
 	Data  []byte
+}
+type EBCache struct {
+	size int
+	data []byte
+}
+
+func CloseCache(file *os.File, cache *EBCache) {
+	if cache != nil {
+		AppendToFileWithByteByFile(file, cache.data)
+	}
 }

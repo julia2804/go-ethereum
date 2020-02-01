@@ -2,6 +2,7 @@ package ebtree_v2
 
 import (
 	"encoding/binary"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 	"math/big"
@@ -100,4 +101,28 @@ func StringToEntity(v string, d string) Entity {
 	entity.Value = []byte(v)
 	entity.Data = []byte(d)
 	return entity
+}
+
+func IntToBytes2(v int) []byte {
+	if v > 256*256 {
+		fmt.Println("v value", v)
+	}
+	var b = make([]byte, 4)
+	_ = b[3] // early bounds check to guarantee safety of writes below
+	b[0] = byte(v >> 24)
+	b[1] = byte(v >> 16)
+	b[2] = byte(v >> 8)
+	b[3] = byte(v)
+
+	return b
+}
+func BytesToInt2(data []byte) int {
+	//return binary.BigEndian.Uint64(b)
+	var ret int = 0
+	var len int = len(data)
+	var i uint = 0
+	for i = 0; i < uint(len); i++ {
+		ret = ret<<(8) | int(data[i])
+	}
+	return ret
 }
