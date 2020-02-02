@@ -42,6 +42,7 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	fileName = "/home/mimota/savetest" + strconv.Itoa(begin) + "_" + strconv.Itoa(end)
 	t1 := time.Now()
 	WriteResultDArray(fileName, trps)
+	CountNum(fileName)
 	fmt.Printf("write finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
 	t := time.Now()
 	//var db *Database
@@ -49,7 +50,7 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	//n, err := InsertToTreeWithDb(trps, db)
 	//n, err := InsertToTree(trps)
 	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-	return 0, nil
+	return len(trps), nil
 }
 
 func InsertToTreeWithDb(trps []ResultD, db *Database) (int, error) {

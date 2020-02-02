@@ -240,5 +240,5 @@ func CountNum(fileName string) {
 		i++
 	}
 
-	fmt.Println("nums", i)
+	fmt.Println("count nums", i)
 }

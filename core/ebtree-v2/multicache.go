@@ -47,7 +47,7 @@ func (pool *WorkerPool2) Close() {
 }
 
 func CreatPoolAndRun(ebt *EBTree, threadSize int, buffersize int) *WorkerPool2 {
-	pool := NewWorkerPool2(ebt, 10, 10)
+	pool := NewWorkerPool2(ebt, threadSize, buffersize)
 	pool.Start()
 	return pool
 }
