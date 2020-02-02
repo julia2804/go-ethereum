@@ -81,6 +81,12 @@ func TestRead3(t *testing.T) {
 func TestCount(t *testing.T) {
 	//CountNum("/home/mimota/savetest1_500000")
 	//CountNum("/home/mimota/savetest500001_1000000")
-	CountNum("/home/mimota/savetest1_2000000")
+	//CountNum("/home/mimota/savetest1_2000000")
 	//CountNum("/home/mimota/file3")
+	CountNum("/home/mimota/round_2_0")
+
+}
+
+func TestReadDirAndMerge(t *testing.T) {
+	fmt.Println(ReadDirAndMerge("/home/mimota/testread/"))
 }

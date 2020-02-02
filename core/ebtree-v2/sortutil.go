@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/log"
 	"os"
+	"strconv"
 )
 
 func minHeap(root int, end int, c []ResultD) {
@@ -170,7 +172,7 @@ func mergeSortAndMergeSame(matrix []TaskR) []ResultD {
 	return mergeSamedata(b)
 }
 
-func mergeFromFiles(fileName1 string, fileName2 string, fileName3 string) {
+func mergeFromTwoFiles(fileName1 string, fileName2 string, fileName3 string) {
 	var array1length = 10
 	var array2length = 10
 	file1, _ := os.OpenFile(fileName1, os.O_RDWR|os.O_CREATE, 0644)
@@ -283,4 +285,27 @@ func mergeFromFileAndMen(array1 []Entity, fileName2 string, fileName3 string) {
 	if len(cache.data) != 0 {
 		AppendToFileWithByteByFile(file3, cache.data)
 	}
+}
+
+func MergeFromFiles(fileNames []string) string {
+	var round int
+	for len(fileNames) > 1 {
+		round++
+		var tmp []string
+		var name string = "round_" + strconv.Itoa(round)
+		if len(fileNames)%2 != 0 {
+			tmp = append(tmp, fileNames[len(fileNames)-1])
+		}
+		for i := 0; i < len(fileNames)-1; i = i + 2 {
+			fileName := homePath + name + "_" + strconv.Itoa(i)
+			mergeFromTwoFiles(fileNames[i], fileNames[i+1], fileName)
+			tmp = append(tmp, fileName)
+		}
+		fileNames = tmp
+	}
+	if len(fileNames) <= 0 {
+		log.Error("files error")
+	}
+	return fileNames[0]
+
 }

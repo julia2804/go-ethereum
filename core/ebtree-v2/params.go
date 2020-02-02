@@ -26,6 +26,9 @@ var (
 	insertbuffer, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "insertbuffer"))
 
 	treesize, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "treesize"))
+
+	homePath          = ethereum.GetValueFromDefaultPath("thread", "homePath")
+	constructSavePath = ethereum.GetValueFromDefaultPath("thread", "constructSavePath")
 )
 
 func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
@@ -67,11 +70,20 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 		bc = outerbc
 	}
 
+	if homePath == "" {
+		homePath = "/root/"
+	}
+
+	if constructSavePath == "" {
+		constructSavePath = "/root/experConstruct/"
+	}
+
 	begin = outbegin
 	end = outend
 	interval = (end - begin + 1) / pretasknum
 
-	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*pretasknum + begin - 1), "tasknum", pretasknum, "threadnum", prethreadnum, "maxProces", maxProces)
+	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*pretasknum + begin - 1), "tasknum", pretasknum,
+		"threadnum", prethreadnum, "maxProces", maxProces, "homepath", homePath, "constructPath", constructSavePath)
 }
 
 func CloseParams() {

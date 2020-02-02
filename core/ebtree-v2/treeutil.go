@@ -39,7 +39,7 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	defer CloseParams()
 	trps := GetTransAndSort()
 	var fileName string
-	fileName = "/home/mimota/savetest" + strconv.Itoa(begin) + "_" + strconv.Itoa(end)
+	fileName = constructSavePath + "save" + strconv.Itoa(begin) + "_" + strconv.Itoa(end)
 	t1 := time.Now()
 	WriteResultDArray(fileName, trps)
 	CountNum(fileName)

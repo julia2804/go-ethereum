@@ -2,7 +2,6 @@ package ebtree_v2
 
 import (
 	"encoding/binary"
-	"fmt"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 	"math/big"
@@ -104,9 +103,6 @@ func StringToEntity(v string, d string) Entity {
 }
 
 func IntToBytes2(v int) []byte {
-	if v > 256*256 {
-		fmt.Println("v value", v)
-	}
 	var b = make([]byte, 4)
 	_ = b[3] // early bounds check to guarantee safety of writes below
 	b[0] = byte(v >> 24)

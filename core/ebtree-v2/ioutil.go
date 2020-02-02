@@ -242,3 +242,14 @@ func CountNum(fileName string) {
 
 	fmt.Println("count nums", i)
 }
+
+func ReadDirAndMerge(dirPath string) string {
+	flist, _ := ioutil.ReadDir(dirPath)
+	fileNames := make([]string, len(flist))
+	var i int
+	for _, f := range flist {
+		fileNames[i] = dirPath + f.Name()
+		i++
+	}
+	return MergeFromFiles(fileNames)
+}
