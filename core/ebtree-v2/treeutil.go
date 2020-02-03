@@ -1,6 +1,7 @@
 package ebtree_v2
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/ethereum/go-ethereum/core"
 	"log"
@@ -34,6 +35,24 @@ func ConstructTree(outerbc *core.BlockChain, begin int, end int) (int, error) {
 	}
 }
 
+func MergeFilesAndInsert(outerbc *core.BlockChain, dir string) (int, error) {
+	Initial(outerbc, 0, 0)
+	t := time.Now()
+	fileName := ReadDirAndMerge(dir)
+	fmt.Println("final fileName", fileName)
+	fmt.Printf("merge finish, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+
+	t1 := time.Now()
+	//results := TestReadResultDs(fileName)
+	var db *Database
+	db = NewDatabase(*bc.GetDB())
+	n, err := InsertToTreeWithDbByFile(fileName, db)
+	//n, err := InsertToTree(trps)
+	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
+	fmt.Println("dir ", dir)
+	return n, err
+}
+
 func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, error) {
 	Initial(outerbc, begin, end)
 	defer CloseParams()
@@ -42,14 +61,21 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	fileName = constructSavePath + "save" + strconv.Itoa(begin) + "_" + strconv.Itoa(end)
 	t1 := time.Now()
 	WriteResultDArray(fileName, trps)
-	CountNum(fileName)
+	//n := CountNum(fileName)
+	//if(n != )
 	fmt.Printf("write finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
-	t := time.Now()
-	//var db *Database
-	//db = NewDatabase(*bc.GetDB())
-	//n, err := InsertToTreeWithDb(trps, db)
-	//n, err := InsertToTree(trps)
-	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+
+	/*
+		t := time.Now()
+		//results := TestReadResultDs(fileName)
+		var db *Database
+		db = NewDatabase(*bc.GetDB())
+		n, err := InsertToTreeWithDbByFile(fileName, db)
+		//n, err := InsertToTree(trps)
+		fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+
+	*/
+
 	return len(trps), nil
 }
 
@@ -57,18 +83,75 @@ func InsertToTreeWithDb(trps []ResultD, db *Database) (int, error) {
 	//results := mergeSortAndMergeSame(trps)
 	tree, err := NewEBTreeFromDb(db)
 	Pool = CreatPoolAndRun(tree, insertthreadnum, insertbuffer)
+	defer Pool.Close()
 	err = tree.Inserts(trps)
 	err = tree.FinalCollapse()
 	if err != nil {
 		return len(trps), err
 	}
-	Pool.Close()
 	err = tree.CommitMeatas()
 	if err != nil {
 		return len(trps), err
 	}
 
 	return len(trps), err
+}
+
+func InsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
+	tree, err := NewEBTreeFromDb(db)
+	Pool = CreatPoolAndRun(tree, insertthreadnum, insertbuffer)
+	defer Pool.Close()
+	f, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
+	defer f.Close()
+	reader := bufio.NewReader(f)
+	datas := make([]ResultD, MaxLeafNodeCapability*128)
+
+	var number int
+	for {
+		num := ReadResultDs(reader, len(datas), &datas)
+		number += num
+		if num < len(datas) {
+			tree.Inserts(datas[:num])
+			//tree.InsertDatasToTree(datas[:num])
+			break
+		}
+		tree.Inserts(datas)
+		//tree.InsertDatasToTree(datas)
+	}
+	err = tree.FinalCollapse()
+	if err != nil {
+		return number, err
+	}
+	err = tree.CommitMeatas()
+	if err != nil {
+		return number, err
+	}
+
+	return number, err
+}
+
+func TestInsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
+	f, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
+	defer f.Close()
+	reader := bufio.NewReader(f)
+	var final []ResultD
+	datas := make([]ResultD, MaxLeafNodeCapability)
+
+	var number int
+	for {
+		num := ReadResultDs(reader, MaxLeafNodeCapability, &datas)
+		number += num
+		if num < MaxLeafNodeCapability {
+			//InsertToTreeWithDb(datas[:num], db)
+			final = append(final, datas[:num]...)
+			break
+		}
+		//InsertToTreeWithDb(datas, db)
+		final = append(final, datas...)
+	}
+	fmt.Println("final", len(final))
+	InsertToTreeWithDb(final, db)
+	return 0, nil
 }
 
 func InsertToTree(trps []TaskR) (int, error) {

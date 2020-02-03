@@ -293,3 +293,7 @@ func (b *LesApiBackend) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebt
 func (b *LesApiBackend) RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error) {
 	return nil, nil
 }
+
+func (b *LesApiBackend) MergeAndInsert(ctx context.Context, dir string) (int, error) {
+	return 0, nil
+}

@@ -95,6 +95,8 @@ type Backend interface {
 	SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error)
 
 	RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error)
+
+	MergeAndInsert(ctx context.Context, dir string) (int, error)
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

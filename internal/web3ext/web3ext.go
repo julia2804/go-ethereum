@@ -550,6 +550,11 @@ web3._extend({
 			params: 1,
 			inputFormatter: [web3._extend.utils.fromDecimal]
 		}),
+		new web3._extend.Method({
+			name: 'mergeAndInsert',
+			call: 'eth_mergeAndInsert',
+			params: 1,
+		}),
 	],
 	properties: [
 		new web3._extend.Property({

@@ -1801,3 +1801,7 @@ func (s *PublicBlockChainAPI) SpecificSearch(ctx context.Context, v *hexutil.Big
 func (s *PublicBlockChainAPI) RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error) {
 	return s.b.RangeSearch(ctx, begin, end)
 }
+
+func (s *PublicBlockChainAPI) MergeAndInsert(ctx context.Context, dir string) (int, error) {
+	return s.b.MergeAndInsert(ctx, dir)
+}

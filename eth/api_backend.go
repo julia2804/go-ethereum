@@ -364,3 +364,7 @@ func (b *EthAPIBackend) RangeSearch(ctx context.Context, begin *hexutil.Big, end
 	}
 	return nil, err
 }
+
+func (b *EthAPIBackend) MergeAndInsert(ctx context.Context, dir string) (int, error) {
+	return ebtree_v2.MergeFilesAndInsert(b.eth.blockchain, dir)
+}
