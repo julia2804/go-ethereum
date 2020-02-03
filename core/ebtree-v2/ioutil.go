@@ -261,7 +261,7 @@ func AppendFileToFileByFile(src *os.File, reader *bufio.Reader, dst *os.File) {
 }
 
 func WriteEntityToFileWithCache(entity Entity, file *os.File, cache *EBCache) {
-	if len(entity.Value) != 0 && len(entity.Data) != 0 {
+	if len(entity.Data) != 0 {
 		cache.data = append(cache.data, IntToBytes2(len(entity.Value))...)
 		cache.data = append(cache.data, entity.Value...)
 
@@ -286,9 +286,9 @@ func CountNum(fileName string) int {
 		sizeArray := make([]byte, 4)
 		io.ReadFull(reader, sizeArray)
 		size := BytesToInt2(sizeArray)
-		if size == 0 {
-			break
-		}
+		//if size == 0 {
+		//	break
+		//}
 		value := make([]byte, size)
 		num, err := io.ReadFull(reader, value)
 		if num != size || err != nil {
