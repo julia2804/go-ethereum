@@ -506,10 +506,10 @@ func (ebt *EBTree) CommitNode(treen EBTreen, batch ethdb.Batch) error {
 		err = errors.New("wrong node type of ebtree")
 		return err
 	}
-	if err := batch.Write(); err != nil {
-		return err
-	}
-	batch.Reset()
+	//if err := batch.Write(); err != nil {
+	//	return err
+	//}
+	//batch.Reset()
 	return err
 }
 
