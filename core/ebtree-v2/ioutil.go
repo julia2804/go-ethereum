@@ -155,6 +155,78 @@ func ReadFile(reader *bufio.Reader, num int, array *[]Entity) int {
 	return i
 }
 
+func ReadResultDs(reader *bufio.Reader, num int, array *[]ResultD) int {
+	var i int
+	for i = 0; i < num; i++ {
+		sizeArray := make([]byte, 4)
+		io.ReadFull(reader, sizeArray)
+		size := BytesToInt2(sizeArray)
+		//if size == 0 {
+		//	break
+		//}
+		value := make([]byte, size)
+		num, err := io.ReadFull(reader, value)
+		if num != size || err != nil {
+			log.Error("readfile error 1")
+			break
+		}
+
+		sizeArray = make([]byte, 4)
+		io.ReadFull(reader, sizeArray)
+		size = BytesToInt2(sizeArray)
+		if size == 0 {
+			break
+		}
+		data := make([]byte, size)
+		num, err = io.ReadFull(reader, data)
+		if num != size || err != nil {
+			log.Error("readfile error 2")
+			break
+		}
+		tds, _ := DecodeTds(data)
+		(*array)[i] = ResultD{Value: value, ResultData: tds}
+	}
+	return i
+}
+
+func TestReadResultDs(fileName string) []ResultD {
+	file, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
+	defer file.Close()
+
+	reader := bufio.NewReader(file)
+	var results []ResultD
+	for {
+		sizeArray := make([]byte, 4)
+		io.ReadFull(reader, sizeArray)
+		size := BytesToInt2(sizeArray)
+		//if size == 0 {
+		//	break
+		//}
+		value := make([]byte, size)
+		num, err := io.ReadFull(reader, value)
+		if num != size || err != nil {
+			log.Error("readfile error 1")
+			break
+		}
+
+		sizeArray = make([]byte, 4)
+		io.ReadFull(reader, sizeArray)
+		size = BytesToInt2(sizeArray)
+		if size == 0 {
+			break
+		}
+		data := make([]byte, size)
+		num, err = io.ReadFull(reader, data)
+		if num != size || err != nil {
+			log.Error("readfile error 2")
+			break
+		}
+		tds, _ := DecodeTds(data)
+		results = append(results, ResultD{Value: value, ResultData: tds})
+	}
+	return results
+}
+
 func AppendEntityArrayToFile(array *[]Entity, index int, fileName string) {
 	file, _ := os.Open(fileName)
 	for i := index; i < len(*array); i++ {
@@ -203,7 +275,7 @@ func WriteEntityToFileWithCache(entity Entity, file *os.File, cache *EBCache) {
 	}
 }
 
-func CountNum(fileName string) {
+func CountNum(fileName string) int {
 	f, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -241,6 +313,7 @@ func CountNum(fileName string) {
 	}
 
 	fmt.Println("count nums", i)
+	return i
 }
 
 func ReadDirAndMerge(dirPath string) string {

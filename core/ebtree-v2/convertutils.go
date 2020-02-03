@@ -79,10 +79,9 @@ func EncodeTds(tds []TD) ([]byte, error) {
 }
 
 func DecodeTds(elems []byte) ([]TD, error) {
-	var tds []TD
-
 	elems, _, _ = rlp.SplitList(elems)
 	c, _ := rlp.CountValues(elems)
+	tds := make([]TD, c)
 	for i := 0; i < c; i++ {
 		var rest2 []byte
 		var td TD
@@ -90,7 +89,7 @@ func DecodeTds(elems []byte) ([]TD, error) {
 		bdluf, _, _ := rlp.SplitString(elems)
 		td.IdentifierData = bdluf
 		elems = rest2
-		tds = append(tds, td)
+		tds[i] = td
 	}
 	return tds, nil
 }
