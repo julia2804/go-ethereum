@@ -1,2 +1,27 @@
 build/bin/geth --syncmode fast --maxpeers 0 --datadir /home/mimota/data console
 go tool pprof main cpu_profile
+
+#construct tree 用法
+***前提****
+config.ini 中配置homePath以及constructSavePath.
+例如
+a.构建500w大小的树
+b.原始数据文件位于/home/mimota/data
+c.homePath=/home/mimota/
+d.constructSavePath=/home/mimota/experdata/
+ps.切记文件夹末尾的/
+
+下列为具体步骤
+1.build/bin/geth construct 1 3000000 --datadir /home/mimota/data
+2.build/bin/geth construct 3000001 4000000 --datadir /home/mimota/data
+3.build/bin/geth construct 4000001 4500000 --datadir /home/mimota/data
+3.build/bin/geth construct 5000001 5000000 --datadir /home/mimota/data
+4.build/bin/geth --syncmode fast --maxpeers 0 --datadir /home/mimota/data console
+5.eth.mergeAndInsert("/home/mimota/experdata/")
+6.eth.topkSearch(10000000)
+
+上述第6步是为了检查是否成功，不是必须步骤
+如遇报错panic: reflect: slice index out of range，请将treeutil文件中，InsertToTreeWithDbByFile函数中的
+	datas := make([]ResultD, MaxLeafNodeCapability*128)
+的128调大，比如设置为512或者1024
+
