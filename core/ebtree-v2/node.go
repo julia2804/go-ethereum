@@ -488,6 +488,10 @@ func (ebt *EBTree) CollapsedUnuseInternal(nt *InternalNode, j int) error {
 
 func (ebt *EBTree) CollapseLeafNode(nt *LeafNode) error {
 	var ntid []byte
+	if nt == nil {
+		err := errors.New("leaf node is nil in CollaspseLeaf")
+		return err
+	}
 	if nt.NextPtr != nil {
 		switch nnt := (nt.NextPtr).(type) {
 		case *LeafNode:
