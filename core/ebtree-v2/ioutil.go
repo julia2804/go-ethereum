@@ -3,7 +3,6 @@ package ebtree_v2
 import (
 	"bufio"
 	"fmt"
-	"github.com/ethereum/go-ethereum/log"
 	"io"
 	"io/ioutil"
 	"os"
@@ -118,36 +117,15 @@ func WriteResultDArray(fileName string, res []ResultD) {
 //	reader2 = bufio.NewReader(file2)
 //}
 
-func ReadFile(reader *bufio.Reader, num int, array *[]Entity) int {
+func ReadEntitys(reader *bufio.Reader, num int, array *[]Entity) int {
 	var length = len(*array)
 	var i int
 	for i = 0; i < num; i++ {
-		sizeArray := make([]byte, 4)
-		io.ReadFull(reader, sizeArray)
-		size := BytesToInt2(sizeArray)
-		if size == 0 {
+		entity := ReadOneEntity(reader)
+		if entity.Data == nil {
 			break
 		}
-		value := make([]byte, size)
-		num, err := io.ReadFull(reader, value)
-		if num != size || err != nil {
-			log.Error("readfile error 1")
-			break
-		}
-
-		sizeArray = make([]byte, 4)
-		io.ReadFull(reader, sizeArray)
-		size = BytesToInt2(sizeArray)
-		if size == 0 {
-			break
-		}
-		data := make([]byte, size)
-		num, err = io.ReadFull(reader, data)
-		if num != size || err != nil {
-			log.Error("readfile error 2")
-			break
-		}
-		(*array)[i] = Entity{Value: value, Data: data}
+		(*array)[i] = entity
 	}
 	if i != num {
 		copy((*array)[length-i:], (*array)[:i])
@@ -155,36 +133,72 @@ func ReadFile(reader *bufio.Reader, num int, array *[]Entity) int {
 	return i
 }
 
+func ReadOneResultD(reader *bufio.Reader) ResultD {
+	var result ResultD
+
+	value, data, err := ReadHelper(reader)
+	tds, _ := DecodeTds(data)
+	if data != nil && err == nil {
+		result.Value = value
+		result.ResultData = tds
+	}
+	return result
+}
+
+func ReadOneEntity(reader *bufio.Reader) Entity {
+	var entity Entity
+
+	value, data, err := ReadHelper(reader)
+	if data != nil && err == nil {
+		entity.Value = value
+		entity.Data = data
+	}
+	return entity
+}
+
+func ReadHelper(reader *bufio.Reader) ([]byte, []byte, error) {
+	var num int
+	var err error
+
+	sizeArray := make([]byte, 4)
+	num, err = io.ReadFull(reader, sizeArray)
+	if num != 4 || err != nil {
+		return nil, nil, err
+	}
+	size := BytesToInt2(sizeArray)
+
+	value := make([]byte, size)
+	num, err = io.ReadFull(reader, value)
+	if num != size || err != nil {
+		return nil, nil, err
+	}
+
+	sizeArray = make([]byte, 4)
+	num, err = io.ReadFull(reader, sizeArray)
+	if num != 4 || err != nil {
+		return nil, nil, err
+	}
+	size = BytesToInt2(sizeArray)
+	if size == 0 {
+		return nil, nil, err
+	}
+
+	data := make([]byte, size)
+	num, err = io.ReadFull(reader, data)
+	if num != size || err != nil {
+		return nil, nil, err
+	}
+	return value, data, nil
+}
+
 func ReadResultDs(reader *bufio.Reader, num int, array *[]ResultD) int {
 	var i int
 	for i = 0; i < num; i++ {
-		sizeArray := make([]byte, 4)
-		io.ReadFull(reader, sizeArray)
-		size := BytesToInt2(sizeArray)
-		//if size == 0 {
-		//	break
-		//}
-		value := make([]byte, size)
-		num, err := io.ReadFull(reader, value)
-		if num != size || err != nil {
-			log.Error("readfile error 1")
+		result := ReadOneResultD(reader)
+		if result.ResultData == nil {
 			break
 		}
-
-		sizeArray = make([]byte, 4)
-		io.ReadFull(reader, sizeArray)
-		size = BytesToInt2(sizeArray)
-		if size == 0 {
-			break
-		}
-		data := make([]byte, size)
-		num, err = io.ReadFull(reader, data)
-		if num != size || err != nil {
-			log.Error("readfile error 2")
-			break
-		}
-		tds, _ := DecodeTds(data)
-		(*array)[i] = ResultD{Value: value, ResultData: tds}
+		(*array)[i] = result
 	}
 	return i
 }
@@ -196,33 +210,11 @@ func TestReadResultDs(fileName string) []ResultD {
 	reader := bufio.NewReader(file)
 	var results []ResultD
 	for {
-		sizeArray := make([]byte, 4)
-		io.ReadFull(reader, sizeArray)
-		size := BytesToInt2(sizeArray)
-		//if size == 0 {
-		//	break
-		//}
-		value := make([]byte, size)
-		num, err := io.ReadFull(reader, value)
-		if num != size || err != nil {
-			log.Error("readfile error 1")
+		result := ReadOneResultD(reader)
+		if result.ResultData == nil {
 			break
 		}
-
-		sizeArray = make([]byte, 4)
-		io.ReadFull(reader, sizeArray)
-		size = BytesToInt2(sizeArray)
-		if size == 0 {
-			break
-		}
-		data := make([]byte, size)
-		num, err = io.ReadFull(reader, data)
-		if num != size || err != nil {
-			log.Error("readfile error 2")
-			break
-		}
-		tds, _ := DecodeTds(data)
-		results = append(results, ResultD{Value: value, ResultData: tds})
+		results = append(results, result)
 	}
 	return results
 }
@@ -283,32 +275,10 @@ func CountNum(fileName string) int {
 	reader := bufio.NewReader(f)
 	var i int
 	for {
-		sizeArray := make([]byte, 4)
-		io.ReadFull(reader, sizeArray)
-		size := BytesToInt2(sizeArray)
-		//if size == 0 {
-		//	break
-		//}
-		value := make([]byte, size)
-		num, err := io.ReadFull(reader, value)
-		if num != size || err != nil {
-			log.Error("readfile error 1")
+		result := ReadOneResultD(reader)
+		if result.ResultData == nil {
 			break
 		}
-
-		sizeArray = make([]byte, 4)
-		io.ReadFull(reader, sizeArray)
-		size = BytesToInt2(sizeArray)
-		if size == 0 {
-			break
-		}
-		data := make([]byte, size)
-		num, err = io.ReadFull(reader, data)
-		if num != size || err != nil {
-			log.Error("readfile error 1")
-			break
-		}
-
 		i++
 	}
 

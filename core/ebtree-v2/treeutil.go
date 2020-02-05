@@ -21,7 +21,7 @@ func ConstructTree(outerbc *core.BlockChain, begin int, end int) (int, error) {
 	defer pprof.StopCPUProfile()
 
 	if treesize == 0 {
-		treesize = 4000000
+		treesize = 10000000
 	}
 	fmt.Println("treesize", treesize)
 	nums := end - begin + 1
@@ -104,12 +104,18 @@ func InsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
 	f, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
 	defer f.Close()
 	reader := bufio.NewReader(f)
-	datas := make([]ResultD, MaxLeafNodeCapability*128)
+	datas := make([]ResultD, MaxLeafNodeCapability*1024)
 
 	var number int
+	var threod int
+	threod = 1
 	for {
 		num := ReadResultDs(reader, len(datas), &datas)
 		number += num
+		if number/10000 > threod {
+			fmt.Println("tmp number ", number)
+			threod++
+		}
 		if num < len(datas) {
 			tree.Inserts(datas[:num])
 			//tree.InsertDatasToTree(datas[:num])
@@ -154,6 +160,7 @@ func TestInsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
 	return 0, nil
 }
 
+/*
 func InsertToTree(trps []TaskR) (int, error) {
 	results := mergeSortAndMergeSame(trps)
 	tree, err := NewEBTree()
@@ -169,6 +176,8 @@ func InsertToTree(trps []TaskR) (int, error) {
 
 	return len(results), err
 }
+
+*/
 
 func TestResult(n int, array []ResultD) {
 	var tmp int

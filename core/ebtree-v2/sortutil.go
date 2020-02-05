@@ -197,7 +197,7 @@ func mergeFromTwoFiles(fileName1 string, fileName2 string, fileName3 string) {
 
 	for {
 		if index1 >= array1length {
-			num := ReadFile(reader1, array1length, &array1)
+			num := ReadEntitys(reader1, array1length, &array1)
 			if num == 0 {
 				AppendEntityArrayToFileByFile(array2, index2, file3)
 				AppendFileToFileByFile(file2, reader2, file3)
@@ -207,7 +207,7 @@ func mergeFromTwoFiles(fileName1 string, fileName2 string, fileName3 string) {
 			}
 		}
 		if index2 >= array2length {
-			num := ReadFile(reader2, array2length, &array2)
+			num := ReadEntitys(reader2, array2length, &array2)
 			if num == 0 {
 				AppendEntityArrayToFileByFile(array1, index1, file3)
 				AppendFileToFileByFile(file1, reader1, file3)
@@ -252,7 +252,7 @@ func mergeFromFileAndMen(array1 []Entity, fileName2 string, fileName3 string) {
 	array2 := make([]Entity, array2L)
 	for {
 		if index2 >= array2L {
-			num := ReadFile(reader, array2L, &array2)
+			num := ReadEntitys(reader, array2L, &array2)
 			if num == 0 {
 				AppendEntityArrayToFileByFile(array1, index1, file2)
 				break
