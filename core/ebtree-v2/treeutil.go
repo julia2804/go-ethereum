@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
-	"strconv"
 	"time"
 )
 
@@ -57,26 +56,14 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	Initial(outerbc, begin, end)
 	defer CloseParams()
 	trps := GetTransAndSort()
-	var fileName string
-	fileName = constructSavePath + "save" + strconv.Itoa(begin) + "_" + strconv.Itoa(end)
-	t1 := time.Now()
-	WriteResultDArray(fileName, trps)
-	//n := CountNum(fileName)
-	//if(n != )
-	fmt.Printf("write finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
 
-	/*
-		t := time.Now()
-		//results := TestReadResultDs(fileName)
-		var db *Database
-		db = NewDatabase(*bc.GetDB())
-		n, err := InsertToTreeWithDbByFile(fileName, db)
-		//n, err := InsertToTree(trps)
-		fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
+	t := time.Now()
+	var db *Database
+	db = NewDatabase(*bc.GetDB())
+	n, err := InsertToTreeWithDb(trps, db)
+	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
 
-	*/
-
-	return len(trps), nil
+	return n, err
 }
 
 func InsertToTreeWithDb(trps []ResultD, db *Database) (int, error) {
