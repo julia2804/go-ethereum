@@ -191,16 +191,17 @@ func ReadHelper(reader *bufio.Reader) ([]byte, []byte, error) {
 	return value, data, nil
 }
 
-func ReadResultDs(reader *bufio.Reader, num int, array *[]ResultD) int {
+func ReadResultDs(reader *bufio.Reader, num int) []ResultD {
 	var i int
+	var results []ResultD
 	for i = 0; i < num; i++ {
 		result := ReadOneResultD(reader)
 		if result.ResultData == nil {
 			break
 		}
-		(*array)[i] = result
+		results = append(results, result)
 	}
-	return i
+	return results
 }
 
 func TestReadResultDs(fileName string) []ResultD {

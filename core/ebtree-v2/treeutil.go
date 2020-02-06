@@ -104,20 +104,15 @@ func InsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
 	f, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
 	defer f.Close()
 	reader := bufio.NewReader(f)
-	datas := make([]ResultD, MaxLeafNodeCapability*1024)
+
+	pi := MaxLeafNodeCapability * 16
 
 	var number int
-	var threod int
-	threod = 1
 	for {
-		num := ReadResultDs(reader, len(datas), &datas)
-		number += num
-		if number/10000 > threod {
-			fmt.Println("tmp number ", number)
-			threod++
-		}
-		if num < len(datas) {
-			tree.Inserts(datas[:num])
+		datas := ReadResultDs(reader, pi)
+		number += len(datas)
+		if len(datas) < (pi) {
+			//tree.Inserts(datas[:num])
 			//tree.InsertDatasToTree(datas[:num])
 			break
 		}
@@ -139,19 +134,19 @@ func InsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
 func TestInsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
 	f, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
 	defer f.Close()
-	reader := bufio.NewReader(f)
+	//reader := bufio.NewReader(f)
 	var final []ResultD
 	datas := make([]ResultD, MaxLeafNodeCapability)
 
-	var number int
+	//var number int
 	for {
-		num := ReadResultDs(reader, MaxLeafNodeCapability, &datas)
-		number += num
-		if num < MaxLeafNodeCapability {
-			//InsertToTreeWithDb(datas[:num], db)
-			final = append(final, datas[:num]...)
-			break
-		}
+		//num := ReadResultDs(reader, MaxLeafNodeCapability, &datas)
+		//number += num
+		//if num < MaxLeafNodeCapability {
+		//	//InsertToTreeWithDb(datas[:num], db)
+		//	final = append(final, datas[:num]...)
+		//	break
+		//}
 		//InsertToTreeWithDb(datas, db)
 		final = append(final, datas...)
 	}
