@@ -9,7 +9,7 @@ import (
 
 var (
 	MaxLeafNodeCapability     = 32
-	MaxInternalNodeCapability = 256
+	MaxInternalNodeCapability = 512
 	//MaxLeafNodeCapability     = uint8(3)
 	//MaxInternalNodeCapability = uint64(3)
 	MaxCollapseCapbility = uint64(100)
@@ -173,9 +173,7 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 		if err != nil {
 			return err
 		}
-		if len(ebt.Collapses) > int(MaxCollapseCapbility) {
-			return ebt.CommitNodes()
-		}
+
 		return nil
 	}
 
@@ -191,9 +189,6 @@ func (ebt *EBTree) InsertDatasToTree(d []ResultD) error {
 	//process internal node
 	//End**********
 
-	/*collapse the leaf node
-	ebt.CollapseLeafNode(ebt.LastPath.Leaf)
-	//todo:send the collapse node to chanel to be processed*/
 	ebt.LastPath.Leaf = &le
 	err = ebt.CollapseEBTree()
 	if err != nil {
@@ -392,6 +387,9 @@ func (ebt *EBTree) FindFirstLeaf(value []byte, flag bool) (*LeafNode, error) {
 func (ebt *EBTree) FinalCollapse() error {
 	il := len(ebt.LastPath.Internals)
 	if il == 0 {
+		if ebt.LastPath.Leaf == nil {
+			return nil
+		}
 		return ebt.CollapseLeafNode(ebt.LastPath.Leaf)
 	}
 	return ebt.CollapseInternalNode((ebt.LastPath.Internals[il-1]), true)
@@ -412,13 +410,17 @@ func (ebt *EBTree) CommitMeatas() error {
 	var me Meta
 
 	var lid IdNode
+	if ebt.FirstLeaf == nil {
+		fmt.Println("there is no node in ebtree")
+		return nil
+	}
 	switch lt := ebt.FirstLeaf.(type) {
 	case *LeafNode:
 		lid = lt.Id
 	case *IdNode:
 		lid = *lt
 	default:
-		err := errors.New("wrong node type of ebt.FirstLeaf")
+		err := errors.New("wrong node type of ebt.FirstLeaf in CommitMeatas")
 		return err
 	}
 
@@ -431,7 +433,7 @@ func (ebt *EBTree) CommitMeatas() error {
 	case *IdNode:
 		rid = *rt
 	default:
-		err := errors.New("wrong node type of ebt.FirstLeaf")
+		err := errors.New("wrong node type of ebt.FirstLeaf CommitMeatas")
 		return err
 	}
 

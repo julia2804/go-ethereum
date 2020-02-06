@@ -63,12 +63,12 @@ func (ebt *EBTree) NewInternalNode() InternalNode {
 	return in
 }
 
-func (ebt *EBTree) NewChildData(value []byte, node EBTreen) ChildData {
+func (ebt *EBTree) NewChildData(node EBTreen) (ChildData, error) {
 	chd := ChildData{
-		Value:   value,
 		NodePtr: node,
 	}
-	return chd
+
+	return chd, nil
 }
 
 // Initial functions in EBTreen
@@ -124,7 +124,10 @@ func (ebt *EBTree) InsertToInternal(n EBTreen, in *InternalNode, i int) (*Intern
 	fmt.Println("locats", locats)
 	var sin *InternalNode
 	var err error
-	ch := ebt.NewChildData(v, n)
+	ch, err := ebt.NewChildData(n)
+	if err != nil {
+		return nil, err
+	}
 	if (len(in.Children)) >= MaxInternalNodeCapability {
 		//insert the node, and split it
 		//when the new internal node is needed
@@ -238,9 +241,11 @@ func (ebt *EBTree) CreateInternalNode(first EBTreen, second EBTreen) (InternalNo
 	var chd1, chd2 ChildData
 	switch nt := (first).(type) {
 	case *LeafNode:
-		fvdl := len(nt.LeafDatas)
-		fv := nt.LeafDatas[fvdl-1].Value
-		chd1 = ebt.NewChildData(fv, nt)
+
+		chd1, err := ebt.NewChildData(nt)
+		if err != nil {
+			return in, err
+		}
 		if second == nil {
 			//chd1 = ebt.NewChildData(fv, nt)
 			in.Children = append(in.Children, chd1)
@@ -253,9 +258,11 @@ func (ebt *EBTree) CreateInternalNode(first EBTreen, second EBTreen) (InternalNo
 
 			switch snt := (second).(type) {
 			case *LeafNode:
-				svdl := len(snt.LeafDatas)
-				sv := snt.LeafDatas[svdl-1].Value
-				chd2 = ebt.NewChildData(sv, snt)
+				var err error
+				chd2, err = ebt.NewChildData(snt)
+				if err != nil {
+					return in, err
+				}
 			default:
 				err := errors.New("wrong node type when first node is leaf node, while second node wrong")
 				return InternalNode{}, err
@@ -265,9 +272,11 @@ func (ebt *EBTree) CreateInternalNode(first EBTreen, second EBTreen) (InternalNo
 			return in, nil
 		}
 	case *InternalNode:
-		fvdl := len(nt.Children)
-		fv := nt.Children[fvdl-1].Value
-		chd1 = ebt.NewChildData(fv, nt)
+		var err error
+		chd1, err = ebt.NewChildData(nt)
+		if err != nil {
+			return in, err
+		}
 		if second == nil {
 			//chd1 = ebt.NewChildData(fv, nt)
 			in.Children = append(in.Children, chd1)
@@ -278,12 +287,14 @@ func (ebt *EBTree) CreateInternalNode(first EBTreen, second EBTreen) (InternalNo
 			var ntid IdNode
 			ntid=nt.Id
 			chd1=ebt.NewChildData(fv,&ntid)*/
-
+			var err error
 			switch snt := (second).(type) {
 			case *InternalNode:
-				svdl := len(snt.Children)
-				sv := snt.Children[svdl-1].Value
-				chd2 = ebt.NewChildData(sv, snt)
+
+				chd2, err = ebt.NewChildData(snt)
+				if err != nil {
+					return in, err
+				}
 			default:
 				err := errors.New("wrong node type when first node is leaf node, while second node wrong")
 				return InternalNode{}, err
@@ -328,18 +339,22 @@ func (ebt *EBTree) AdjustNodeInPath(i int64, first EBTreen, second EBTreen) erro
 
 			return nil
 		} else {
-			var v []byte
+
 			switch snt := second.(type) {
 			case *LeafNode:
-				v = snt.LeafDatas[len(snt.LeafDatas)-1].Value
+
 			case *InternalNode:
-				v = snt.Children[len(snt.Children)-1].Value
+
 				ebt.LastPath.Internals[i] = snt
 			default:
 				err := errors.New("wrong node type in UpdateInternalNodeInPath")
 				return err
 			}
-			chd := ebt.NewChildData(v, second)
+			chd, err := ebt.NewChildData(second)
+			if err != nil {
+				return err
+			}
+
 			ebt.LastPath.Internals[i+1].Children = append(ebt.LastPath.Internals[i+1].Children, chd)
 			return nil
 		}
@@ -395,8 +410,44 @@ func (ebt *EBTree) FindInNode(value []byte, n EBTreen, flag bool) (*LeafNode, er
 	}
 	return le, err
 }
-
 func (ebt *EBTree) SearchInNode(value []byte, n EBTreen) (int64, error, bool) {
+	//signal the value is existed in those ebtree
+	var flag bool
+	flag = false
+	switch nt := n.(type) {
+	case *LeafNode:
+		var i int64
+		for i = 0; i < int64(len(nt.LeafDatas)); i++ {
+			if byteCompare(value, nt.LeafDatas[i].Value) < 0 {
+				continue
+			} else if byteCompare(value, nt.LeafDatas[i].Value) == 0 {
+				flag = true
+				return i, nil, flag
+			} else {
+				return i, nil, flag
+			}
+		}
+		return i - 1, nil, flag
+	case *InternalNode:
+		var i int64
+		for i = 0; i < int64(len(nt.Children)); i++ {
+			if byteCompare(value, nt.Children[i].Value) < 0 {
+				continue
+			} else if byteCompare(value, nt.Children[i].Value) == 0 {
+				flag = true
+				return i, nil, flag
+			} else {
+				return i, nil, flag
+			}
+		}
+		return i - 1, nil, flag
+	default:
+		err := errors.New("node type is wrong")
+		return -1, err, flag
+	}
+}
+
+func (ebt *EBTree) UnuseSearchInNode(value []byte, n EBTreen) (int64, error, bool) {
 	//signal the value is existed in those ebtree
 	var flag bool
 	flag = false
@@ -455,6 +506,11 @@ func (ebt *EBTree) CollapsedUnuseInternal(nt *InternalNode, j int) error {
 	for i := len(nt.Children) - 2; i >= 0; i-- {
 		switch nct := (nt.Children[i].NodePtr).(type) {
 		case *LeafNode:
+			if nct == nil {
+				fmt.Println("nct is nil in collapsedunuseinternal")
+				return nil
+			}
+
 			err = ebt.CollapseLeafNode(nct)
 
 			if err != nil {
@@ -463,6 +519,7 @@ func (ebt *EBTree) CollapsedUnuseInternal(nt *InternalNode, j int) error {
 			var idn IdNode
 			idn = nct.Id
 			nt.Children[i].NodePtr = &idn
+			nt.Children[i].Value = nct.LeafDatas[len(nct.LeafDatas)-1].Value
 		case *InternalNode:
 			err = ebt.CollapseInternalNode(nct, false)
 			if err != nil {
@@ -471,6 +528,7 @@ func (ebt *EBTree) CollapsedUnuseInternal(nt *InternalNode, j int) error {
 			var idn IdNode
 			idn = nct.Id
 			nt.Children[i].NodePtr = &idn
+			nt.Children[i].Value = nct.Children[len(nct.Children)-1].Value
 		case *IdNode:
 			break
 		default:
@@ -490,7 +548,8 @@ func (ebt *EBTree) CollapseLeafNode(nt *LeafNode) error {
 	var ntid []byte
 	if nt == nil {
 		err := errors.New("leaf node is nil in CollaspseLeaf")
-		return err
+		fmt.Println(err)
+		return nil
 	}
 	if nt.NextPtr != nil {
 		switch nnt := (nt.NextPtr).(type) {
@@ -512,6 +571,8 @@ func (ebt *EBTree) CollapseLeafNode(nt *LeafNode) error {
 	}
 
 	//ebt.Collapses = append(ebt.Collapses, nt)
+
+	//todo:uncomment when use it
 	Pool.CacheChan <- nt
 	return nil
 }
@@ -529,6 +590,10 @@ func (ebt *EBTree) CollapseInternalNode(nt *InternalNode, final bool) error {
 				return nil
 			}
 			flag = true
+			if ntct == nil {
+				fmt.Println("ntct is nil in collapseInternalNode")
+				return nil
+			}
 			err := ebt.CollapseLeafNode(ntct)
 			if err != nil {
 				return err
@@ -537,6 +602,7 @@ func (ebt *EBTree) CollapseInternalNode(nt *InternalNode, final bool) error {
 			ntid = ntct.Id
 			ntptr = ntid
 			nt.Children[i].NodePtr = &ntptr
+			nt.Children[i].Value = ntct.LeafDatas[len(ntct.LeafDatas)-1].Value
 		case *InternalNode:
 			if !final && ebt.isInPath(ntct.Id) {
 				return nil
@@ -550,6 +616,7 @@ func (ebt *EBTree) CollapseInternalNode(nt *InternalNode, final bool) error {
 			ntid = ntct.Id
 			ntptr = ntid
 			nt.Children[i].NodePtr = &ntptr
+			nt.Children[i].Value = ntct.Children[len(ntct.Children)-1].Value
 		default:
 			err := errors.New("the child of internalnode should be idnode in collaspNode")
 			return err
