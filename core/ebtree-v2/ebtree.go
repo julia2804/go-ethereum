@@ -8,8 +8,6 @@ import (
 )
 
 var (
-	MaxLeafNodeCapability     = 32
-	MaxInternalNodeCapability = 512
 	//MaxLeafNodeCapability     = uint8(3)
 	//MaxInternalNodeCapability = uint64(3)
 	MaxCollapseCapbility = uint64(100)
