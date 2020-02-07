@@ -226,6 +226,7 @@ func init() {
 		// See retesteth.go
 		retestethCommand,
 		constructCommand,
+		mergeCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 

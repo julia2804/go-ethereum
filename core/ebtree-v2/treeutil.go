@@ -4,21 +4,22 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/ethereum/go-ethereum/core"
-	"log"
 	"os"
-	"runtime/pprof"
 	"strconv"
 	"time"
 )
 
 func ConstructTree(outerbc *core.BlockChain, begin int, end int) (int, error) {
 
-	cpuf, err := os.Create("cpu_profile")
-	if err != nil {
-		log.Fatal(err)
-	}
-	pprof.StartCPUProfile(cpuf)
-	defer pprof.StopCPUProfile()
+	/*
+		cpuf, err := os.Create("cpu_profile")
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(cpuf)
+		defer pprof.StopCPUProfile()
+
+	*/
 
 	if treesize == 0 {
 		treesize = 10000000
