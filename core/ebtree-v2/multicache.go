@@ -1,18 +1,21 @@
 package ebtree_v2
 
 import (
+	"fmt"
 	"github.com/ethereum/go-ethereum/log"
 )
 
 type WorkerPool2 struct {
-	CacheChan chan EBTreen
-	PoolSize  int
-	ebt       *EBTree
+	CacheChan   chan EBTreen
+	PoolSize    int
+	ebt         *EBTree
+	resultsChan chan int
 }
 
 func NewWorkerPool2(ebt *EBTree, threadSize int, buffersize int) *WorkerPool2 {
 	cache := make(chan EBTreen, buffersize)
-	pool := &WorkerPool2{CacheChan: cache, PoolSize: threadSize, ebt: ebt}
+	results := make(chan int, threadSize)
+	pool := &WorkerPool2{CacheChan: cache, PoolSize: threadSize, ebt: ebt, resultsChan: results}
 	return pool
 }
 
@@ -39,11 +42,28 @@ func (pool *WorkerPool2) consumer(ch chan EBTreen) {
 		log.Error(err.Error())
 	}
 	batch.Reset()
+	pool.resultsChan <- 1
 }
 
 func (pool *WorkerPool2) Close() {
 	close(pool.CacheChan)
+	pool.results(pool.PoolSize)
+	close(pool.resultsChan)
 	log.Info("cache channel closed")
+}
+
+func (pool *WorkerPool2) results(e int) {
+	var f float32
+	f = 5
+	results := make([]int, e)
+	for i := 0; i < e; i++ {
+		results[i] = <-pool.resultsChan
+		per := float32(i) / float32(e) * 100
+		if per >= f {
+			fmt.Println("finish task ", per, "%")
+			f = f + 5
+		}
+	}
 }
 
 func CreatPoolAndRun(ebt *EBTree, threadSize int, buffersize int) *WorkerPool2 {

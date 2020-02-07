@@ -37,9 +37,10 @@ func ConstructTree(outerbc *core.BlockChain, begin int, end int) (int, error) {
 
 func MergeFilesAndInsert(outerbc *core.BlockChain, dir string) (int, error) {
 	Initial(outerbc, 0, 0)
+	defer CloseParams()
 	t := time.Now()
 	fileName := ReadDirAndMerge(dir)
-	fmt.Println("final fileName", fileName)
+	fmt.Println("final fileName :", fileName)
 	fmt.Printf("merge finish, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
 
 	t1 := time.Now()
@@ -101,6 +102,7 @@ func InsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
 	tree, err := NewEBTreeFromDb(db)
 	Pool = CreatPoolAndRun(tree, insertthreadnum, insertbuffer)
 	defer Pool.Close()
+
 	f, _ := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE, 0644)
 	defer f.Close()
 	reader := bufio.NewReader(f)
