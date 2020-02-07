@@ -228,8 +228,8 @@ func GetTransAndSort() []ResultD {
 
 	fmt.Println("getblocks from db start")
 	t3 := time.Now()
-	prepool := AssembleTaskAndStart(pretasknum, prethreadnum, ToChannel, nil)
-	results := prepool.Results(pretasknum)
+	prepool := AssembleTaskAndStart(gettasknum, getthreadnum, ToChannel, nil)
+	results := prepool.Results(gettasknum)
 	fmt.Printf("getblocks finished, timeElapsed: %f s\n", time.Now().Sub(t3).Seconds())
 
 	var length int
@@ -252,7 +252,7 @@ func GetTransAndSort() []ResultD {
 	trps := HeapSortAndMergeSame(data)
 	fmt.Printf("heapsort finished, timeElapsed: %f s\n", time.Now().Sub(t2).Seconds())
 
-	//takenum = pretasknum / aftertasknum
+	//takenum = gettasknum / aftertasknum
 	//afterpool := AssembleTaskAndStart(aftertasknum, afterthreadnum, FromChannel, prepool)
 
 	//trps := afterpool.Results(aftertasknum)

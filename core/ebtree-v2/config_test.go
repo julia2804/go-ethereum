@@ -7,5 +7,5 @@ import (
 )
 
 func TestGetConfig(t *testing.T) {
-	fmt.Println(ethereum.GetValueFromDefaultPath("thread", "pretasknum"))
+	fmt.Println(ethereum.GetValueFromDefaultPath("thread", "gettasknum"))
 }

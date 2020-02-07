@@ -16,11 +16,11 @@ var end int
 var takenum int
 
 var (
-	pretasknum, _   = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "pretasknum"))
-	aftertasknum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "aftertasknum"))
+	gettasknum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "gettasknum"))
+	//aftertasknum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "aftertasknum"))
 
-	prethreadnum, _    = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "prethreadnum"))
-	afterthreadnum, _  = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "afterthreadnum"))
+	getthreadnum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "getthreadnum"))
+	//afterthreadnum, _  = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "afterthreadnum"))
 	insertthreadnum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "insertthreadnum"))
 
 	insertbuffer, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "insertbuffer"))
@@ -29,6 +29,9 @@ var (
 
 	homePath          = ethereum.GetValueFromDefaultPath("thread", "homePath")
 	constructSavePath = ethereum.GetValueFromDefaultPath("thread", "constructSavePath")
+
+	MaxLeafNodeCapability, _     = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "leaf_num"))
+	MaxInternalNodeCapability, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "internal_num"))
 )
 
 func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
@@ -38,25 +41,25 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 	}
 	runtime.GOMAXPROCS(maxProces)
 
-	if pretasknum == 0 {
-		pretasknum = 1
+	if gettasknum == 0 {
+		gettasknum = 1
 	}
 
-	if prethreadnum == 0 {
-		if pretasknum == 1 {
-			prethreadnum = 1
+	if getthreadnum == 0 {
+		if gettasknum == 1 {
+			getthreadnum = 1
 		} else {
-			prethreadnum = maxProces
+			getthreadnum = maxProces
 		}
 	}
-
-	if aftertasknum == 0 {
-		aftertasknum = 1
-	}
-
-	if afterthreadnum == 0 {
-		afterthreadnum = 1
-	}
+	//
+	//if aftertasknum == 0 {
+	//	aftertasknum = 1
+	//}
+	//
+	//if afterthreadnum == 0 {
+	//	afterthreadnum = 1
+	//}
 
 	if insertthreadnum == 0 {
 		insertthreadnum = maxProces
@@ -78,12 +81,20 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 		constructSavePath = "/root/experConstruct/"
 	}
 
+	if MaxLeafNodeCapability == 0 {
+		MaxLeafNodeCapability = 32
+	}
+	if MaxInternalNodeCapability == 0 {
+		MaxInternalNodeCapability = 512
+	}
+
 	begin = outbegin
 	end = outend
-	interval = (end - begin + 1) / pretasknum
+	interval = (end - begin + 1) / gettasknum
 
-	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*pretasknum + begin - 1), "tasknum", pretasknum,
-		"threadnum", prethreadnum, "maxProces", maxProces, "homepath", homePath, "constructPath", constructSavePath)
+	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*gettasknum + begin - 1), "gettasknum", gettasknum,
+		"threadnum", getthreadnum, "maxProces", maxProces, "homepath", homePath, "constructPath", constructSavePath,
+		"leaf_num", MaxLeafNodeCapability, "internal_num", MaxInternalNodeCapability)
 }
 
 func CloseParams() {
