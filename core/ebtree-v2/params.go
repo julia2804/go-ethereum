@@ -34,10 +34,8 @@ var (
 	MaxLeafNodeCapability, _     = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "leaf_num"))
 	MaxInternalNodeCapability, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "internal_num"))
 
-	recordDir = ethereum.GetValueFromDefaultPath("thread", "recordDir")
+	recordPath = ethereum.GetValueFromDefaultPath("thread", "recordPath")
 )
-
-var recordPath string
 
 func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 	maxProces := runtime.NumCPU()
@@ -93,12 +91,9 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 		MaxInternalNodeCapability = 512
 	}
 
-	if recordDir == "" || len(recordDir) == 0 {
-		recordDir = "/root/"
+	if recordPath == "" || len(recordPath) == 0 {
+		recordPath = "/root/record" + time.Now().Format("2006-01-02 15:04:05.9999") + ".txt"
 	}
-
-	recordPath = recordDir + time.Now().Format("2006-01-02 15:04:05.9999") + ".txt"
-	time.Now().Unix()
 
 	begin = outbegin
 	end = outend

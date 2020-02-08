@@ -43,19 +43,11 @@ func MergeFilesAndInsert(outerbc *core.BlockChain, dir string) (int, error) {
 	f, _ := os.OpenFile(recordPath, os.O_RDWR|os.O_CREATE, 0644)
 	defer f.Close()
 
-	AppendToFileWithStringByFile(f, "merge dir :"+dir)
-	AppendToFileWithStringByFile(f, "\n")
-
 	t := time.Now()
 	fileName := ReadDirAndMerge(dir)
 	fmt.Println("final fileName :", fileName)
 	fmt.Printf("merge finish, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-	AppendToFileWithStringByFile(f, "merge files time,")
-	AppendToFileWithStringByFile(f, time.Now().Sub(t).String())
-	AppendToFileWithStringByFile(f, "\n")
-
-	AppendToFileWithStringByFile(f, "final files,"+fileName)
-	AppendToFileWithStringByFile(f, "\n")
+	AppendToFileWithStringByFile(f, time.Now().Sub(t).String()+",")
 
 	t1 := time.Now()
 	//results := TestReadResultDs(fileName)
@@ -65,7 +57,6 @@ func MergeFilesAndInsert(outerbc *core.BlockChain, dir string) (int, error) {
 	//n, err := InsertToTree(trps)
 	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
 	fmt.Println("dir ", dir)
-	AppendToFileWithStringByFile(f, "insert file time,")
 	AppendToFileWithStringByFile(f, time.Now().Sub(t1).String())
 	AppendToFileWithStringByFile(f, "\n")
 
@@ -78,8 +69,7 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	f, _ := os.OpenFile(recordPath, os.O_RDWR|os.O_CREATE, 0644)
 	defer f.Close()
 
-	AppendToFileWithStringByFile(f, "begin:"+strconv.Itoa(begin)+",end:"+strconv.Itoa(end))
-	AppendToFileWithStringByFile(f, "\n")
+	AppendToFileWithStringByFile(f, strconv.Itoa(begin)+","+strconv.Itoa(end)+",")
 
 	defer CloseParams()
 	trps := GetTransAndSort(f)
@@ -90,7 +80,6 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	//n := CountNum(fileName)
 	//if(n != )
 	fmt.Printf("write finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
-	AppendToFileWithStringByFile(f, "write file time,")
 	AppendToFileWithStringByFile(f, time.Now().Sub(t1).String())
 	AppendToFileWithStringByFile(f, "\n")
 
@@ -105,7 +94,6 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 
 	*/
 
-	AppendToFileWithStringByFile(f, "\n\n\n")
 	return len(trps), nil
 }
 
@@ -259,9 +247,7 @@ func GetTransAndSort(file *os.File) []ResultD {
 	prepool := AssembleTaskAndStart(gettasknum, getthreadnum, ToChannel, nil)
 	results := prepool.Results(gettasknum)
 	fmt.Printf("getblocks finished, timeElapsed: %f s\n", time.Now().Sub(t3).Seconds())
-	AppendToFileWithStringByFile(file, "get trans time,")
-	AppendToFileWithStringByFile(file, time.Now().Sub(t3).String())
-	AppendToFileWithStringByFile(file, "\n")
+	AppendToFileWithStringByFile(file, time.Now().Sub(t3).String()+",")
 
 	var length int
 	for i := 0; i < len(results); i++ {
@@ -277,17 +263,13 @@ func GetTransAndSort(file *os.File) []ResultD {
 		size += len((results)[i].TaskResult)
 	}
 	fmt.Printf("merge tasks finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
-	AppendToFileWithStringByFile(file, "merge array time,")
-	AppendToFileWithStringByFile(file, time.Now().Sub(t1).String())
-	AppendToFileWithStringByFile(file, "\n")
+	AppendToFileWithStringByFile(file, time.Now().Sub(t1).String()+",")
 
 	fmt.Println("heapsort start")
 	t2 := time.Now()
 	trps := HeapSortAndMergeSame(data)
 	fmt.Printf("heapsort finished, timeElapsed: %f s\n", time.Now().Sub(t2).Seconds())
-	AppendToFileWithStringByFile(file, "heapsort time,")
-	AppendToFileWithStringByFile(file, time.Now().Sub(t2).String())
-	AppendToFileWithStringByFile(file, "\n")
+	AppendToFileWithStringByFile(file, time.Now().Sub(t2).String()+",")
 
 	//takenum = gettasknum / aftertasknum
 	//afterpool := AssembleTaskAndStart(aftertasknum, afterthreadnum, FromChannel, prepool)
@@ -295,9 +277,7 @@ func GetTransAndSort(file *os.File) []ResultD {
 	//trps := afterpool.Results(aftertasknum)
 
 	fmt.Printf("get, merge, sort finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-	AppendToFileWithStringByFile(file, "get,merge,sort total time,")
-	AppendToFileWithStringByFile(file, time.Now().Sub(t).String())
-	AppendToFileWithStringByFile(file, "\n")
+	AppendToFileWithStringByFile(file, time.Now().Sub(t).String()+",")
 
 	return trps
 }
