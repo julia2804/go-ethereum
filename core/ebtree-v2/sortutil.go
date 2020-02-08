@@ -297,7 +297,7 @@ func MergeFromFiles(fileNames []string) string {
 			tmp = append(tmp, fileNames[len(fileNames)-1])
 		}
 		for i := 0; i < len(fileNames)-1; i = i + 2 {
-			fileName := homePath + name + "_" + strconv.Itoa(i)
+			fileName := constructSavePath + name + "_" + strconv.Itoa(i)
 			mergeFromTwoFiles(fileNames[i], fileNames[i+1], fileName)
 			tmp = append(tmp, fileName)
 		}

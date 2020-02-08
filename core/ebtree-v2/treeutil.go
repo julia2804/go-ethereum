@@ -47,7 +47,7 @@ func MergeFilesAndInsert(outerbc *core.BlockChain, dir string) (int, error) {
 	fileName := ReadDirAndMerge(dir)
 	fmt.Println("final fileName :", fileName)
 	fmt.Printf("merge finish, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-	AppendToFileWithStringByFile(f, time.Now().Sub(t).String()+",")
+	AppendToFileWithStringByFile(f, strconv.FormatInt(time.Now().Sub(t).Milliseconds(), 10)+",")
 
 	t1 := time.Now()
 	//results := TestReadResultDs(fileName)
@@ -57,7 +57,7 @@ func MergeFilesAndInsert(outerbc *core.BlockChain, dir string) (int, error) {
 	//n, err := InsertToTree(trps)
 	fmt.Printf("insert to ebtree, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
 	fmt.Println("dir ", dir)
-	AppendToFileWithStringByFile(f, time.Now().Sub(t1).String())
+	AppendToFileWithStringByFile(f, strconv.FormatInt(time.Now().Sub(t1).Milliseconds(), 10))
 	AppendToFileWithStringByFile(f, "\n")
 
 	AppendToFileWithStringByFile(f, "\n\n\n")
@@ -80,7 +80,7 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	//n := CountNum(fileName)
 	//if(n != )
 	fmt.Printf("write finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
-	AppendToFileWithStringByFile(f, time.Now().Sub(t1).String())
+	AppendToFileWithStringByFile(f, strconv.FormatInt(time.Now().Sub(t1).Milliseconds(), 10))
 	AppendToFileWithStringByFile(f, "\n")
 
 	/*
@@ -247,7 +247,7 @@ func GetTransAndSort(file *os.File) []ResultD {
 	prepool := AssembleTaskAndStart(gettasknum, getthreadnum, ToChannel, nil)
 	results := prepool.Results(gettasknum)
 	fmt.Printf("getblocks finished, timeElapsed: %f s\n", time.Now().Sub(t3).Seconds())
-	AppendToFileWithStringByFile(file, time.Now().Sub(t3).String()+",")
+	AppendToFileWithStringByFile(file, strconv.FormatInt(time.Now().Sub(t3).Milliseconds(), 10)+",")
 
 	var length int
 	for i := 0; i < len(results); i++ {
@@ -263,13 +263,13 @@ func GetTransAndSort(file *os.File) []ResultD {
 		size += len((results)[i].TaskResult)
 	}
 	fmt.Printf("merge tasks finished, timeElapsed: %f s\n", time.Now().Sub(t1).Seconds())
-	AppendToFileWithStringByFile(file, time.Now().Sub(t1).String()+",")
+	AppendToFileWithStringByFile(file, strconv.FormatInt(time.Now().Sub(t1).Milliseconds(), 10)+",")
 
 	fmt.Println("heapsort start")
 	t2 := time.Now()
 	trps := HeapSortAndMergeSame(data)
 	fmt.Printf("heapsort finished, timeElapsed: %f s\n", time.Now().Sub(t2).Seconds())
-	AppendToFileWithStringByFile(file, time.Now().Sub(t2).String()+",")
+	AppendToFileWithStringByFile(file, strconv.FormatInt(time.Now().Sub(t2).Milliseconds(), 10)+",")
 
 	//takenum = gettasknum / aftertasknum
 	//afterpool := AssembleTaskAndStart(aftertasknum, afterthreadnum, FromChannel, prepool)
@@ -277,7 +277,7 @@ func GetTransAndSort(file *os.File) []ResultD {
 	//trps := afterpool.Results(aftertasknum)
 
 	fmt.Printf("get, merge, sort finished, timeElapsed: %f s\n", time.Now().Sub(t).Seconds())
-	AppendToFileWithStringByFile(file, time.Now().Sub(t).String()+",")
+	AppendToFileWithStringByFile(file, strconv.FormatInt(time.Now().Sub(t).Milliseconds(), 10)+",")
 
 	return trps
 }

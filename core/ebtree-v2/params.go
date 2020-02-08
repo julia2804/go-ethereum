@@ -28,7 +28,7 @@ var (
 
 	treesize, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "treesize"))
 
-	homePath          = ethereum.GetValueFromDefaultPath("thread", "homePath")
+	//homePath          = ethereum.GetValueFromDefaultPath("thread", "homePath")
 	constructSavePath = ethereum.GetValueFromDefaultPath("thread", "constructSavePath")
 
 	MaxLeafNodeCapability, _     = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "leaf_num"))
@@ -76,9 +76,9 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 		bc = outerbc
 	}
 
-	if homePath == "" {
-		homePath = "/root/"
-	}
+	//if homePath == "" {
+	//	homePath = "/root/"
+	//}
 
 	if constructSavePath == "" {
 		constructSavePath = "/root/experConstruct/"
@@ -100,7 +100,7 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 	interval = (end - begin + 1) / gettasknum
 
 	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*gettasknum + begin - 1), "gettasknum", gettasknum,
-		"threadnum", getthreadnum, "maxProces", maxProces, "homepath", homePath, "constructPath", constructSavePath,
+		"threadnum", getthreadnum, "maxProces", maxProces, "constructPath", constructSavePath,
 		"leaf_num", MaxLeafNodeCapability, "internal_num", MaxInternalNodeCapability, "recordpath", recordPath)
 }
 
