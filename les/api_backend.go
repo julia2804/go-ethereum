@@ -285,6 +285,10 @@ func (b *LesApiBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.Resu
 	return nil, nil
 }
 
+func (b *LesApiBackend) MockTopKSearch(ctx context.Context, k int) (int64, error) {
+	return 0, nil
+}
+
 func (b *LesApiBackend) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error) {
 	var tmp ebtree_v2.ResultD
 	return tmp, nil
@@ -292,6 +296,10 @@ func (b *LesApiBackend) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebt
 
 func (b *LesApiBackend) RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error) {
 	return nil, nil
+}
+
+func (b *LesApiBackend) MockRangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) (int64, error) {
+	return 0, nil
 }
 
 func (b *LesApiBackend) MergeAndInsert(ctx context.Context, dir string) (int, error) {

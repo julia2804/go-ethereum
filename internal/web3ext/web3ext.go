@@ -539,8 +539,19 @@ web3._extend({
 			params: 1,
 		}),
 		new web3._extend.Method({
+			name: 'mockTopKSearch',
+			call: 'eth_mockTopKSearch',
+			params: 1,
+		}),
+		new web3._extend.Method({
 			name: 'rangeSearch',
 			call: 'eth_rangeSearch',
+			params: 2,
+			inputFormatter: [web3._extend.utils.fromDecimal, web3._extend.utils.fromDecimal]
+		}),
+		new web3._extend.Method({
+			name: 'mockRangeSearch',
+			call: 'eth_mockRangeSearch',
 			params: 2,
 			inputFormatter: [web3._extend.utils.fromDecimal, web3._extend.utils.fromDecimal]
 		}),

@@ -92,9 +92,13 @@ type Backend interface {
 
 	TopKSearch(ctx context.Context, k int) ([]ebtree_v2.ResultD, error)
 
+	MockTopKSearch(ctx context.Context, k int) (int64, error)
+
 	SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error)
 
 	RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error)
+
+	MockRangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) (int64, error)
 
 	MergeAndInsert(ctx context.Context, dir string) (int, error)
 }

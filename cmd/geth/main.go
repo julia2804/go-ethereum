@@ -20,6 +20,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"net/http"
 	"os"
 	"runtime"
 	godebug "runtime/debug"
@@ -258,6 +259,10 @@ func init() {
 func main() {
 	//args := []string{"test", "--syncmode", "fast", "--cache", "2048", "--datadir", "/home/mimota/data", "console"}
 	//args := []string{"test", "construct", "1", "1000000",  "--datadir", "/home/mimota/data"}
+	go func() {
+		http.ListenAndServe("0.0.0.0:8899", nil)
+	}()
+
 	if err := app.Run(os.Args); err != nil {
 		//if err := app.Run(args); err != nil {
 

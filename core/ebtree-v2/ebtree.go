@@ -265,6 +265,66 @@ func (ebt *EBTree) TopkVSearch(k int64) ([]ResultD, error) {
 	return ds, nil
 }
 
+func (ebt *EBTree) MockTopkVSearch(k int64) (int64, error) {
+	var num int64
+	le := ebt.FirstLeaf
+	for i := 0; num < k; i++ {
+		if le == nil {
+			return num, nil
+		}
+		var lle int
+		var ft LeafNode
+		switch lt := le.(type) {
+		case *LeafNode:
+			lle = len(lt.LeafDatas)
+			ft = *lt
+		case IdNode:
+			nt, err := ebt.LoadNode(lt.fstring())
+			if err != nil {
+				return num, err
+			}
+			if nt == nil {
+				return num, nil
+			}
+			switch ntt := nt.(type) {
+			case *LeafNode:
+				lle = len(ntt.LeafDatas)
+				ft = *ntt
+			default:
+				err := errors.New("wrong node type in firstleaf after load from levledb")
+				return num, err
+			}
+		case *IdNode:
+			nt, err := ebt.LoadNode(lt.fstring())
+			if err != nil {
+				return num, err
+			}
+			if nt == nil {
+				return num, nil
+			}
+			switch ntt := nt.(type) {
+			case *LeafNode:
+				lle = len(ntt.LeafDatas)
+				ft = *ntt
+			default:
+				err := errors.New("wrong node type in firstleaf after load from levledb")
+				return num, err
+			}
+		default:
+			err := errors.New("wrong node type in firstleaf")
+			return num, err
+		}
+		for j := 0; j < lle; j++ {
+			num++
+			if num >= k {
+				return num, nil
+			}
+		}
+		le = ft.NextPtr
+	}
+	return num, nil
+}
+
 func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 	var ds []ResultD
 	le, err := ebt.FindFirstLeaf(end, false)
@@ -309,6 +369,52 @@ func (ebt *EBTree) RangeSearch(begin []byte, end []byte) ([]ResultD, error) {
 		}
 	}
 	return ds, err
+}
+
+func (ebt *EBTree) MockRangeSearch(begin []byte, end []byte) (int64, error) {
+	var num int64
+	le, err := ebt.FindFirstLeaf(end, false)
+	if err != nil {
+		return num, err
+	}
+	if le == nil {
+		return num, nil
+	}
+	for le != nil && len(le.LeafDatas) > 0 && byteCompare(le.LeafDatas[0].Value, begin) >= 0 {
+		for j := 0; j < len(le.LeafDatas); j++ {
+			if byteCompare(begin, le.LeafDatas[j].Value) <= 0 && byteCompare(end, le.LeafDatas[j].Value) >= 0 {
+				num++
+			} else if byteCompare(begin, le.LeafDatas[j].Value) > 0 {
+				return num, nil
+			}
+		}
+		if le.NextPtr == nil {
+			return num, nil
+		}
+		switch nt := (le.NextPtr).(type) {
+		case *LeafNode:
+			le = nt
+		case *IdNode:
+			n, err := ebt.LoadNode(nt.fstring())
+			if err != nil {
+				return num, err
+			}
+			if n == nil {
+				return num, nil
+			}
+			switch lnt := n.(type) {
+			case *LeafNode:
+				le = lnt
+			default:
+				err := errors.New("wrong node type from leveldb in  RangeSearch")
+				return num, err
+			}
+		default:
+			err := errors.New("wrong node type of leaf.nextprt in RangeSearch")
+			return num, err
+		}
+	}
+	return num, err
 }
 
 func (ebt *EBTree) EquivalentSearch(value []byte) (ResultD, error) {

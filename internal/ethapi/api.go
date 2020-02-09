@@ -1794,12 +1794,20 @@ func (s *PublicBlockChainAPI) TopKSearch(ctx context.Context, k int) ([]ebtree_v
 	return s.b.TopKSearch(ctx, k)
 }
 
+func (s *PublicBlockChainAPI) MockTopKSearch(ctx context.Context, k int) (int64, error) {
+	return s.b.MockTopKSearch(ctx, k)
+}
+
 func (s *PublicBlockChainAPI) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error) {
 	return s.b.SpecificSearch(ctx, v)
 }
 
 func (s *PublicBlockChainAPI) RangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) ([]ebtree_v2.ResultD, error) {
 	return s.b.RangeSearch(ctx, begin, end)
+}
+
+func (s *PublicBlockChainAPI) MockRangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) (int64, error) {
+	return s.b.MockRangeSearch(ctx, begin, end)
 }
 
 func (s *PublicBlockChainAPI) MergeAndInsert(ctx context.Context, dir string) (int, error) {

@@ -329,6 +329,25 @@ func (b *EthAPIBackend) TopKSearch(ctx context.Context, k int) ([]ebtree_v2.Resu
 	return nil, err
 }
 
+func (b *EthAPIBackend) MockTopKSearch(ctx context.Context, k int) (int64, error) {
+	tree, err := ebtree_v2.NewEBTreeFromDb(ebtree_v2.NewDatabase(*b.eth.blockchain.GetDB()))
+	if err == nil {
+		num, err := tree.MockTopkVSearch((int64(k)))
+		if err != nil {
+			log.Error(err.Error())
+		}
+		log.Info("topk num of value", "resultnum", num)
+		//log.Info("topk num of trans", "resultnum", ebtree_v2.TransNumInResultDArray(results))
+		//todo results, 太多了，看不清
+		return num, err
+	}
+	if err != nil {
+		fmt.Println("lll")
+		log.Error(err.Error())
+	}
+	return 0, err
+}
+
 func (b *EthAPIBackend) SpecificSearch(ctx context.Context, v *hexutil.Big) (ebtree_v2.ResultD, error) {
 	tree, err := ebtree_v2.NewEBTreeFromDb(ebtree_v2.NewDatabase(*b.eth.blockchain.GetDB()))
 	var result ebtree_v2.ResultD
@@ -363,6 +382,24 @@ func (b *EthAPIBackend) RangeSearch(ctx context.Context, begin *hexutil.Big, end
 		log.Error(err.Error())
 	}
 	return nil, err
+}
+
+func (b *EthAPIBackend) MockRangeSearch(ctx context.Context, begin *hexutil.Big, end *hexutil.Big) (int64, error) {
+	tree, err := ebtree_v2.NewEBTreeFromDb(ebtree_v2.NewDatabase(*b.eth.blockchain.GetDB()))
+	if err == nil {
+		num, err := tree.MockRangeSearch(begin.ToInt().Bytes(), end.ToInt().Bytes())
+		if err != nil {
+			log.Error(err.Error())
+		}
+		log.Info("range num of value", "resultnum", num)
+		//log.Info("range num of trans", "resultnum", ebtree_v2.TransNumInResultDArray(results))
+		//todo results, 太多了，看不清
+		return num, err
+	}
+	if err != nil {
+		log.Error(err.Error())
+	}
+	return 0, err
 }
 
 func (b *EthAPIBackend) MergeAndInsert(ctx context.Context, dir string) (int, error) {
