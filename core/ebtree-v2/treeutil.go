@@ -130,12 +130,14 @@ func InsertToTreeWithDbByFile(fileName string, db *Database) (int, error) {
 	for {
 		datas := ReadResultDs(reader, pi)
 		number += len(datas)
+		if len(datas) > 0 {
+			tree.Inserts(datas)
+		}
 		if len(datas) < (pi) {
 			//tree.Inserts(datas[:num])
 			//tree.InsertDatasToTree(datas[:num])
 			break
 		}
-		tree.Inserts(datas)
 		//tree.InsertDatasToTree(datas)
 	}
 	err = tree.FinalCollapse()
