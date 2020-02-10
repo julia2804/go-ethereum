@@ -205,6 +205,22 @@ Use "ethereum dump 0" to dump the genesis block.`,
 		Category:    "BLOCKCHAIN COMMANDS",
 		Description: `construct tree`,
 	}
+	afterInsertCommand = cli.Command{
+		Action: utils.MigrateFlags(afterInsert),
+		Name:   "afterInsert",
+		Usage:  "construct ebtree",
+		//ArgsUsage: "<sourceChaindataDir>",
+		Flags: []cli.Flag{
+			utils.DataDirFlag,
+			utils.CacheFlag,
+			utils.SyncModeFlag,
+			utils.FakePoWFlag,
+			utils.TestnetFlag,
+			utils.EndFlag,
+		},
+		Category:    "BLOCKCHAIN COMMANDS",
+		Description: `construct tree`,
+	}
 	mergeCommand = cli.Command{
 		Action: utils.MigrateFlags(merge),
 		Name:   "merge",
@@ -602,6 +618,19 @@ func construct(ctx *cli.Context) error {
 	ebtree_v2.ConstructTree(chain, begin, end)
 
 	//time.Sleep(20 * time.Second)
+
+	return nil
+}
+
+func afterInsert(ctx *cli.Context) error {
+	stack := makeFullNode(ctx)
+	defer stack.Close()
+	chain, db := utils.MakeChain(ctx, stack)
+	defer db.Close()
+
+	begin, _ := strconv.Atoi(ctx.Args()[0])
+	end, _ := strconv.Atoi(ctx.Args()[1])
+	ebtree_v2.AppendInsert(chain, begin, end)
 
 	return nil
 }

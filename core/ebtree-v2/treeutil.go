@@ -97,6 +97,52 @@ func constructTreeHelper(outerbc *core.BlockChain, begin int, end int) (int, err
 	return len(trps), nil
 }
 
+func AppendInsert(bc *core.BlockChain, begin int, end int) (int64, error) {
+	Initial(bc, begin, end)
+	defer CloseParams()
+	f, _ := os.OpenFile(insert_begin_end_Path, os.O_RDWR|os.O_CREATE, 0644)
+	defer f.Close()
+
+	e := end - begin + 1
+	var p float32
+	p = 5
+	var transNum int64
+	db := NewDatabase(*bc.GetDB())
+	tree, _ := NewEBTreeFromDb(db)
+	t1 := time.Now()
+	for i := begin; i <= end; i++ {
+		block := bc.GetBlockByNumber(uint64(i))
+		if block != nil {
+			trans := block.Transactions()
+			for j := 0; j < trans.Len(); j++ {
+				tree.AfterInsertDataToTree(trans[j].Value().Bytes(), Convert2IdentifierData(i, j))
+			}
+			transNum += int64(trans.Len())
+			per := float32(i) / float32(e) * 100
+			if per >= p {
+				fmt.Println("finish task ", per, "%")
+				p = p + 5
+			}
+		}
+	}
+	err := tree.FinalCollapse()
+	if err != nil {
+		fmt.Println(err.Error())
+		return transNum, err
+	}
+	err = tree.CommitMeatas()
+	if err != nil {
+		fmt.Println(err.Error())
+		return transNum, err
+	}
+	fmt.Printf("after insert, timeElapsed: %d ms\n", time.Now().Sub(t1).Milliseconds())
+	AppendToFileWithStringByFile(f, strconv.Itoa(begin)+",")
+	AppendToFileWithStringByFile(f, strconv.Itoa(end)+",")
+	AppendToFileWithStringByFile(f, strconv.FormatInt(time.Now().Sub(t1).Milliseconds(), 10)+",")
+	AppendToFileWithStringByFile(f, strconv.FormatInt(transNum, 10)+"\n")
+	return transNum, nil
+}
+
 func InsertToTreeWithDb(trps []ResultD, db *Database) (int, error) {
 	//results := mergeSortAndMergeSame(trps)
 	tree, err := NewEBTreeFromDb(db)

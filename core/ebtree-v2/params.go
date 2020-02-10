@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"runtime"
 	"strconv"
-	"time"
 )
 
 var bc *core.BlockChain
@@ -35,6 +34,8 @@ var (
 	MaxInternalNodeCapability, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "internal_num"))
 
 	recordPath = ethereum.GetValueFromDefaultPath("thread", "recordPath")
+
+	insert_begin_end_Path = ethereum.GetValueFromDefaultPath("thread", "SingleAppendPath")
 )
 
 func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
@@ -92,7 +93,12 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 	}
 
 	if recordPath == "" || len(recordPath) == 0 {
-		recordPath = "/root/record" + time.Now().Format("2006-01-02 15:04:05.9999") + ".txt"
+		recordPath = "/root/record.txt"
+		//recordPath = "/root/record" + time.Now().Format("2006-01-02 15:04:05.9999") + ".txt"
+	}
+
+	if insert_begin_end_Path == "" || len(insert_begin_end_Path) == 0 {
+		insert_begin_end_Path = "/root/insert_begin_end.txt"
 	}
 
 	begin = outbegin
@@ -101,10 +107,12 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 
 	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*gettasknum + begin - 1), "gettasknum", gettasknum,
 		"threadnum", getthreadnum, "maxProces", maxProces, "constructPath", constructSavePath,
-		"leaf_num", MaxLeafNodeCapability, "internal_num", MaxInternalNodeCapability, "recordpath", recordPath)
+		"leaf_num", MaxLeafNodeCapability, "internal_num", MaxInternalNodeCapability, "recordpath", recordPath, "insert_begin_end_path", insert_begin_end_Path)
 }
 
 func CloseParams() {
 	bc.Stop()
 	bc = nil
+	begin = 0
+	end = 0
 }
