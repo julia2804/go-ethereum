@@ -8,8 +8,6 @@ import (
 )
 
 var (
-	MaxLeafNode          = int(3)
-	MaxInternal          = int(3)
 	MaxCollapseCapbility = uint64(100)
 	MetaKey              = []byte("metas")
 	NilNode              = IntToBytes(0)
