@@ -3,6 +3,7 @@ package ebtree_v2
 import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/rlp"
+	"math/rand"
 	"testing"
 )
 
@@ -46,7 +47,21 @@ func TestInsert(t *testing.T) {
 		fmt.Println("not found")
 	}
 }
-
+func TestAfterInsert(t *testing.T) {
+	var ebt *EBTree
+	var err error
+	ebt, err = NewEBTree()
+	if err != nil {
+		fmt.Print(err)
+		return
+	}
+	for i := 1000000000000; i >= 10; i = i / 10 {
+		da := []byte("hello")
+		fmt.Println("hello")
+		ebt.AfterInsertDataToTree(IntToBytes(uint64(rand.Intn(1000))), da)
+	}
+	fmt.Println("hello")
+}
 func ReturnResultD(t int) []ResultD {
 	var ds []ResultD
 	var d ResultD

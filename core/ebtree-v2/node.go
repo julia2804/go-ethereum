@@ -53,7 +53,17 @@ func (ebt *EBTree) NewLeafNode() LeafNode {
 	}
 	return le
 }
-
+func NewLeafData(value []byte, da []byte) ResultD {
+	var tds []TD
+	var td TD
+	td.IdentifierData = da
+	tds = append(tds, td)
+	dai := ResultD{
+		Value:      value,
+		ResultData: tds,
+	}
+	return dai
+}
 func (ebt *EBTree) NewInternalNode() InternalNode {
 	iid := ebt.NewSequence()
 	in := InternalNode{
