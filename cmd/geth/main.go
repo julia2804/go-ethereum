@@ -229,6 +229,7 @@ func init() {
 		constructCommand,
 		mergeCommand,
 		afterInsertCommand,
+		experCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 

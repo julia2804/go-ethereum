@@ -237,6 +237,22 @@ Use "ethereum dump 0" to dump the genesis block.`,
 		Category:    "BLOCKCHAIN COMMANDS",
 		Description: `construct tree`,
 	}
+	experCommand = cli.Command{
+		Action: utils.MigrateFlags(exper),
+		Name:   "exper",
+		Usage:  "merge ebtree",
+		//ArgsUsage: "<sourceChaindataDir>",
+		Flags: []cli.Flag{
+			utils.DataDirFlag,
+			utils.CacheFlag,
+			utils.SyncModeFlag,
+			utils.FakePoWFlag,
+			utils.TestnetFlag,
+			utils.EndFlag,
+		},
+		Category:    "BLOCKCHAIN COMMANDS",
+		Description: `construct tree`,
+	}
 )
 
 // initGenesis will initialise the given JSON format genesis file and writes it as
@@ -646,5 +662,15 @@ func merge(ctx *cli.Context) error {
 
 	//time.Sleep(20 * time.Second)
 
+	return nil
+}
+
+func exper(ctx *cli.Context) error {
+	stack := makeFullNode(ctx)
+	defer stack.Close()
+	chain, db := utils.MakeChain(ctx, stack)
+	defer db.Close()
+
+	ebtree_v2.ExperStart(chain)
 	return nil
 }

@@ -36,6 +36,9 @@ var (
 	recordPath = ethereum.GetValueFromDefaultPath("thread", "recordPath")
 
 	insert_begin_end_Path = ethereum.GetValueFromDefaultPath("thread", "SingleAppendPath")
+
+	experSavePath = ethereum.GetValueFromDefaultPath("thread", "experSavePath")
+	duplicate, _  = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "duplicate"))
 )
 
 func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
@@ -99,6 +102,10 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 
 	if insert_begin_end_Path == "" || len(insert_begin_end_Path) == 0 {
 		insert_begin_end_Path = "/root/insert_begin_end.txt"
+	}
+
+	if duplicate == 0 {
+		duplicate = 5
 	}
 
 	begin = outbegin
