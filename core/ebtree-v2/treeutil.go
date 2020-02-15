@@ -278,10 +278,10 @@ func compareResult(array1, array2 []ResultD) {
 	}
 }
 
-func TransNumInResultDArray(array []ResultD) int {
-	var num int
+func TransNumInResultDArray(array []ResultD) int64 {
+	var num int64
 	for i := 0; i < len(array); i++ {
-		num += len((array)[i].ResultData)
+		num += int64(len((array)[i].ResultData))
 	}
 	return num
 }
