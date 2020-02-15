@@ -104,6 +104,10 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 		insert_begin_end_Path = "/root/insert_begin_end.txt"
 	}
 
+	if experSavePath == "" || len(experSavePath) == 0 {
+		experSavePath = "/root/expersave.txt"
+	}
+
 	if duplicate == 0 {
 		duplicate = 5
 	}
@@ -114,7 +118,8 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 
 	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*gettasknum + begin - 1), "gettasknum", gettasknum,
 		"threadnum", getthreadnum, "maxProces", maxProces, "constructPath", constructSavePath,
-		"leaf_num", MaxLeafNodeCapability, "internal_num", MaxInternalNodeCapability, "recordpath", recordPath, "insert_begin_end_path", insert_begin_end_Path)
+		"leaf_num", MaxLeafNodeCapability, "internal_num", MaxInternalNodeCapability, "recordpath",
+		recordPath, "insert_begin_end_path", insert_begin_end_Path, "experSavePath", experSavePath, "duplicate", duplicate)
 }
 
 func CloseParams() {

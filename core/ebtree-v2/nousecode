@@ -1,7 +1,7 @@
 build/bin/geth --syncmode fast --maxpeers 0 --datadir /home/mimota/data console
 go tool pprof main cpu_profile
 
-#construct tree 用法
+#construct tree 用法 (废弃)
 ***前提****
 config.ini 中配置homePath以及constructSavePath.
 例如
@@ -25,3 +25,43 @@ ps.切记文件夹末尾的/
 	datas := make([]ResultD, MaxLeafNodeCapability*128)
 的128调大，比如设置为512或者1024
 
+RLP(Recursive Length Prefix)
+SLP(Simple Length Prefix)
+SLP专门设计以序列化和反序列化Entity数组
+1.序列化方式：对于Entity数组的每个元素——entity。先用4个字节记录entity.value的长度，再记录entity.value;接着用4个字节记录entity.data的长度,再记录entity.data.
+2.反序列化方式：读取4个字节，并且转换为int n。接着读取n个字节，并将其作为entity.value。读取4个字节，并且转换为int m。接着读取m个字节，并将其作为entity.data。执行k次就获取了k个entity
+
+gettasknum
+preConstruct中，getblock会分为多个task执行，gettasknum为其task的数量
+
+getthreadnum
+preConstruct中，getblock会分为多个task执行，task会被不同的线程执行，getthreadnum为线程的数量
+
+insertthreadnum
+insert的线程数量
+
+insertbuffer
+insert的线程buffer
+
+treesize
+treesize用来判别constructTree是否需要helper
+
+constructSavePath
+preconstruct过程中，所产生的文件所保存的文件夹
+
+MaxLeafNodeCapability
+叶子最大负载
+MaxInternalNodeCapability
+中间节点最大负载
+
+recordPath
+construct过程中所记录时间的文件地址
+
+insert_begin_end_Path
+分散插入时，所消耗时间记录的地址
+
+experSavePath
+查询实验保存时间的地址
+
+duplicate
+每次实验需要做几次
