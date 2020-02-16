@@ -646,8 +646,11 @@ func afterInsert(ctx *cli.Context) error {
 
 	begin, _ := strconv.Atoi(ctx.Args()[0])
 	end, _ := strconv.Atoi(ctx.Args()[1])
-	ebtree_v2.AppendInsert(chain, begin, end)
-
+	trans, err := ebtree_v2.AppendInsert(chain, begin, end)
+	fmt.Println("the trans in appendInsert is :", trans)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

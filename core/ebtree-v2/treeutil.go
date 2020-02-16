@@ -115,7 +115,10 @@ func AppendInsert(bc *core.BlockChain, begin int, end int) (int64, error) {
 		if block != nil {
 			trans := block.Transactions()
 			for j := 0; j < trans.Len(); j++ {
-				tree.AfterInsertDataToTree(trans[j].Value().Bytes(), Convert2IdentifierData(i, j))
+				err := tree.AfterInsertDataToTree(trans[j].Value().Bytes(), Convert2IdentifierData(i, j))
+				if err != nil {
+					return -1, err
+				}
 			}
 			transNum += int64(trans.Len())
 			per := float32(i) / float32(e) * 100
@@ -125,7 +128,7 @@ func AppendInsert(bc *core.BlockChain, begin int, end int) (int64, error) {
 			}
 		}
 	}
-	err := tree.FinalCollapse()
+	err := tree.Db.AfterCommit(tree.Root, true)
 	if err != nil {
 		fmt.Println(err.Error())
 		return transNum, err

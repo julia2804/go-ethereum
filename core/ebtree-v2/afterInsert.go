@@ -3,6 +3,7 @@ package ebtree_v2
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 )
 
@@ -12,10 +13,11 @@ func (t *EBTree) AfterInsertDataToTree(value []byte, da []byte) error {
 	}
 	//fmt.Print("start to insert value :")
 	//fmt.Println(value)
-	err := t.AfterInsertDataToNode(&t.Root, value, da)
+	nt, err := t.AfterInsertDataToNode(t.Root, value, da)
 	if err != nil {
 		return err
 	}
+	t.Root = nt
 	return t.AftersplitNode(&t.Root, nil, 0)
 }
 
@@ -28,11 +30,12 @@ func (t *EBTree) AfterInsertToInternalChild(cd *ChildData, value []byte, da []by
 	switch pt := (cd.NodePtr).(type) {
 	case *LeafNode, *InternalNode:
 		//call the insert function to
-		err := t.AfterInsertDataToNode(&cd.NodePtr, value, da)
+		nt, err := t.AfterInsertDataToNode(cd.NodePtr, value, da)
 		if err != nil {
-			fmt.Println("insert data: when the data was added into appropriate child, something wrong")
+			fmt.Println("insert data: when the data was added into appropriate child, something wrong in leaf and internal node: AfterInsertToInternalChild")
 			return err
 		}
+		cd.NodePtr = nt
 		if byteCompare(cd.Value, value) > 0 {
 			cd.Value = value
 		}
@@ -48,18 +51,19 @@ func (t *EBTree) AfterInsertToInternalChild(cd *ChildData, value []byte, da []by
 		//replace the bytenode with leaf/internal node
 		cd.NodePtr = decoden
 		//call the insert function to
-		err = t.AfterInsertDataToNode(&cd.NodePtr, value, da)
+		nt, err := t.AfterInsertDataToNode(cd.NodePtr, value, da)
 		if err != nil {
-			fmt.Println("insert data: when the data was added into appropriate child, something wrong")
+			fmt.Println("insert data: when the data was added into appropriate child, something wrong in idNode: AfterInsertToInternalChild")
 			return err
 		}
+		cd.NodePtr = nt
 		if byteCompare(cd.Value, value) > 0 {
 			cd.Value = value
 		}
 		return nil
 	default:
 		log.Info("wrong pointer type：default")
-		err := errors.New("wrong pointer type:default in  InsertToInternalChild")
+		err := errors.New("wrong pointer type:default in  InsertToInternalChild in defalut: AfterInsertToInternalChild")
 		return err
 	}
 }
@@ -75,11 +79,11 @@ func (t *EBTree) AfterInsertDataToInternalNode(nt *InternalNode, value []byte, d
 				return err
 			}
 			//判断child对应的节点是否需要split
-			err = t.AftersplitNode(&nt.Children[j].NodePtr, nt, j)
 			//返回结果
 			if err != nil {
-				fmt.Println("insert data: when the data was added into appropriate child, something wrong")
+				fmt.Println("insert data: when the data was added into appropriate child, something wrong in AfterInsertDataToInternalNode")
 				return err
+				err = t.AftersplitNode(&nt.Children[j].NodePtr, nt, j)
 			}
 			return nil
 		} else {
@@ -101,7 +105,8 @@ func (t *EBTree) AfterInsertDataToInternalNode(nt *InternalNode, value []byte, d
 	err = t.AftersplitNode(&ct.NodePtr, nt, j-1)
 	//返回结果
 	if err != nil {
-		fmt.Println("insert data: when the data was added into appropriate child, something wrong")
+		fmt.Println("insert data: when the data was added into appropriate child, something wrong in AfterInsertDataToInternalNode")
+		fmt.Println(err)
 		return err
 	}
 	return nil
@@ -184,25 +189,40 @@ func (t *EBTree) AfterInsertDataToLeafNode(nt *LeafNode, value []byte, da []byte
 /**************end****************
 insert to leaf
 ***********************************/
-func (t *EBTree) AfterInsertDataToNode(n *EBTreen, value []byte, da []byte) error {
+func (t *EBTree) AfterInsertDataToNode(n EBTreen, value []byte, da []byte) (EBTreen, error) {
 
-	switch nt := (*n).(type) {
+	switch nt := (n).(type) {
 	case *LeafNode:
 		//insert into leafNode
-		return t.AfterInsertDataToLeafNode(nt, value, da)
+		err := t.AfterInsertDataToLeafNode(nt, value, da)
+		if err != nil {
+			fmt.Println(err)
+			return nt, err
+		}
+		return nt, nil
 		//不进行split
 	case *InternalNode:
 		//insert into internal node
-		return t.AfterInsertDataToInternalNode(nt, value, da)
+		err := t.AfterInsertDataToInternalNode(nt, value, da)
+		if err != nil {
+			fmt.Println(err)
+			return nt, err
+		}
+		return nt, nil
 	case *IdNode:
 		//insert into byte node,need to use real node to replace it
 		ntid := nt.fstring()
 		decoden, err := t.LoadNode(ntid)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		n = &decoden
-		return t.AfterInsertDataToNode(n, value, da)
+		n = decoden
+		nr, err := t.AfterInsertDataToNode(n, value, da)
+		if err != nil {
+			fmt.Println(err)
+			return nr, err
+		}
+		return nr, nil
 	case nil:
 		dai := NewLeafData(value, da)
 
@@ -211,14 +231,13 @@ func (t *EBTree) AfterInsertDataToNode(n *EBTreen, value []byte, da []byte) erro
 		newn := t.NewLeafNode()
 		newn.LeafDatas = da
 		t.Root = &newn
-		return nil
+		return t.Root, nil
 	default:
 		log.Info("n with wrong node type")
 		err := errors.New("the node is not leaf or internal, something wrong")
-		return err
+		return nil, err
 	}
-	err := errors.New("the function reach to the bottom in InsertDataToNode, something wrong")
-	return err
+
 }
 
 /**************start****************
@@ -383,10 +402,140 @@ func (t *EBTree) AftersplitNode(n *EBTreen, parent *InternalNode, i int) error {
 		err := errors.New("node is defalut in splitNode")
 		return err
 	}
-	err := errors.New("something wrong")
+	err := errors.New("something wrong in splitNode")
 	return err
 }
 
 /**************end****************
 split node
+***********************************/
+/**************start****************
+commit node
+***********************************/
+func (db *Database) AfterCommit(root EBTreen, report bool) error {
+	// Create a database batch to flush persistent data out. It is important that
+	// outside code doesn't see an inconsistent state (referenced data removed from
+	// memory cache during commit but not yet in persistent storage). This is ensured
+	// by only uncaching existing data when the database write finalizes.
+	db.lock.RLock()
+
+	batch := db.diskdb.NewBatch()
+	// Move the trie itself into the batch, flushing if enough data is accumulated
+	//nodes, storage := len(db.dirties), db.dirtiesSize
+	if err := db.Aftercommit(root, batch); err != nil {
+		log.Error("Failed to commit trie from trie database", "err", err)
+		fmt.Println(root.fstring())
+		db.lock.RUnlock()
+		return err
+	}
+	// Write batch ready, unlock for readers during persistence
+	if err := batch.Write(); err != nil {
+		log.Error("Failed to write trie to disk", "err", err)
+		db.lock.RUnlock()
+		return err
+	}
+	batch.Reset()
+	db.lock.RUnlock()
+
+	// Write successful, clear out the flushed data
+	db.lock.Lock()
+	defer db.lock.Unlock()
+
+	return nil
+}
+
+// 提交保存以node为根节点的树
+func (db *Database) Aftercommit(node EBTreen, batch ethdb.Batch) error {
+	//保存encode的结果
+	var result []byte
+	result = nil
+	var err error
+	var nid []byte
+
+	switch nt := (node).(type) {
+	//如果是叶子节点，需要先将原来的next更改为id
+	case *LeafNode:
+		nid = nt.Id
+		var nb IdNode
+		if nt.NextPtr != nil {
+			nb = nt.NextPtr.fstring()
+			nt.NextPtr = &nb
+		}
+		result, err = EncodeNode(nt)
+		if err != nil {
+			panic("encode error: " + err.Error())
+		}
+	//如果是中间节点，需要递归先保存子树；然后再保存自身
+	case *InternalNode:
+		nid = nt.Id
+		for i := 0; i < len(nt.Children); i++ {
+			ct := (nt.Children[i])
+			//子节点有三种可能，其中如果是ByteNode的话是不需要递归操作
+			switch cpt := (ct.NodePtr).(type) {
+			case *IdNode:
+				continue
+			case *LeafNode:
+				var nb IdNode
+				nb = cpt.Id
+				ct.NodePtr = &nb
+				nt.Children[i] = ct
+
+				err = db.Aftercommit(cpt, batch)
+				if err != nil {
+					return err
+				}
+
+			case *InternalNode:
+				var nb IdNode
+				nb = cpt.Id
+				ct.NodePtr = &nb
+				nt.Children[i] = ct
+
+				err = db.Aftercommit(cpt, batch)
+				if err != nil {
+					return err
+				}
+
+			default:
+				err = errors.New("wrong child pointer type : default")
+			}
+
+		}
+		result, err = EncodeNode(nt)
+		if err != nil {
+			panic("encode error: " + err.Error())
+		}
+	//如果是ByteNode，那么不需要任何操作
+	case *IdNode:
+		return nil
+	default:
+		log.Info("error int func : EncodeNode().388")
+		err = errors.New("error int func : EncodeNode().388")
+	}
+
+	if err != nil {
+		return err
+	}
+	if result == nil {
+		return errors.New("no result in func commit()")
+	}
+
+	//将result放入batch中
+	if err := batch.Put(nid[:], result); err != nil {
+		return err
+	}
+	// If we've reached an optimal batch size, commit and start over
+	//if batch.ValueSize() >= ethdb.IdealBatchSize {
+	if batch.ValueSize() >= ethdb.IdealBatchSize {
+		if err := batch.Write(); err != nil {
+			return err
+		}
+		batch.Reset()
+	}
+
+	return nil
+}
+
+/**************end****************
+commit node
 ***********************************/

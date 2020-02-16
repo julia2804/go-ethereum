@@ -59,7 +59,7 @@ func NewEBTreeFromDb(db *Database) (*EBTree, error) {
 		lid = me.FirstLeaf
 		ebt.Root = rid
 		ebt.FirstLeaf = lid
-
+		ebt.Sequence = BytesToInt(me.Sequence)
 		if len(me.Root) != 0 {
 
 			rootNode, err := ebt.LoadNode(me.Root)
@@ -525,6 +525,8 @@ func (ebt *EBTree) CommitMeatas() error {
 		lid = lt.Id
 	case *IdNode:
 		lid = *lt
+	case IdNode:
+		lid = lt
 	default:
 		err := errors.New("wrong node type of ebt.FirstLeaf in CommitMeatas")
 		return err
