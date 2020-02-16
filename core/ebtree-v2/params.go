@@ -17,17 +17,15 @@ var takenum int
 
 var (
 	gettasknum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "gettasknum"))
-	//aftertasknum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "aftertasknum"))
 
 	getthreadnum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "getthreadnum"))
-	//afterthreadnum, _  = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "afterthreadnum"))
+
 	insertthreadnum, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "insertthreadnum"))
 
 	insertbuffer, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "insertbuffer"))
 
 	treesize, _ = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "treesize"))
 
-	//homePath          = ethereum.GetValueFromDefaultPath("thread", "homePath")
 	constructSavePath = ethereum.GetValueFromDefaultPath("thread", "constructSavePath")
 
 	MaxLeafNodeCapability, _     = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "leaf_num"))
@@ -37,8 +35,11 @@ var (
 
 	insert_begin_end_Path = ethereum.GetValueFromDefaultPath("thread", "SingleAppendPath")
 
-	experSavePath = ethereum.GetValueFromDefaultPath("thread", "experSavePath")
-	duplicate, _  = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "duplicate"))
+	//experSavePath = ethereum.GetValueFromDefaultPath("thread", "experSavePath")
+	duplicate, _     = strconv.Atoi(ethereum.GetValueFromDefaultPath("thread", "duplicate"))
+	topkSavePath     = ethereum.GetValueFromDefaultPath("thread", "topkSavePath")
+	specificSavePath = ethereum.GetValueFromDefaultPath("thread", "specificSavePath")
+	rangeSavePath    = ethereum.GetValueFromDefaultPath("thread", "rangeSavePath")
 )
 
 func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
@@ -59,14 +60,6 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 			getthreadnum = maxProces
 		}
 	}
-	//
-	//if aftertasknum == 0 {
-	//	aftertasknum = 1
-	//}
-	//
-	//if afterthreadnum == 0 {
-	//	afterthreadnum = 1
-	//}
 
 	if insertthreadnum == 0 {
 		insertthreadnum = maxProces
@@ -79,10 +72,6 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 	if outerbc != nil {
 		bc = outerbc
 	}
-
-	//if homePath == "" {
-	//	homePath = "/root/"
-	//}
 
 	if constructSavePath == "" {
 		constructSavePath = "/root/experConstruct/"
@@ -104,8 +93,16 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 		insert_begin_end_Path = "/root/insert_begin_end.txt"
 	}
 
-	if experSavePath == "" || len(experSavePath) == 0 {
-		experSavePath = "/root/expersave.txt"
+	if topkSavePath == "" || len(topkSavePath) == 0 {
+		topkSavePath = "/root/expersave.txt"
+	}
+
+	if rangeSavePath == "" || len(rangeSavePath) == 0 {
+		rangeSavePath = "/root/expersave.txt"
+	}
+
+	if specificSavePath == "" || len(specificSavePath) == 0 {
+		specificSavePath = "/root/expersave.txt"
 	}
 
 	if duplicate == 0 {
@@ -119,7 +116,8 @@ func Initial(outerbc *core.BlockChain, outbegin int, outend int) {
 	log.Info("initial over, the final blocknum is :", "begin", begin, "fn", (interval*gettasknum + begin - 1), "gettasknum", gettasknum,
 		"threadnum", getthreadnum, "maxProces", maxProces, "constructPath", constructSavePath,
 		"leaf_num", MaxLeafNodeCapability, "internal_num", MaxInternalNodeCapability, "recordpath",
-		recordPath, "insert_begin_end_path", insert_begin_end_Path, "experSavePath", experSavePath, "duplicate", duplicate)
+		recordPath, "insert_begin_end_path", insert_begin_end_Path, "duplicate", duplicate,
+		"topkSavePath", topkSavePath, "specificSavePath", specificSavePath, "rangeSavePath", rangeSavePath)
 }
 
 func CloseParams() {

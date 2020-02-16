@@ -60,8 +60,17 @@ construct过程中所记录时间的文件地址
 insert_begin_end_Path
 分散插入时，所消耗时间记录的地址
 
-experSavePath
+experSavePath 废弃
 查询实验保存时间的地址
 
 duplicate
 每次实验需要做几次
+
+topkSavePath
+查询实验保存时间的地址
+
+rangeSavePath
+查询实验保存时间的地址
+
+specificSavePath
+查询实验保存时间的地址

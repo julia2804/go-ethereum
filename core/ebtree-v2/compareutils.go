@@ -113,10 +113,10 @@ func GenTestData(n int) {
 	fmt.Println(len(m1))
 }
 
-func BigAbs(a string, b string) hexutil.Big {
+func BigAdd(a string, b string) hexutil.Big {
 	Inta, _ := new(big.Int).SetString(a, 10)
 	Intb, _ := new(big.Int).SetString(b, 10)
-	return hexutil.Big(*Inta.Abs(Intb))
+	return hexutil.Big(*Inta.Add(Inta, Intb))
 }
 
 func ResultDIsSame(a ResultD, b ResultD) bool {
